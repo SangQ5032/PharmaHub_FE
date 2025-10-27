@@ -1,5 +1,7 @@
 # React Native
 node_modules/
+package-lock.json   # ⛔ chặn npm lockfile để bắt buộc dùng yarn
+.pnpm-debug.log* 
 build/
 android/app/build/
 ios/Pods/
@@ -30,6 +32,10 @@ yarn-error.log*
 /android/.cxx/
 /android/app/.cxx/
 /android/keystores/
+# Ignore Gradle cache and build folders
+android/.gradle/
+android/build/
+android/app/build/
 
 # --- IOS FULL ---
 /ios/DerivedData/

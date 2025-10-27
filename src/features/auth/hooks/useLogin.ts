@@ -1,8 +1,8 @@
 // src/features/auth/hooks/useLogin.ts
 import { useState } from 'react'
 import { useDispatch } from 'react-redux'
-import { authApi } from '../authApi'
-import { setTokens } from '../../slice/authSlice'
+import { authApi } from '../api/authApi'
+import { setTokens } from '../slice/authSlice'
 
 export function useLogin() {
   const dispatch = useDispatch()
