@@ -1,29 +1,26 @@
 // App.tsx
-import './src/shared/config/reactotron' // init Reactotron (nếu bạn đã cấu hình)
+import './src/shared/config/reactotron'
 import React from 'react'
 import { AppRegistry, StatusBar, LogBox } from 'react-native'
-import { Provider } from 'react-redux'
 import { name as appName } from './app.json'
 import AppNavigator from './src/app/navigation/AppNavigator'
-import { store } from './src/app/store'
 import { GestureHandlerRootView } from 'react-native-gesture-handler'
 import { SafeAreaProvider } from 'react-native-safe-area-context'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 
-// Ignore noisy logs (tùy bạn có muốn giữ hay xóa)
-LogBox.ignoreLogs([
-  'Setting a timer', // ví dụ common RN timer warning
-])
+LogBox.ignoreLogs(['Setting a timer'])
+
+const queryClient = new QueryClient()
 
 const App = () => {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
-      <Provider store={store}>
-        {/* Nếu sau này dùng redux-persist: wrap <PersistGate> vào bên trong Provider */}
+      <QueryClientProvider client={queryClient}>
         <SafeAreaProvider>
           <StatusBar barStyle="light-content" />
           <AppNavigator />
         </SafeAreaProvider>
-      </Provider>
+      </QueryClientProvider>
     </GestureHandlerRootView>
   )
 }

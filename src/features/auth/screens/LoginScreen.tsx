@@ -1,24 +1,84 @@
-/* eslint-disable react-native/no-inline-styles */
-// src/features/auth/screens/LoginScreen.tsx
-import React, { useState } from 'react'
-import { View, TextInput, Button, Text } from 'react-native'
-import { useLogin } from '../api/hooks/useLogin'
+/* eslint-disable @typescript-eslint/no-unused-vars */
+/* eslint-disable handle-callback-err */
+import React, { useState } from 'react';
+import {
+  View,
+  Text,
+  TextInput,
+  Button,
+  StyleSheet,
+  ActivityIndicator,
+  ToastAndroid,
+} from 'react-native';
+import { useLogin } from '@features/auth/hooks/useLogin';
 
 export default function LoginScreen() {
-  const { login, loading, error } = useLogin()
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const { mutate: login, isPending } = useLogin();
 
-  const onSubmit = () => {
-    login(email, password).catch(() => {})
-  }
+  const handleLogin = () => {
+    if (!email || !password) {
+      ToastAndroid.show('Vui lòng nhập đầy đủ', ToastAndroid.SHORT);
+      return;
+    }
+
+    login(
+      { email, password },
+      {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        onError: (err: any) => {
+          ToastAndroid.show('Đăng nhập thất bại', ToastAndroid.SHORT);
+        },
+      },
+    );
+  };
 
   return (
-    <View style={{ flex:1, justifyContent:'center', padding:16 }}>
-      <TextInput placeholder="Email" value={email} onChangeText={setEmail} />
-      <TextInput placeholder="Password" value={password} onChangeText={setPassword} secureTextEntry />
-      {error && <Text>{error}</Text>}
-      <Button title={loading ? '...' : 'Login'} onPress={onSubmit} />
+    <View style={styles.container}>
+      <Text style={styles.title}>Đăng nhập</Text>
+
+      <TextInput
+        style={styles.input}
+        placeholder="Email"
+        autoCapitalize="none"
+        value={email}
+        onChangeText={setEmail}
+      />
+
+      <TextInput
+        style={styles.input}
+        placeholder="Mật khẩu"
+        secureTextEntry
+        value={password}
+        onChangeText={setPassword}
+      />
+
+      {isPending ? (
+        <ActivityIndicator />
+      ) : (
+        <Button title="Đăng nhập" onPress={handleLogin} />
+      )}
     </View>
-  )
+  );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    justifyContent: 'center',
+    padding: 20,
+  },
+  title: {
+    fontSize: 22,
+    fontWeight: '600',
+    marginBottom: 20,
+  },
+  input: {
+    borderWidth: 1,
+    borderColor: '#ddd',
+    padding: 12,
+    marginBottom: 10,
+    borderRadius: 6,
+  },
+});
