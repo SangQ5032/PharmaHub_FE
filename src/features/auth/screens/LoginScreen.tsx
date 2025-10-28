@@ -19,7 +19,6 @@ export default function LoginScreen() {
 
   const handleLogin = () => {
     if (!email || !password) {
-      samk;
       ToastAndroid.show('Vui lòng nhập đầy đủ', ToastAndroid.SHORT);
       return;
     }
@@ -27,8 +26,8 @@ export default function LoginScreen() {
     login(
       { email, password },
       {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         onError: (err: any) => {
-          // Bạn có thể refine message theo structure API
           ToastAndroid.show('Đăng nhập thất bại', ToastAndroid.SHORT);
         },
       },
