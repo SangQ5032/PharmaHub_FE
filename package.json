@@ -11,11 +11,11 @@
     "prepare": "true"
   },
   "lint-staged": {
-  "src/**/*.{js,jsx,ts,tsx}": [
-    "eslint --fix",
-    "prettier --write"
-  ]
-},
+    "src/**/*.{js,jsx,ts,tsx}": [
+      "eslint --fix",
+      "prettier --write"
+    ]
+  },
   "dependencies": {
     "@react-native-async-storage/async-storage": "^2.2.0",
     "@react-native/new-app-screen": "0.80.1",
