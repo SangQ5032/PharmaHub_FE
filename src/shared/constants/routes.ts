@@ -1,4 +1,5 @@
 export const ROUTES = {
-LOGIN: 'Login',
-HOME: 'Home',
+  LOGIN: 'Login',
+  PHONE_LOGIN: 'PhoneLogin',
+  HOME: 'Home',
 };
