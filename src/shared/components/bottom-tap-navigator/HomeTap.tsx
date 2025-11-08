@@ -2,9 +2,10 @@
 import React from 'react';
 import { View, StyleSheet } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { HomeTabParamList } from '@shared/types/homeTab';
 
 export type TabItem = {
-  name: string;
+  name: keyof HomeTabParamList;
   component: React.ComponentType<any>;
   label: string;
 };

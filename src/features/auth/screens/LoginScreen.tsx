@@ -10,12 +10,25 @@ import {
   ActivityIndicator,
   ToastAndroid,
 } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
+import type { CompositeNavigationProp } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import type {
+  RootStackParamList,
+  AuthStackParamList,
+} from '@shared/types/navigation';
 import { useLogin } from '@features/auth/hooks/useLogin';
 
 export default function LoginScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const { mutate: login, isPending } = useLogin();
+
+  type NavigationProp = CompositeNavigationProp<
+    NativeStackNavigationProp<AuthStackParamList>,
+    NativeStackNavigationProp<RootStackParamList>
+  >;
+  const navigation = useNavigation<NavigationProp>();
 
   const handleLogin = () => {
     if (!email || !password) {
@@ -26,7 +39,14 @@ export default function LoginScreen() {
     login(
       { email, password },
       {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        onSuccess: () => {
+          // Navigate to MainApp (RootStack level) sau khi đăng nhập thành công
+          navigation.getParent()?.reset({
+            index: 0,
+            routes: [{ name: 'MainApp' as keyof RootStackParamList }],
+          });
+        },
+
         onError: (err: any) => {
           ToastAndroid.show('Đăng nhập thất bại', ToastAndroid.SHORT);
         },

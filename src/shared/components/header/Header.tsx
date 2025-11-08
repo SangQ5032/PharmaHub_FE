@@ -41,7 +41,7 @@ export const Header: React.FC<HeaderProps> = ({
             <Image
               source={{ uri: avatarUrl }}
               style={styles.avatar}
-              defaultSource={require('@shared/assets/default-avatar.png')}
+              defaultSource={require('../../assets/columbina.png')}
             />
           </TouchableOpacity>
         ) : (
