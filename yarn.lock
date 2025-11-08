@@ -5794,6 +5794,11 @@ metro@0.82.5, metro@^0.82.2:
     ws "^7.5.10"
     yargs "^17.6.2"
 
+microdiff@^1.5.0:
+  version "1.5.0"
+  resolved "https://registry.yarnpkg.com/microdiff/-/microdiff-1.5.0.tgz#d16219b223396f11ffcf441da26a43d3e6bd06f8"
+  integrity sha512-Drq+/THMvDdzRYrK0oxJmOKiC24ayUV8ahrt8l3oRK51PWt6gdtrIGrlIH3pT/lFh1z93FbAcidtsHcWbnRz8Q==
+
 micromatch@^4.0.4, micromatch@^4.0.8:
   version "4.0.8"
   resolved "https://registry.npmjs.org/micromatch/-/micromatch-4.0.8.tgz"
@@ -6533,6 +6538,13 @@ reactotron-react-native@^5.1.18:
   dependencies:
     mitt "^3.0.1"
     reactotron-core-client "2.9.9"
+
+reactotron-redux@^3.2.1:
+  version "3.2.1"
+  resolved "https://registry.yarnpkg.com/reactotron-redux/-/reactotron-redux-3.2.1.tgz#3512f3d44d458e25ca65176c3d93243415bc8aa0"
+  integrity sha512-WxMVz1zBlzWplS3HJU1kDH1LBaTE71i/mMdyRTZZrAQq33+SKd7hva03pMbd6UJFaQeSCvey26a2SSWp5CLsWg==
+  dependencies:
+    microdiff "^1.5.0"
 
 readable-stream@^3.4.0:
   version "3.6.2"
