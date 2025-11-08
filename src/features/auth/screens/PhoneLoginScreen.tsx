@@ -16,6 +16,11 @@ import {
 } from 'react-native';
 import { phoneAuthService } from '../services/phoneAuth.service';
 import { useAuthStore } from '../stores/useAuthStore';
+import { useNavigation } from '@react-navigation/native';
+import type { CompositeNavigationProp } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import type { RootStackParamList } from '@shared/types/navigation';
+import type { AuthStackParamList } from '@shared/types/navigation';
 
 export default function PhoneLoginScreen() {
   const [phoneNumber, setPhoneNumber] = useState('');
@@ -25,6 +30,11 @@ export default function PhoneLoginScreen() {
   const [verifying, setVerifying] = useState(false);
   const [countdown, setCountdown] = useState(0);
   const { setToken, setUser } = useAuthStore();
+  type NavigationProp = CompositeNavigationProp<
+    NativeStackNavigationProp<AuthStackParamList>,
+    NativeStackNavigationProp<RootStackParamList>
+  >;
+  const navigation = useNavigation<NavigationProp>();
 
   // Test Reactotron khi component mount
   useEffect(() => {
@@ -96,11 +106,6 @@ export default function PhoneLoginScreen() {
       return;
     }
 
-    if (!otpSent) {
-      Alert.alert('Lỗi', 'Vui lòng gửi mã OTP trước');
-      return;
-    }
-
     setVerifying(true);
     try {
       const result = await phoneAuthService.verifyOTP(phoneNumber, otp);
@@ -114,19 +119,12 @@ export default function PhoneLoginScreen() {
           setUser(result.user);
         }
 
-        Alert.alert(
-          'Đăng nhập thành công',
-          `Chào mừng bạn!\nSố điện thoại: ${phoneNumber}`,
-          [
-            {
-              text: 'OK',
-              onPress: () => {
-                // Reset form
-                resetForm();
-              },
-            },
-          ],
-        );
+        // Navigate to MainApp (RootStack level)
+        // React Navigation sẽ tự động tìm route ở parent navigator
+        navigation.getParent()?.reset({
+          index: 0,
+          routes: [{ name: 'MainApp' as keyof RootStackParamList }],
+        });
       } else {
         Alert.alert('Lỗi', result.error || 'Mã OTP không đúng');
       }
