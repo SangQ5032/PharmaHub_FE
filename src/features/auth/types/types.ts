@@ -22,6 +22,44 @@ export interface LoginData {
   user?: any; // sẽ refine sau
 }
 
+export interface SendOTPBody {
+  phone: string;
+}
+
+export interface SendOTPResponse {
+  success: boolean;
+  message: string;
+  data: {
+    expiresIn: number;
+  };
+}
+
+export interface VerifyOTPBody {
+  phone: string;
+  otp: string;
+  sessionId?: string; // Nếu backend cần sessionId
+}
+
+export interface VerifyOTPResponse {
+  success: boolean;
+  accessToken?: string;
+  refreshToken?: string;
+  user?: any;
+  message?: string;
+}
+
+export interface VerifyFirebaseTokenBody {
+  idToken: string;
+}
+
+export interface VerifyFirebaseTokenResponse {
+  success: boolean;
+  accessToken?: string;
+  refreshToken?: string;
+  user?: any;
+  message?: string;
+}
+
 export type AuthState = {
   accessToken: string | null;
   refreshToken: string | null;

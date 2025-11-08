@@ -2,12 +2,10 @@
 
 const reactotron = {
   configure: () => reactotron,
-  use: () => reactotron,
-  useReactNative: () => reactotron,   // Thêm dòng này
+  useReactNative: () => reactotron,
   connect: () => reactotron,
   clear: () => {},
   log: () => {},
 };
 
-export const reactotronRedux = () => {};
 export default reactotron;

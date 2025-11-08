@@ -13,5 +13,6 @@ module.exports = {
   rules: {
     'no-undef': 'error',                // Bắt lỗi biến chưa khai báo
     '@typescript-eslint/no-unused-vars': 'warn',  // Báo biến không dùng
+     "@typescript-eslint/no-explicit-any": "off"
   },
 };
