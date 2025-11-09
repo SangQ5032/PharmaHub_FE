@@ -11,8 +11,20 @@ export interface User {
 // error?: string | null;
 // }
 
+// Login với username/password
+export interface LoginUsernameBody {
+  username: string;
+  password: string;
+}
+
+// Login với Firebase ID Token
+export interface LoginFirebaseBody {
+  idToken: string;
+}
+
+// Backward compatibility
 export interface LoginBody {
-  email: string;
+  username: string;
   password: string;
 }
 
@@ -54,9 +66,11 @@ export interface VerifyFirebaseTokenBody {
 
 export interface VerifyFirebaseTokenResponse {
   success: boolean;
-  accessToken?: string;
-  refreshToken?: string;
-  user?: any;
+  data: {
+    accessToken?: string;
+    refreshToken?: string;
+    user?: User;
+  };
   message?: string;
 }
 

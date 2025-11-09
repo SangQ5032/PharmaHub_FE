@@ -9,6 +9,7 @@ import {
 import { Header } from '@shared/components/header/Header';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { useNavigation } from '@react-navigation/native';
+import { ROUTES } from '@shared/constants/routes';
 
 export interface FunctionItem {
   id: string;
@@ -18,9 +19,19 @@ export interface FunctionItem {
 }
 
 const FUNCTIONS: FunctionItem[] = [
-  { id: '1', name: 'Bán hàng', icon: 'cart', route: 'Sales' },
-  { id: '2', name: 'Sản phẩm', icon: 'package-variant', route: 'Products' },
-  { id: '3', name: 'Thống kê', icon: 'chart-bar', route: 'Statistics' },
+  { id: '1', name: 'Lịch Làm Việc', icon: 'cart', route: ROUTES.WORK_SCHEDULE },
+  {
+    id: '2',
+    name: 'Lịch Làm Việc Của Tôi',
+    icon: 'package-variant',
+    route: ROUTES.MY_WORK_SCHEDULE,
+  },
+  {
+    id: '3',
+    name: 'Checkin',
+    icon: 'chart-bar',
+    route: ROUTES.CHECKIN_CHECKOUT,
+  },
   { id: '4', name: 'Doanh thu', icon: 'cash', route: 'Revenue' },
   { id: '5', name: 'Hoá đơn', icon: 'receipt', route: 'Invoices' },
 ];

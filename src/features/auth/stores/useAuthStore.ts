@@ -18,11 +18,47 @@ export const useAuthStore = create<AuthState>((set, get) => ({
    * Lưu token và user vào store + AsyncStorage
    */
   setToken: async (accessToken, refreshToken) => {
-    set({ accessToken });
-    await AsyncStorage.setItem(STORAGE_KEYS.ACCESS, accessToken);
-    if (refreshToken) {
-      set({ refreshToken });
-      await AsyncStorage.setItem(STORAGE_KEYS.REFRESH, refreshToken);
+    try {
+      // Lưu vào Zustand store trước
+      set({ accessToken });
+
+      // Lưu vào AsyncStorage (nếu chưa có)
+      const existingToken = await AsyncStorage.getItem(STORAGE_KEYS.ACCESS);
+
+      // Thử lưu với error handling chi tiết
+      try {
+        await AsyncStorage.setItem(STORAGE_KEYS.ACCESS, accessToken);
+
+        // Đợi một chút để đảm bảo commit
+        await new Promise(resolve => setTimeout(resolve, 50));
+
+        // Verify ngay sau khi lưu
+        const verifyToken = await AsyncStorage.getItem(STORAGE_KEYS.ACCESS);
+
+        if (!verifyToken || verifyToken !== accessToken) {
+          console.error('❌ LỖI: Token không khớp sau khi lưu!');
+          // Thử lưu lại
+          await AsyncStorage.setItem(STORAGE_KEYS.ACCESS, accessToken);
+          await new Promise(resolve => setTimeout(resolve, 100));
+          const retryVerify = await AsyncStorage.getItem(STORAGE_KEYS.ACCESS);
+        }
+      } catch (storageError: any) {
+        console.error('❌ Lỗi khi lưu vào AsyncStorage:', {
+          message: storageError?.message,
+          name: storageError?.name,
+          code: storageError?.code,
+          stack: storageError?.stack,
+        });
+        throw storageError;
+      }
+
+      if (refreshToken) {
+        set({ refreshToken });
+        await AsyncStorage.setItem(STORAGE_KEYS.REFRESH, refreshToken);
+      }
+    } catch (error) {
+      console.error('❌ Lỗi trong setToken:', error);
+      throw error;
     }
   },
 

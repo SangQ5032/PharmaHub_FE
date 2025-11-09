@@ -1,5 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
-/* eslint-disable handle-callback-err */
 import React, { useState } from 'react';
 import {
   View,
@@ -18,9 +16,10 @@ import type {
   AuthStackParamList,
 } from '@shared/types/navigation';
 import { useLogin } from '@features/auth/hooks/useLogin';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export default function LoginScreen() {
-  const [email, setEmail] = useState('');
+  const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const { mutate: login, isPending } = useLogin();
 
@@ -31,24 +30,43 @@ export default function LoginScreen() {
   const navigation = useNavigation<NavigationProp>();
 
   const handleLogin = () => {
-    if (!email || !password) {
-      ToastAndroid.show('Vui lòng nhập đầy đủ', ToastAndroid.SHORT);
+    if (!username.trim() || !password.trim()) {
+      ToastAndroid.show('Vui lòng nhập đầy đủ thông tin', ToastAndroid.SHORT);
       return;
     }
 
     login(
-      { email, password },
+      { username: username.trim(), password },
       {
-        onSuccess: () => {
-          // Navigate to MainApp (RootStack level) sau khi đăng nhập thành công
-          navigation.getParent()?.reset({
-            index: 0,
-            routes: [{ name: 'MainApp' as keyof RootStackParamList }],
-          });
+        onSuccess: async () => {
+          // Đợi một chút để đảm bảo token đã được lưu vào AsyncStorage
+          await new Promise(resolve => setTimeout(resolve, 200));
+
+          // Verify token đã được lưu trước khi navigate
+          const savedToken = await AsyncStorage.getItem('accessToken');
+
+          if (savedToken) {
+            console.log('✅ Token đã sẵn sàng, đang navigate...', {
+              tokenLength: savedToken.length,
+            });
+            ToastAndroid.show('Đăng nhập thành công', ToastAndroid.SHORT);
+            // Navigate to MainApp (RootStack level) sau khi đăng nhập thành công
+            navigation.getParent()?.reset({
+              index: 0,
+              routes: [{ name: 'MainApp' as keyof RootStackParamList }],
+            });
+          } else {
+            console.error('❌ Token chưa được lưu, không thể navigate');
+            ToastAndroid.show('Lỗi: Token chưa được lưu', ToastAndroid.SHORT);
+          }
         },
 
         onError: (err: any) => {
-          ToastAndroid.show('Đăng nhập thất bại', ToastAndroid.SHORT);
+          const errorMessage =
+            err?.response?.data?.message ||
+            err?.message ||
+            'Đăng nhập thất bại';
+          ToastAndroid.show(errorMessage, ToastAndroid.SHORT);
         },
       },
     );
@@ -60,10 +78,10 @@ export default function LoginScreen() {
 
       <TextInput
         style={styles.input}
-        placeholder="Email"
+        placeholder="Tên đăng nhập"
         autoCapitalize="none"
-        value={email}
-        onChangeText={setEmail}
+        value={username}
+        onChangeText={setUsername}
       />
 
       <TextInput
