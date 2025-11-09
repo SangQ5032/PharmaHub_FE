@@ -4,12 +4,16 @@ import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import LoginScreen from '@features/auth/screens/LoginScreen';
 import PhoneLoginScreen from '@features/auth/screens/PhoneLoginScreen';
+import WorkScheduleScreen from '@features/work-schdule/screens/WorkScheduleScreen';
+import MyWorkScheduleScreen from '@features/work-schdule/screens/MyWorkScheduleScreen';
+import CheckinCheckoutScreen from '@features/checkin-checkout/screens/CheckinCheckoutScreen';
 import { ROUTES } from '@shared/constants/routes';
 import { HomeNavigator, TabItem } from '@shared/components';
 import HomeScreen from '@shared/screens/HomeScreen';
 import {
   RootStackParamList,
   AuthStackParamList,
+  MainStackParamList,
 } from '@shared/types/navigation';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -30,17 +34,36 @@ const AuthNavigator = () => (
   </AuthStack.Navigator>
 );
 
-// Create Main App Navigator with Tabs
+// Create Main Stack Navigator (contains tabs and other screens)
+const MainStack = createNativeStackNavigator<MainStackParamList>();
 const MainAppNavigator = () => (
-  <HomeNavigator
-    tabs={tabs}
-    activeTintColor="#4CAF50"
-    inactiveTintColor="#9E9E9E"
-    tabBarStyle={{
-      backgroundColor: '#FFFFFF',
-      borderTopColor: '#E0E0E0',
-    }}
-  />
+  <MainStack.Navigator screenOptions={{ headerShown: false }}>
+    <MainStack.Screen name="HomeTabs">
+      {() => (
+        <HomeNavigator
+          tabs={tabs}
+          activeTintColor="#4CAF50"
+          inactiveTintColor="#9E9E9E"
+          tabBarStyle={{
+            backgroundColor: '#FFFFFF',
+            borderTopColor: '#E0E0E0',
+          }}
+        />
+      )}
+    </MainStack.Screen>
+    <MainStack.Screen
+      name={ROUTES.WORK_SCHEDULE}
+      component={WorkScheduleScreen}
+    />
+    <MainStack.Screen
+      name={ROUTES.MY_WORK_SCHEDULE}
+      component={MyWorkScheduleScreen}
+    />
+    <MainStack.Screen
+      name={ROUTES.CHECKIN_CHECKOUT}
+      component={CheckinCheckoutScreen}
+    />
+  </MainStack.Navigator>
 );
 
 export default function AppNavigator() {
