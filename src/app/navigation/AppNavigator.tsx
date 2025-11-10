@@ -10,6 +10,7 @@ import CheckinCheckoutScreen from '@features/checkin-checkout/screens/CheckinChe
 import { ROUTES } from '@shared/constants/routes';
 import { HomeNavigator, TabItem } from '@shared/components';
 import HomeScreen from '@shared/screens/HomeScreen';
+import { MedicineListScreen, AddMedicineScreen } from '@features/medicines'; // <-- ensure AddMedicineScreen import if present
 import {
   RootStackParamList,
   AuthStackParamList,
@@ -20,37 +21,41 @@ const Stack = createNativeStackNavigator<RootStackParamList>();
 
 const tabs: TabItem[] = [
   { name: 'Home', component: HomeScreen, label: 'Trang chủ' },
-  // { name: 'Orders', component: OrdersScreen, label: 'Đơn hàng' },
-  // { name: 'Notifications', component: NotificationsScreen, label: 'Thông báo' },
-  // { name: 'Profile', component: ProfileScreen, label: 'Tài khoản' },
+  { name: ROUTES.MEDICINES, component: MedicineListScreen, label: 'Thuốc' },
 ];
 
 // Create Auth Navigator
 const AuthStack = createNativeStackNavigator<AuthStackParamList>();
 const AuthNavigator = () => (
   <AuthStack.Navigator screenOptions={{ headerShown: false }}>
+    {/* Tạm bỏ qua màn login và phonelogin (comment, không xóa) */}
+    {/*
     <AuthStack.Screen name={ROUTES.PHONE_LOGIN} component={PhoneLoginScreen} />
     <AuthStack.Screen name={ROUTES.LOGIN} component={LoginScreen} />
+    */}
   </AuthStack.Navigator>
 );
 
 // Create Main Stack Navigator (contains tabs and other screens)
 const MainStack = createNativeStackNavigator<MainStackParamList>();
+
+// Wrapper component so Screen receives a component prop (no non-Screen child in Navigator)
+const HomeTabsWrapper = () => (
+  <HomeNavigator
+    tabs={tabs}
+    activeTintColor="#4CAF50"
+    inactiveTintColor="#9E9E9E"
+    tabBarStyle={{
+      backgroundColor: '#FFFFFF',
+      borderTopColor: '#E0E0E0',
+    }}
+  />
+);
+
 const MainAppNavigator = () => (
   <MainStack.Navigator screenOptions={{ headerShown: false }}>
-    <MainStack.Screen name="HomeTabs">
-      {() => (
-        <HomeNavigator
-          tabs={tabs}
-          activeTintColor="#4CAF50"
-          inactiveTintColor="#9E9E9E"
-          tabBarStyle={{
-            backgroundColor: '#FFFFFF',
-            borderTopColor: '#E0E0E0',
-          }}
-        />
-      )}
-    </MainStack.Screen>
+    {/* Use component prop with wrapper instead of child render function */}
+    <MainStack.Screen name="HomeTabs" component={HomeTabsWrapper} />
     <MainStack.Screen
       name={ROUTES.WORK_SCHEDULE}
       component={WorkScheduleScreen}
@@ -63,14 +68,26 @@ const MainAppNavigator = () => (
       name={ROUTES.CHECKIN_CHECKOUT}
       component={CheckinCheckoutScreen}
     />
+    <MainStack.Screen name={ROUTES.MEDICINES} component={MedicineListScreen} />
+    {/* If AddMedicineScreen exists */}
+    <MainStack.Screen
+      name={ROUTES.ADD_MEDICINE}
+      component={AddMedicineScreen}
+    />
   </MainStack.Navigator>
 );
 
 export default function AppNavigator() {
   return (
     <NavigationContainer>
-      <Stack.Navigator screenOptions={{ headerShown: false }}>
+      {/* Khi mở app, vào luôn MainApp. Tạm comment màn Auth và set initialRouteName */}
+      <Stack.Navigator
+        screenOptions={{ headerShown: false }}
+        initialRouteName="MainApp"
+      >
+        {/*
         <Stack.Screen name="Auth" component={AuthNavigator} />
+        */}
         <Stack.Screen name="MainApp" component={MainAppNavigator} />
       </Stack.Navigator>
     </NavigationContainer>
