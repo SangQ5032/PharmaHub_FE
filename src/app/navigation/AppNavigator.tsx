@@ -10,7 +10,8 @@ import CheckinCheckoutScreen from '@features/checkin-checkout/screens/CheckinChe
 import { ROUTES } from '@shared/constants/routes';
 import { HomeNavigator, TabItem } from '@shared/components';
 import HomeScreen from '@shared/screens/HomeScreen';
-import { MedicineListScreen, AddMedicineScreen } from '@features/medicines'; // <-- ensure AddMedicineScreen import if present
+import { MedicinesHubScreen, MedicineListScreen, AddMedicineScreen } from '@features/medicines'; // <-- ensure AddMedicineScreen import if present
+import { SuppliersScreen, AddSupplierScreen } from '@features/suppliers';
 import {
   RootStackParamList,
   AuthStackParamList,
@@ -21,7 +22,7 @@ const Stack = createNativeStackNavigator<RootStackParamList>();
 
 const tabs: TabItem[] = [
   { name: 'Home', component: HomeScreen, label: 'Trang chủ' },
-  { name: ROUTES.MEDICINES, component: MedicineListScreen, label: 'Thuốc' },
+  { name: ROUTES.MEDICINES_HUB, component: MedicinesHubScreen, label: 'Medicines Hub' },
 ];
 
 // Create Auth Navigator
@@ -33,6 +34,7 @@ const AuthNavigator = () => (
     <AuthStack.Screen name={ROUTES.PHONE_LOGIN} component={PhoneLoginScreen} />
     <AuthStack.Screen name={ROUTES.LOGIN} component={LoginScreen} />
     */}
+    <AuthStack.Screen name={ROUTES.LOGIN} component={LoginScreen} />
   </AuthStack.Navigator>
 );
 
@@ -68,7 +70,10 @@ const MainAppNavigator = () => (
       name={ROUTES.CHECKIN_CHECKOUT}
       component={CheckinCheckoutScreen}
     />
-    <MainStack.Screen name={ROUTES.MEDICINES} component={MedicineListScreen} />
+  <MainStack.Screen name={ROUTES.MEDICINES_HUB} component={MedicinesHubScreen} />
+  <MainStack.Screen name={ROUTES.MEDICINES} component={MedicineListScreen} />
+  <MainStack.Screen name={ROUTES.SUPPLIERS} component={SuppliersScreen} />
+  <MainStack.Screen name={ROUTES.ADD_SUPPLIER} component={AddSupplierScreen} />
     {/* If AddMedicineScreen exists */}
     <MainStack.Screen
       name={ROUTES.ADD_MEDICINE}

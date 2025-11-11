@@ -1,4 +1,4 @@
-import React, { useCallback } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import {
   View,
   Text,
@@ -6,6 +6,8 @@ import {
   RefreshControl,
   StyleSheet,
   TouchableOpacity,
+  TextInput,
+  Modal,
   ScrollView,
 } from 'react-native';
 import { useMedicines } from '../hooks/useMedicines';
@@ -15,96 +17,200 @@ import { ROUTES } from '@shared/constants/routes';
 import apiClient from '@shared/services/api';
 
 const MedicineListScreen: React.FC = () => {
-  const { medicines, loading, error, errorDetail, refresh } = useMedicines();
+  const { medicines, loading, error, errorDetail, refresh, search, setSearch } =
+    useMedicines();
   const navigation = useNavigation<any>();
+
+  // ----- Filters state -----
+  const [filterVisible, setFilterVisible] = useState(false);
+  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
+  // expiryOption: null(no filter) | 30 | 60 | 365
+  const [expiryOption, setExpiryOption] = useState<number | null>(null);
+  // stock levels
+  const [stockLow, setStockLow] = useState(false);
+  const [stockMed, setStockMed] = useState(false);
+  const [stockHigh, setStockHigh] = useState(false);
 
   const baseURL =
     (apiClient && (apiClient.defaults as any)?.baseURL) || '<no-baseURL>';
 
-  // refresh mỗi lần màn này được focus (sau edit/xóa quay về)
   useFocusEffect(
     useCallback(() => {
       refresh();
     }, [refresh]),
   );
 
+  // ----- Derived helpers -----
+  const categories = useMemo(() => {
+    const set = new Set<string>();
+    medicines.forEach(m => {
+      const c = (m as any).category;
+      if (typeof c === 'string' && c.trim()) set.add(c.trim());
+    });
+    return Array.from(set).sort((a, b) => a.localeCompare(b));
+  }, [medicines]);
+
+  const getDaysLeft = (d?: string) => {
+    if (!d) return undefined;
+    const exp = new Date(d);
+    if (Number.isNaN(exp.getTime())) return undefined;
+    const today = new Date();
+    exp.setHours(0, 0, 0, 0);
+    today.setHours(0, 0, 0, 0);
+    const msPerDay = 24 * 60 * 60 * 1000;
+    return Math.round((exp.getTime() - today.getTime()) / msPerDay);
+  };
+
+  const qtyToLevel = (q?: number | string) => {
+    if (q == null || q === '') return undefined;
+    const n = typeof q === 'string' ? Number(q) : q;
+    if (Number.isNaN(n)) return undefined;
+    if (n >= 200) return 'high';
+    if (n >= 100) return 'med';
+    return 'low';
+  };
+
+  const filteredMedicines = useMemo(() => {
+    return medicines.filter(m => {
+      // category filter (multi)
+      if (selectedCategories.length > 0) {
+        const c = (m as any).category?.trim();
+        if (!c || !selectedCategories.includes(c)) return false;
+      }
+
+      // expiry filter (single: <= N days)
+      if (expiryOption != null) {
+        const daysLeft = getDaysLeft((m as any).expiry_date);
+        if (typeof daysLeft !== 'number' || !(daysLeft <= expiryOption)) {
+          return false;
+        }
+      }
+
+      // stock level filter (multi)
+      const needStock = stockLow || stockMed || stockHigh;
+      if (needStock) {
+        const level = qtyToLevel((m as any).quantity);
+        const ok = (stockLow && level === 'low') || (stockMed && level === 'med') || (stockHigh && level === 'high');
+        if (!ok) return false;
+      }
+
+      return true;
+    });
+  }, [medicines, selectedCategories, expiryOption, stockLow, stockMed, stockHigh]);
+
+  const clearAllFilters = () => {
+    setSelectedCategories([]);
+    setExpiryOption(null);
+    setStockLow(false);
+    setStockMed(false);
+    setStockHigh(false);
+  };
+
+  const selectedChips = useMemo(() => {
+    const chips: { key: string; label: string; onRemove: () => void }[] = [];
+    selectedCategories.forEach(c =>
+      chips.push({
+        key: `cat:${c}`,
+        label: c,
+        onRemove: () => setSelectedCategories(prev => prev.filter(x => x !== c)),
+      }),
+    );
+    if (expiryOption != null) {
+      const label = expiryOption === 365 ? 'HSD ≤ 1 năm' : `HSD ≤ ${expiryOption} ngày`;
+      chips.push({ key: `exp:${expiryOption}`, label, onRemove: () => setExpiryOption(null) });
+    }
+    if (stockLow) chips.push({ key: 'sl:low', label: 'SL Low', onRemove: () => setStockLow(false) });
+    if (stockMed) chips.push({ key: 'sl:med', label: 'SL Med', onRemove: () => setStockMed(false) });
+    if (stockHigh) chips.push({ key: 'sl:high', label: 'SL High', onRemove: () => setStockHigh(false) });
+    return chips;
+  }, [selectedCategories, expiryOption, stockLow, stockMed, stockHigh]);
+
   return (
+    <>
     <View style={styles.container}>
-      {/* Tiêu đề được bọc trong titleContainer để căn giữa theo chiều dọc */}
       <View style={styles.titleContainer}>
-        <Text style={styles.titleText}>Danh sách thuốc</Text>
+        <Text style={styles.titleText}>Quản lý thuốc</Text>
       </View>
 
-      <View style={styles.debugRow}>
-        <Text style={styles.debugLabel}>API:</Text>
-        <Text style={styles.debugValue}>{baseURL}</Text>
-      </View>
-
-      {/* Phần danh sách chiếm 90% (flex:9) */}
-      <View style={styles.listContainer}>
-        {/* Header row: 4 cột bằng nhau */}
-        <View style={styles.headerRow}>
-          <View style={styles.headerCell}>
-            <Text style={[styles.headerText, styles.left]}>TÊN THUỐC</Text>
-          </View>
-          <View style={styles.headerCell}>
-            <Text style={[styles.headerText, styles.center]}>GIÁ</Text>
-          </View>
-          <View style={styles.headerCell}>
-            <Text style={[styles.headerText, styles.center]}>HSD</Text>
-          </View>
-          <View style={styles.headerCell}>
-            <Text
-              style={[styles.headerText, styles.right, { textAlign: 'center' }]}
-            >
-              SL
-            </Text>
-          </View>
-        </View>
-
-        {error ? (
-          <View style={styles.errorBox}>
-            <Text style={styles.errorTitle}>Lỗi khi tải dữ liệu:</Text>
-            <Text style={styles.errorText}>{String(error)}</Text>
-            <Text style={styles.errorSmall}>
-              Status: {String(errorDetail?.responseStatus ?? '-')}
-            </Text>
-            <ScrollView style={styles.errorPayload} horizontal>
-              <Text selectable style={styles.errorSmall}>
-                {JSON.stringify(
-                  errorDetail?.responseData ?? errorDetail ?? {},
-                  null,
-                  2,
-                )}
-              </Text>
-            </ScrollView>
-            <TouchableOpacity style={styles.retry} onPress={refresh}>
-              <Text style={styles.retryText}>Thử lại</Text>
-            </TouchableOpacity>
-          </View>
-        ) : null}
-
-        <FlatList
-          data={medicines}
-          keyExtractor={item => String(item._id)}
-          renderItem={({ item }) => (
-            <MedicineItem item={item} onUpdated={refresh} />
-          )}
-          refreshControl={
-            <RefreshControl refreshing={loading} onRefresh={refresh} />
-          }
-          contentContainerStyle={
-            medicines.length === 0 ? styles.emptyContainer : undefined
-          }
-          ListEmptyComponent={
-            !loading ? (
-              <Text style={styles.emptyText}>Không có dữ liệu</Text>
-            ) : null
-          }
+      {/* Search box */}
+      <View style={styles.searchContainer}>
+        <TextInput
+          value={search}
+          onChangeText={setSearch}
+          placeholder="Tìm theo tên thuốc..."
+          style={styles.searchInput}
+          returnKeyType="search"
+          autoCorrect={false}
+          clearButtonMode="while-editing"
         />
       </View>
 
-      {/* Bottom bar chiếm 10% (flex:1) chứa nút viên thuốc "+ Thêm thuốc" */}
+      {/* Filters row */}
+      <View style={styles.filtersRow}>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chipsContainer}>
+          {selectedChips.length === 0 ? (
+            <Text style={styles.chipsPlaceholder}>Chưa chọn bộ lọc</Text>
+          ) : (
+            selectedChips.map(chip => (
+              <View key={chip.key} style={styles.chip}>
+                <Text style={styles.chipText}>{chip.label}</Text>
+                <TouchableOpacity onPress={chip.onRemove} style={styles.chipRemove}>
+                  <Text style={styles.chipRemoveText}>×</Text>
+                </TouchableOpacity>
+              </View>
+            ))
+          )}
+        </ScrollView>
+
+        <TouchableOpacity style={styles.filterButton} onPress={() => setFilterVisible(true)} activeOpacity={0.8}>
+          <Text style={styles.filterButtonText}>Lọc</Text>
+        </TouchableOpacity>
+      </View>
+
+      {/* Header row */}
+      <View style={styles.headerRow}>
+        <View style={styles.headerCell}>
+          <Text style={[styles.headerText, styles.left]}>TÊN THUỐC</Text>
+        </View>
+        <View style={styles.headerCell}>
+          <Text style={[styles.headerText, styles.center]}>GIÁ</Text>
+        </View>
+        <View style={styles.headerCell}>
+          <Text style={[styles.headerText, styles.center]}>HSD</Text>
+        </View>
+        <View style={styles.headerCell}>
+          <Text style={[styles.headerText, styles.right]}>SL</Text>
+        </View>
+      </View>
+
+      {error ? (
+        <View style={styles.errorContainer}>
+          <Text style={styles.error}>Lỗi: {String(error)}</Text>
+          <TouchableOpacity style={styles.retry} onPress={refresh}>
+            <Text style={styles.retryText}>Thử lại</Text>
+          </TouchableOpacity>
+        </View>
+      ) : null}
+
+      <FlatList
+        data={filteredMedicines}
+        keyExtractor={item => String(item._id)}
+        renderItem={({ item }) => (
+          <MedicineItem item={item} onUpdated={refresh} />
+        )}
+        refreshControl={
+          <RefreshControl refreshing={loading} onRefresh={refresh} />
+        }
+        contentContainerStyle={
+          filteredMedicines.length === 0 ? styles.emptyContainer : undefined
+        }
+        ListEmptyComponent={
+          !loading ? (
+            <Text style={styles.emptyText}>Không có dữ liệu</Text>
+          ) : null
+        }
+      />
+
       <View style={styles.bottomBar}>
         <TouchableOpacity
           style={styles.pillButton}
@@ -114,7 +220,93 @@ const MedicineListScreen: React.FC = () => {
           <Text style={styles.pillButtonText}>＋ Thêm thuốc</Text>
         </TouchableOpacity>
       </View>
-    </View>
+  </View>
+
+  {/* Filter Modal */}
+    <Modal visible={filterVisible} transparent animationType="fade" onRequestClose={() => setFilterVisible(false)}>
+      <View style={styles.modalBackdrop}>
+        <View style={styles.modalCard}>
+          <Text style={styles.modalTitle}>Bộ lọc</Text>
+
+          {/* Category */}
+          <Text style={styles.sectionTitle}>Category</Text>
+          <View style={styles.optionsWrap}>
+            {categories.length === 0 ? (
+              <Text style={styles.muted}>Không có category</Text>
+            ) : (
+              categories.map(c => {
+                const selected = selectedCategories.includes(c);
+                return (
+                  <TouchableOpacity
+                    key={c}
+                    style={[styles.optionPill, selected && styles.optionPillSelected]}
+                    onPress={() =>
+                      setSelectedCategories(prev =>
+                        prev.includes(c) ? prev.filter(x => x !== c) : [...prev, c],
+                      )
+                    }
+                  >
+                    <Text style={[styles.optionPillText, selected && styles.optionPillTextSelected]}>
+                      {c}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })
+            )}
+          </View>
+
+          <Text style={styles.sectionTitle}>Hạn sử dụng</Text>
+          <View style={styles.optionsWrap}>
+            {[30, 60, 365].map(n => {
+              const selected = expiryOption === n;
+              const label = n === 365 ? '≤ 1 năm' : `≤ ${n} ngày`;
+              return (
+                <TouchableOpacity
+                  key={n}
+                  style={[styles.optionPill, selected && styles.optionPillSelected]}
+                  onPress={() => setExpiryOption(prev => (prev === n ? null : n))}
+                >
+                  <Text style={[styles.optionPillText, selected && styles.optionPillTextSelected]}>
+                    {label}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+
+          <Text style={styles.sectionTitle}>Số lượng (SL)</Text>
+          <View style={styles.optionsWrap}>
+            {(
+              [
+                { key: 'Low', value: 'low' as const, selected: stockLow, toggle: () => setStockLow(v => !v) },
+                { key: 'Med', value: 'med' as const, selected: stockMed, toggle: () => setStockMed(v => !v) },
+                { key: 'High', value: 'high' as const, selected: stockHigh, toggle: () => setStockHigh(v => !v) },
+              ]
+            ).map(o => (
+              <TouchableOpacity
+                key={o.value}
+                style={[styles.optionPill, o.selected && styles.optionPillSelected]}
+                onPress={o.toggle}
+              >
+                <Text style={[styles.optionPillText, o.selected && styles.optionPillTextSelected]}>
+                  {o.key}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+
+          <View style={styles.modalActions}>
+            <TouchableOpacity style={[styles.modalButton, styles.btnGhost]} onPress={clearAllFilters}>
+              <Text style={[styles.modalButtonText, styles.btnGhostText]}>Bỏ tất cả lựa chọn</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={[styles.modalButton, styles.btnPrimary]} onPress={() => setFilterVisible(false)}>
+              <Text style={[styles.modalButtonText, styles.btnPrimaryText]}>Áp dụng</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </View>
+    </Modal>
+    </>
   );
 };
 
@@ -128,36 +320,61 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   titleText: { fontSize: 20, fontWeight: '600', color: '#fff' },
-  debugRow: {
+
+  // search
+  searchContainer: {
     paddingHorizontal: 12,
-    paddingBottom: 8,
+    marginBottom: 8,
+  },
+  searchInput: {
+    height: 40,
+    borderWidth: 1,
+    borderColor: '#E0E0E0',
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    backgroundColor: '#fff',
+  },
+
+  // filters
+  filtersRow: {
     flexDirection: 'row',
     alignItems: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    marginHorizontal: 12,
+    marginBottom: 8,
+    backgroundColor: '#F9FBFA',
+    borderWidth: 1,
+    borderColor: '#E0E0E0',
+    borderRadius: 16,
   },
-  debugLabel: { fontSize: 12, color: '#666', marginRight: 8 },
-  debugValue: { fontSize: 12, color: '#000', flex: 1 },
-  errorBox: {
-    padding: 12,
-    backgroundColor: '#fee',
-    borderRadius: 8,
-    margin: 12,
+  chipsContainer: {
+    flexGrow: 1,
+    alignItems: 'center',
+    paddingRight: 8,
   },
-  errorTitle: { fontWeight: '700', color: '#900', marginBottom: 4 },
-  errorText: { color: '#900' },
-  errorSmall: { color: '#666', fontSize: 12, marginTop: 6 },
-  errorPayload: { maxHeight: 120, marginTop: 6 },
-  retry: {
-    marginTop: 8,
-    padding: 8,
-    backgroundColor: '#4CAF50',
-    alignSelf: 'flex-start',
-    borderRadius: 6,
+  chipsPlaceholder: { color: '#888' },
+  chip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+    borderColor: '#E6E6E6',
+    borderWidth: 1,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 999,
+    marginRight: 8,
   },
-  retryText: { color: '#fff', fontWeight: '600' },
-  listContainer: {
-    flex: 9,
-    paddingHorizontal: 8,
+  chipText: { color: '#2E7D32', fontWeight: '600' },
+  chipRemove: { marginLeft: 6 },
+  chipRemoveText: { color: '#888', fontSize: 16, lineHeight: 16 },
+  filterButton: {
+    backgroundColor: '#2EB872',
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 10,
   },
+  filterButtonText: { color: '#fff', fontWeight: '700' },
 
   headerRow: {
     flexDirection: 'row',
@@ -180,15 +397,9 @@ const styles = StyleSheet.create({
     color: '#333',
   },
 
-  bottomBar: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingHorizontal: 12,
-    backgroundColor: 'transparent',
-  },
+  bottomBar: { padding: 12 },
   pillButton: {
-    width: '90%',
+    width: '100%',
     backgroundColor: '#2EB872',
     paddingVertical: 12,
     borderRadius: 999,
@@ -196,18 +407,73 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     elevation: 4,
   },
-  pillButtonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '700',
-  },
+  pillButtonText: { color: '#fff', fontSize: 16, fontWeight: '700' },
 
   left: { textAlign: 'left' },
   center: { textAlign: 'center' },
   right: { textAlign: 'right' },
   error: { color: 'red', marginBottom: 8 },
+  errorContainer: { marginBottom: 8 },
   emptyContainer: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   emptyText: { color: '#666', padding: 20 },
+  // retry button (error)
+  retry: {
+    alignSelf: 'flex-start',
+    backgroundColor: '#2EB872',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 8,
+  },
+  retryText: { color: '#fff', fontWeight: '700' },
+
+  // modal
+  modalBackdrop: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.3)',
+    justifyContent: 'center',
+    padding: 16,
+  },
+  modalCard: {
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    padding: 16,
+  },
+  modalTitle: { fontSize: 18, fontWeight: '700', marginBottom: 8 },
+  sectionTitle: { marginTop: 12, marginBottom: 6, fontWeight: '700', color: '#333' },
+  optionsWrap: { flexDirection: 'row', flexWrap: 'wrap' },
+  optionPill: {
+    borderWidth: 1,
+    borderColor: '#E0E0E0',
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+    borderRadius: 999,
+    marginRight: 8,
+    marginBottom: 8,
+    backgroundColor: '#fff',
+  },
+  optionPillSelected: {
+    backgroundColor: '#2EB872',
+    borderColor: '#2EB872',
+  },
+  optionPillText: { color: '#333', fontWeight: '600' },
+  optionPillTextSelected: { color: '#fff' },
+  muted: { color: '#888' },
+  modalActions: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    marginTop: 12,
+  },
+  modalButton: {
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderRadius: 8,
+    marginLeft: 8,
+  },
+  modalButtonText: { fontWeight: '700' },
+  btnPrimary: { backgroundColor: '#2EB872' },
+  btnPrimaryText: { color: '#fff', fontWeight: '700' },
+  btnGhost: { backgroundColor: '#fff', borderWidth: 1, borderColor: '#E0E0E0' },
+  btnGhostText: { color: '#333', fontWeight: '600' },
 });
 
 export default MedicineListScreen;

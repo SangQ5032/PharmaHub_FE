@@ -15,4 +15,9 @@ export type MainStackParamList = {
   [ROUTES.WORK_SCHEDULE]: undefined;
   [ROUTES.MY_WORK_SCHEDULE]: undefined;
   [ROUTES.CHECKIN_CHECKOUT]: undefined;
+  [ROUTES.MEDICINES_HUB]: undefined;
+  [ROUTES.MEDICINES]: undefined;
+  [ROUTES.ADD_MEDICINE]: { mode?: 'edit'; item?: any } | undefined;
+  [ROUTES.SUPPLIERS]: undefined;
+  [ROUTES.ADD_SUPPLIER]: { mode?: 'edit'; item?: any } | undefined;
 };

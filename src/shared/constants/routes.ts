@@ -5,6 +5,9 @@ export const ROUTES = {
   WORK_SCHEDULE: 'WorkSchedule',
   MY_WORK_SCHEDULE: 'MyWorkSchedule',
   CHECKIN_CHECKOUT: 'CheckinCheckout',
+  MEDICINES_HUB: 'MedicinesHub',
   MEDICINES: 'Medicines',
   ADD_MEDICINE: 'AddMedicine',
-};
+  SUPPLIERS: 'Suppliers',
+  ADD_SUPPLIER: 'AddSupplier',
+} as const;

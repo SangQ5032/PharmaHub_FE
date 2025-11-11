@@ -1,3 +1,4 @@
 import MedicineListScreen from './screens/MedicineListScreen';
 import AddMedicineScreen from './screens/AddMedicineScreen';
-export { MedicineListScreen, AddMedicineScreen };
+import MedicinesHubScreen from './screens/MedicinesHubScreen';
+export { MedicinesHubScreen, MedicineListScreen, AddMedicineScreen };

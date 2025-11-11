@@ -1,21 +1,38 @@
 import apiClient from '@shared/services/api';
 
-// Lấy danh sách medicines
-export async function fetchMedicines(): Promise<any[]> {
+// Lấy danh sách medicines (mặc định backend có thể trả về 10 item do pagination)
+// Thêm page & limit để lấy đủ dữ liệu (tạm thời limit lớn để đảm bảo thấy hết)
+export async function fetchMedicines(
+  name?: string,
+  options?: { page?: number; limit?: number },
+): Promise<any[]> {
   const url = '/medicines';
+  const page = options?.page ?? 1;
+  const limit = options?.limit ?? 100; // có 14 record -> 100 đủ dư
   try {
     // debug: log baseURL + full url
     console.log(
       '[medicineService] API baseURL =',
       (apiClient && (apiClient.defaults as any)?.baseURL) || '<no-baseURL>',
     );
-    console.log('[medicineService] GET', url);
+    console.log('[medicineService] GET', url, 'params:', { name, page, limit });
 
-    const res = await apiClient.get(url);
+    const params: Record<string, any> = { page, limit };
+    if (name) params.name = name;
+
+    const res = await apiClient.get(url, { params });
     const payload = res.data;
+
+    // Các format payload khả dụng: array trực tiếp | {data:[]} | {items:[]} | {results:[]}
     if (Array.isArray(payload)) return payload;
     if (payload && Array.isArray(payload.data)) return payload.data;
     if (payload && Array.isArray(payload.items)) return payload.items;
+    if (payload && Array.isArray(payload.results)) return payload.results;
+
+    // Nếu backend trả về {data:{items:[]}} dạng lồng
+    if (payload?.data && Array.isArray(payload.data.items))
+      return payload.data.items;
+
     return [];
   } catch (err: any) {
     // detailed logging for debugging

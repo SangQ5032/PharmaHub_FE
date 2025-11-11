@@ -30,6 +30,18 @@ const getTagInfo = (threshold?: number) => {
   return { label: 'Low', bg: '#FFCDD2' }; // light red
 };
 
+// Tính số ngày còn lại đến hạn sử dụng
+const getDaysLeft = (d?: string) => {
+  if (!d) return undefined;
+  const exp = new Date(d);
+  if (Number.isNaN(exp.getTime())) return undefined;
+  const today = new Date();
+  exp.setHours(0, 0, 0, 0);
+  today.setHours(0, 0, 0, 0);
+  const msPerDay = 24 * 60 * 60 * 1000;
+  return Math.round((exp.getTime() - today.getTime()) / msPerDay);
+};
+
 const MedicineItem: React.FC<{ item: Medicine; onUpdated?: () => void }> = ({
   item,
   onUpdated,
@@ -80,9 +92,20 @@ const MedicineItem: React.FC<{ item: Medicine; onUpdated?: () => void }> = ({
     );
   };
 
+  // xác định màu nền card theo hạn sử dụng
+  const daysLeft = getDaysLeft(item.expiry_date);
+  const isExpired = typeof daysLeft === 'number' ? daysLeft < 0 : false;
+  const isNear = typeof daysLeft === 'number' ? daysLeft <= 10 : false;
+  const cardBgStyle =
+    daysLeft == null
+      ? null
+      : isExpired || isNear
+      ? styles.cardNearExpiry
+      : styles.cardValid;
+
   return (
     <TouchableOpacity onPress={handlePress} activeOpacity={0.8}>
-      <View style={styles.card}>
+      <View style={[styles.card, cardBgStyle]}>
         <View style={styles.row}>
           {/* Name (25%) */}
           <View style={[styles.cell, { flex: 25 }]}>
@@ -132,11 +155,21 @@ const styles = StyleSheet.create({
     paddingVertical: 15,
     paddingHorizontal: 5,
     borderRadius: 8,
-    backgroundColor: '#fff',
+    backgroundColor: '#fff', // sẽ bị ghi đè bởi cardNearExpiry/cardValid nếu có
     marginBottom: 10,
     borderWidth: 1,
     borderColor: '#eee',
     margin: 10,
+  },
+  // nền đỏ nhạt khi còn <= 10 ngày hoặc đã hết hạn
+  cardNearExpiry: {
+    backgroundColor: '#FFEBEE', // red 50
+    borderColor: '#FFCDD2',
+  },
+  // nền xanh lá nhạt khi còn hạn > 10 ngày
+  cardValid: {
+    backgroundColor: '#E8F5E9', // green 50
+    borderColor: '#C8E6C9',
   },
   row: {
     flexDirection: 'row',

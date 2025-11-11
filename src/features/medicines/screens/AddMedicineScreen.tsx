@@ -133,7 +133,7 @@ const AddMedicineScreen: React.FC = () => {
           onPress={() => navigation.goBack()}
           hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
         >
-          <Text style={styles.backText}>‹</Text>
+          <Text style={styles.backText}>Back</Text>
         </TouchableOpacity>
         <Text style={styles.headerTitle}>
           {mode === 'edit' ? 'Cập nhật thuốc' : 'Thêm thuốc mới'}
@@ -293,7 +293,7 @@ const styles = StyleSheet.create({
     alignItems: 'flex-start',
   },
   backText: {
-    fontSize: 28,
+    fontSize: 15,
     color: '#2EB872',
   },
   headerTitle: {

@@ -7,6 +7,7 @@ export function useMedicines() {
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [errorDetail, setErrorDetail] = useState<any>(null);
+  const [search, setSearch] = useState<string>('');
 
   const load = useCallback(async () => {
     console.log('[useMedicines] load start');
@@ -14,7 +15,8 @@ export function useMedicines() {
     setError(null);
     setErrorDetail(null);
     try {
-      const data = await fetchMedicines();
+      const q = search.trim();
+  const data = await fetchMedicines(q || undefined, { page: 1, limit: 100 });
       console.log(
         '[useMedicines] load success, count =',
         Array.isArray(data) ? data.length : 'not-array',
@@ -32,11 +34,20 @@ export function useMedicines() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [search]);
 
+  // initial load
   useEffect(() => {
     load();
   }, [load]);
 
-  return { medicines, loading, error, errorDetail, refresh: load };
+  // debounce search input -> realtime fetch theo tên
+  useEffect(() => {
+    const h = setTimeout(() => {
+      load();
+    }, 300);
+    return () => clearTimeout(h);
+  }, [search, load]);
+
+  return { medicines, loading, error, errorDetail, refresh: load, search, setSearch };
 }
