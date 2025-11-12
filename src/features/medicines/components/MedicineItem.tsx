@@ -1,3 +1,4 @@
+/* eslint-disable react-native/no-inline-styles */
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Alert } from 'react-native';
 import { Medicine } from '../types';
@@ -22,13 +23,7 @@ const formatDate = (d?: string) => {
   return `${dd}/${mm}/${yyyy}`;
 };
 
-const getTagInfo = (threshold?: number) => {
-  if (threshold == null) return null;
-  if (threshold >= 200) return { label: 'High', bg: '#C8E6C9' }; // light green
-  if (threshold >= 100 && threshold <= 200)
-    return { label: 'Med', bg: '#FFF9C4' }; // light yellow
-  return { label: 'Low', bg: '#FFCDD2' }; // light red
-};
+// Removed tag (High/Med/Low) logic as requested
 
 // Tính số ngày còn lại đến hạn sử dụng
 const getDaysLeft = (d?: string) => {
@@ -47,10 +42,7 @@ const MedicineItem: React.FC<{ item: Medicine; onUpdated?: () => void }> = ({
   onUpdated,
 }) => {
   const navigation = useNavigation<any>();
-  // ưu tiên quantity để tag (hoặc fallback vào warning_threshold)
-  const tag = getTagInfo(
-    (item.quantity ?? (item as any).warning_threshold) as number,
-  );
+  // Tag removed
 
   const handleEdit = () => {
     navigation.navigate(ROUTES.ADD_MEDICINE, { mode: 'edit', item });
@@ -127,23 +119,6 @@ const MedicineItem: React.FC<{ item: Medicine; onUpdated?: () => void }> = ({
               {formatDate(item.expiry_date)}
             </Text>
           </View>
-
-          {/* SL + Tag (20%) - tag hiển thị ngang hàng với item */}
-          <View
-            style={[
-              styles.cell,
-              { flex: 20, justifyContent: 'center', alignItems: 'flex-end' },
-            ]}
-          >
-            <View style={styles.slRow}>
-              {/* chỉ hiện tag */}
-              {tag ? (
-                <View style={[styles.tag, { backgroundColor: tag.bg }]}>
-                  <Text style={styles.tagText}>{tag.label}</Text>
-                </View>
-              ) : null}
-            </View>
-          </View>
         </View>
       </View>
     </TouchableOpacity>
@@ -187,22 +162,7 @@ const styles = StyleSheet.create({
   left: { textAlign: 'left' },
   center: { textAlign: 'center' },
   right: { textAlign: 'right' },
-  slRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'flex-end',
-  },
-  tag: {
-    marginLeft: 8,
-    paddingVertical: 4,
-    paddingHorizontal: 8,
-    borderRadius: 8,
-  },
-  tagText: {
-    color: '#000',
-    fontWeight: '600',
-    fontSize: 12,
-  },
+  // tag styles removed
 });
 
 export default MedicineItem;

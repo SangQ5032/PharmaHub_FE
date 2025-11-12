@@ -1,3 +1,4 @@
+/* eslint-disable react-native/no-inline-styles */
 import React, { useState, useEffect } from 'react';
 import {
   View,
@@ -27,7 +28,6 @@ const AddMedicineScreen: React.FC = () => {
   const [expiryDate, setExpiryDate] = useState(''); // ISO yyyy-mm-dd
   const [supplierId, setSupplierId] = useState('');
   const [warningThreshold, setWarningThreshold] = useState('');
-  const [quantity, setQuantity] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
@@ -46,9 +46,7 @@ const AddMedicineScreen: React.FC = () => {
           ? String(editingItem.warning_threshold)
           : '',
       );
-      setQuantity(
-        editingItem.quantity != null ? String(editingItem.quantity) : '',
-      );
+      // quantity has been removed from the form
     }
   }, [mode, editingItem]);
 
@@ -80,8 +78,6 @@ const AddMedicineScreen: React.FC = () => {
     if (!price.trim() || Number.isNaN(Number(price)))
       return 'Giá hợp lệ là bắt buộc';
     if (!expiryDate.trim()) return 'Hạn sử dụng là bắt buộc';
-    if (!quantity.trim() || Number.isNaN(Number(quantity)))
-      return 'SL hợp lệ là bắt buộc';
     return null;
   };
 
@@ -102,7 +98,6 @@ const AddMedicineScreen: React.FC = () => {
       warning_threshold: warningThreshold
         ? Number(warningThreshold)
         : undefined,
-      quantity: Number(quantity),
     };
     setSubmitting(true);
     try {
@@ -158,29 +153,14 @@ const AddMedicineScreen: React.FC = () => {
           placeholder="supplier id"
         />
 
-        <View style={styles.rowHalf}>
-          <View style={styles.halfContainer}>
-            <Text style={styles.label}>Price</Text>
-            <TextInput
-              style={[styles.input, styles.halfInput]}
-              value={price}
-              onChangeText={setPrice}
-              keyboardType="numeric"
-              placeholder="10000"
-            />
-          </View>
-
-          <View style={styles.halfContainer}>
-            <Text style={styles.label}>Quantity</Text>
-            <TextInput
-              style={[styles.input, styles.halfInput]}
-              value={quantity}
-              onChangeText={setQuantity}
-              keyboardType="numeric"
-              placeholder="100"
-            />
-          </View>
-        </View>
+        <Text style={styles.label}>Price</Text>
+        <TextInput
+          style={styles.input}
+          value={price}
+          onChangeText={setPrice}
+          keyboardType="numeric"
+          placeholder="10000"
+        />
 
         <View style={styles.rowHalf}>
           <View style={styles.halfContainer}>

@@ -14,10 +14,10 @@ import { useMedicines } from '../hooks/useMedicines';
 import MedicineItem from '../components/MedicineItem';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { ROUTES } from '@shared/constants/routes';
-import apiClient from '@shared/services/api';
+// import apiClient from '@shared/services/api';
 
 const MedicineListScreen: React.FC = () => {
-  const { medicines, loading, error, errorDetail, refresh, search, setSearch } =
+  const { medicines, loading, error, refresh, search, setSearch } =
     useMedicines();
   const navigation = useNavigation<any>();
 
@@ -26,13 +26,9 @@ const MedicineListScreen: React.FC = () => {
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   // expiryOption: null(no filter) | 30 | 60 | 365
   const [expiryOption, setExpiryOption] = useState<number | null>(null);
-  // stock levels
-  const [stockLow, setStockLow] = useState(false);
-  const [stockMed, setStockMed] = useState(false);
-  const [stockHigh, setStockHigh] = useState(false);
+  // quantity-based stock filters removed
 
-  const baseURL =
-    (apiClient && (apiClient.defaults as any)?.baseURL) || '<no-baseURL>';
+  // const baseURL = (apiClient && (apiClient.defaults as any)?.baseURL) || '<no-baseURL>';
 
   useFocusEffect(
     useCallback(() => {
@@ -61,14 +57,7 @@ const MedicineListScreen: React.FC = () => {
     return Math.round((exp.getTime() - today.getTime()) / msPerDay);
   };
 
-  const qtyToLevel = (q?: number | string) => {
-    if (q == null || q === '') return undefined;
-    const n = typeof q === 'string' ? Number(q) : q;
-    if (Number.isNaN(n)) return undefined;
-    if (n >= 200) return 'high';
-    if (n >= 100) return 'med';
-    return 'low';
-  };
+  // quantity-based stock level helpers removed
 
   const filteredMedicines = useMemo(() => {
     return medicines.filter(m => {
@@ -86,24 +75,16 @@ const MedicineListScreen: React.FC = () => {
         }
       }
 
-      // stock level filter (multi)
-      const needStock = stockLow || stockMed || stockHigh;
-      if (needStock) {
-        const level = qtyToLevel((m as any).quantity);
-        const ok = (stockLow && level === 'low') || (stockMed && level === 'med') || (stockHigh && level === 'high');
-        if (!ok) return false;
-      }
+      // quantity-based stock filtering removed
 
       return true;
     });
-  }, [medicines, selectedCategories, expiryOption, stockLow, stockMed, stockHigh]);
+  }, [medicines, selectedCategories, expiryOption]);
 
   const clearAllFilters = () => {
     setSelectedCategories([]);
     setExpiryOption(null);
-    setStockLow(false);
-    setStockMed(false);
-    setStockHigh(false);
+    // reset for removed stock filters not needed
   };
 
   const selectedChips = useMemo(() => {
@@ -112,200 +93,228 @@ const MedicineListScreen: React.FC = () => {
       chips.push({
         key: `cat:${c}`,
         label: c,
-        onRemove: () => setSelectedCategories(prev => prev.filter(x => x !== c)),
+        onRemove: () =>
+          setSelectedCategories(prev => prev.filter(x => x !== c)),
       }),
     );
     if (expiryOption != null) {
-      const label = expiryOption === 365 ? 'HSD ≤ 1 năm' : `HSD ≤ ${expiryOption} ngày`;
-      chips.push({ key: `exp:${expiryOption}`, label, onRemove: () => setExpiryOption(null) });
+      const label =
+        expiryOption === 365 ? 'HSD ≤ 1 năm' : `HSD ≤ ${expiryOption} ngày`;
+      chips.push({
+        key: `exp:${expiryOption}`,
+        label,
+        onRemove: () => setExpiryOption(null),
+      });
     }
-    if (stockLow) chips.push({ key: 'sl:low', label: 'SL Low', onRemove: () => setStockLow(false) });
-    if (stockMed) chips.push({ key: 'sl:med', label: 'SL Med', onRemove: () => setStockMed(false) });
-    if (stockHigh) chips.push({ key: 'sl:high', label: 'SL High', onRemove: () => setStockHigh(false) });
     return chips;
-  }, [selectedCategories, expiryOption, stockLow, stockMed, stockHigh]);
+  }, [selectedCategories, expiryOption]);
 
   return (
     <>
-    <View style={styles.container}>
-      <View style={styles.titleContainer}>
-        <Text style={styles.titleText}>Quản lý thuốc</Text>
-      </View>
-
-      {/* Search box */}
-      <View style={styles.searchContainer}>
-        <TextInput
-          value={search}
-          onChangeText={setSearch}
-          placeholder="Tìm theo tên thuốc..."
-          style={styles.searchInput}
-          returnKeyType="search"
-          autoCorrect={false}
-          clearButtonMode="while-editing"
-        />
-      </View>
-
-      {/* Filters row */}
-      <View style={styles.filtersRow}>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chipsContainer}>
-          {selectedChips.length === 0 ? (
-            <Text style={styles.chipsPlaceholder}>Chưa chọn bộ lọc</Text>
-          ) : (
-            selectedChips.map(chip => (
-              <View key={chip.key} style={styles.chip}>
-                <Text style={styles.chipText}>{chip.label}</Text>
-                <TouchableOpacity onPress={chip.onRemove} style={styles.chipRemove}>
-                  <Text style={styles.chipRemoveText}>×</Text>
-                </TouchableOpacity>
-              </View>
-            ))
-          )}
-        </ScrollView>
-
-        <TouchableOpacity style={styles.filterButton} onPress={() => setFilterVisible(true)} activeOpacity={0.8}>
-          <Text style={styles.filterButtonText}>Lọc</Text>
-        </TouchableOpacity>
-      </View>
-
-      {/* Header row */}
-      <View style={styles.headerRow}>
-        <View style={styles.headerCell}>
-          <Text style={[styles.headerText, styles.left]}>TÊN THUỐC</Text>
+      <View style={styles.container}>
+        <View style={styles.titleContainer}>
+          <Text style={styles.titleText}>Quản lý thuốc</Text>
         </View>
-        <View style={styles.headerCell}>
-          <Text style={[styles.headerText, styles.center]}>GIÁ</Text>
-        </View>
-        <View style={styles.headerCell}>
-          <Text style={[styles.headerText, styles.center]}>HSD</Text>
-        </View>
-        <View style={styles.headerCell}>
-          <Text style={[styles.headerText, styles.right]}>SL</Text>
-        </View>
-      </View>
 
-      {error ? (
-        <View style={styles.errorContainer}>
-          <Text style={styles.error}>Lỗi: {String(error)}</Text>
-          <TouchableOpacity style={styles.retry} onPress={refresh}>
-            <Text style={styles.retryText}>Thử lại</Text>
+        {/* Search box */}
+        <View style={styles.searchContainer}>
+          <TextInput
+            value={search}
+            onChangeText={setSearch}
+            placeholder="Tìm theo tên thuốc..."
+            style={styles.searchInput}
+            returnKeyType="search"
+            autoCorrect={false}
+            clearButtonMode="while-editing"
+          />
+        </View>
+
+        {/* Filters row */}
+        <View style={styles.filtersRow}>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.chipsContainer}
+          >
+            {selectedChips.length === 0 ? (
+              <Text style={styles.chipsPlaceholder}>Chưa chọn bộ lọc</Text>
+            ) : (
+              selectedChips.map(chip => (
+                <View key={chip.key} style={styles.chip}>
+                  <Text style={styles.chipText}>{chip.label}</Text>
+                  <TouchableOpacity
+                    onPress={chip.onRemove}
+                    style={styles.chipRemove}
+                  >
+                    <Text style={styles.chipRemoveText}>×</Text>
+                  </TouchableOpacity>
+                </View>
+              ))
+            )}
+          </ScrollView>
+
+          <TouchableOpacity
+            style={styles.filterButton}
+            onPress={() => setFilterVisible(true)}
+            activeOpacity={0.8}
+          >
+            <Text style={styles.filterButtonText}>Lọc</Text>
           </TouchableOpacity>
         </View>
-      ) : null}
 
-      <FlatList
-        data={filteredMedicines}
-        keyExtractor={item => String(item._id)}
-        renderItem={({ item }) => (
-          <MedicineItem item={item} onUpdated={refresh} />
-        )}
-        refreshControl={
-          <RefreshControl refreshing={loading} onRefresh={refresh} />
-        }
-        contentContainerStyle={
-          filteredMedicines.length === 0 ? styles.emptyContainer : undefined
-        }
-        ListEmptyComponent={
-          !loading ? (
-            <Text style={styles.emptyText}>Không có dữ liệu</Text>
-          ) : null
-        }
-      />
+        {/* Header row */}
+        <View style={styles.headerRow}>
+          <View style={styles.headerCell}>
+            <Text style={[styles.headerText, styles.left]}>TÊN THUỐC</Text>
+          </View>
+          <View style={styles.headerCell}>
+            <Text style={[styles.headerText, styles.center]}>GIÁ</Text>
+          </View>
+          <View style={styles.headerCell}>
+            <Text style={[styles.headerText, styles.center]}>HSD</Text>
+          </View>
+          {/* SL column removed */}
+        </View>
 
-      <View style={styles.bottomBar}>
-        <TouchableOpacity
-          style={styles.pillButton}
-          onPress={() => navigation.navigate(ROUTES.ADD_MEDICINE)}
-          activeOpacity={0.8}
-        >
-          <Text style={styles.pillButtonText}>＋ Thêm thuốc</Text>
-        </TouchableOpacity>
+        {error ? (
+          <View style={styles.errorContainer}>
+            <Text style={styles.error}>Lỗi: {String(error)}</Text>
+            <TouchableOpacity style={styles.retry} onPress={refresh}>
+              <Text style={styles.retryText}>Thử lại</Text>
+            </TouchableOpacity>
+          </View>
+        ) : null}
+
+        <FlatList
+          data={filteredMedicines}
+          keyExtractor={item => String(item._id)}
+          renderItem={({ item }) => (
+            <MedicineItem item={item} onUpdated={refresh} />
+          )}
+          refreshControl={
+            <RefreshControl refreshing={loading} onRefresh={refresh} />
+          }
+          contentContainerStyle={
+            filteredMedicines.length === 0 ? styles.emptyContainer : undefined
+          }
+          ListEmptyComponent={
+            !loading ? (
+              <Text style={styles.emptyText}>Không có dữ liệu</Text>
+            ) : null
+          }
+        />
+
+        <View style={styles.bottomBar}>
+          <TouchableOpacity
+            style={styles.pillButton}
+            onPress={() => navigation.navigate(ROUTES.ADD_MEDICINE)}
+            activeOpacity={0.8}
+          >
+            <Text style={styles.pillButtonText}>＋ Thêm thuốc</Text>
+          </TouchableOpacity>
+        </View>
       </View>
-  </View>
 
-  {/* Filter Modal */}
-    <Modal visible={filterVisible} transparent animationType="fade" onRequestClose={() => setFilterVisible(false)}>
-      <View style={styles.modalBackdrop}>
-        <View style={styles.modalCard}>
-          <Text style={styles.modalTitle}>Bộ lọc</Text>
+      {/* Filter Modal */}
+      <Modal
+        visible={filterVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setFilterVisible(false)}
+      >
+        <View style={styles.modalBackdrop}>
+          <View style={styles.modalCard}>
+            <Text style={styles.modalTitle}>Bộ lọc</Text>
 
-          {/* Category */}
-          <Text style={styles.sectionTitle}>Category</Text>
-          <View style={styles.optionsWrap}>
-            {categories.length === 0 ? (
-              <Text style={styles.muted}>Không có category</Text>
-            ) : (
-              categories.map(c => {
-                const selected = selectedCategories.includes(c);
+            {/* Category */}
+            <Text style={styles.sectionTitle}>Category</Text>
+            <View style={styles.optionsWrap}>
+              {categories.length === 0 ? (
+                <Text style={styles.muted}>Không có category</Text>
+              ) : (
+                categories.map(c => {
+                  const selected = selectedCategories.includes(c);
+                  return (
+                    <TouchableOpacity
+                      key={c}
+                      style={[
+                        styles.optionPill,
+                        selected && styles.optionPillSelected,
+                      ]}
+                      onPress={() =>
+                        setSelectedCategories(prev =>
+                          prev.includes(c)
+                            ? prev.filter(x => x !== c)
+                            : [...prev, c],
+                        )
+                      }
+                    >
+                      <Text
+                        style={[
+                          styles.optionPillText,
+                          selected && styles.optionPillTextSelected,
+                        ]}
+                      >
+                        {c}
+                      </Text>
+                    </TouchableOpacity>
+                  );
+                })
+              )}
+            </View>
+
+            <Text style={styles.sectionTitle}>Hạn sử dụng</Text>
+            <View style={styles.optionsWrap}>
+              {[30, 60, 365].map(n => {
+                const selected = expiryOption === n;
+                const label = n === 365 ? '≤ 1 năm' : `≤ ${n} ngày`;
                 return (
                   <TouchableOpacity
-                    key={c}
-                    style={[styles.optionPill, selected && styles.optionPillSelected]}
+                    key={n}
+                    style={[
+                      styles.optionPill,
+                      selected && styles.optionPillSelected,
+                    ]}
                     onPress={() =>
-                      setSelectedCategories(prev =>
-                        prev.includes(c) ? prev.filter(x => x !== c) : [...prev, c],
-                      )
+                      setExpiryOption(prev => (prev === n ? null : n))
                     }
                   >
-                    <Text style={[styles.optionPillText, selected && styles.optionPillTextSelected]}>
-                      {c}
+                    <Text
+                      style={[
+                        styles.optionPillText,
+                        selected && styles.optionPillTextSelected,
+                      ]}
+                    >
+                      {label}
                     </Text>
                   </TouchableOpacity>
                 );
-              })
-            )}
-          </View>
+              })}
+            </View>
 
-          <Text style={styles.sectionTitle}>Hạn sử dụng</Text>
-          <View style={styles.optionsWrap}>
-            {[30, 60, 365].map(n => {
-              const selected = expiryOption === n;
-              const label = n === 365 ? '≤ 1 năm' : `≤ ${n} ngày`;
-              return (
-                <TouchableOpacity
-                  key={n}
-                  style={[styles.optionPill, selected && styles.optionPillSelected]}
-                  onPress={() => setExpiryOption(prev => (prev === n ? null : n))}
-                >
-                  <Text style={[styles.optionPillText, selected && styles.optionPillTextSelected]}>
-                    {label}
-                  </Text>
-                </TouchableOpacity>
-              );
-            })}
-          </View>
+            {/* Quantity-based filter section removed */}
 
-          <Text style={styles.sectionTitle}>Số lượng (SL)</Text>
-          <View style={styles.optionsWrap}>
-            {(
-              [
-                { key: 'Low', value: 'low' as const, selected: stockLow, toggle: () => setStockLow(v => !v) },
-                { key: 'Med', value: 'med' as const, selected: stockMed, toggle: () => setStockMed(v => !v) },
-                { key: 'High', value: 'high' as const, selected: stockHigh, toggle: () => setStockHigh(v => !v) },
-              ]
-            ).map(o => (
+            <View style={styles.modalActions}>
               <TouchableOpacity
-                key={o.value}
-                style={[styles.optionPill, o.selected && styles.optionPillSelected]}
-                onPress={o.toggle}
+                style={[styles.modalButton, styles.btnGhost]}
+                onPress={clearAllFilters}
               >
-                <Text style={[styles.optionPillText, o.selected && styles.optionPillTextSelected]}>
-                  {o.key}
+                <Text style={[styles.modalButtonText, styles.btnGhostText]}>
+                  Bỏ tất cả lựa chọn
                 </Text>
               </TouchableOpacity>
-            ))}
-          </View>
-
-          <View style={styles.modalActions}>
-            <TouchableOpacity style={[styles.modalButton, styles.btnGhost]} onPress={clearAllFilters}>
-              <Text style={[styles.modalButtonText, styles.btnGhostText]}>Bỏ tất cả lựa chọn</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={[styles.modalButton, styles.btnPrimary]} onPress={() => setFilterVisible(false)}>
-              <Text style={[styles.modalButtonText, styles.btnPrimaryText]}>Áp dụng</Text>
-            </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.modalButton, styles.btnPrimary]}
+                onPress={() => setFilterVisible(false)}
+              >
+                <Text style={[styles.modalButtonText, styles.btnPrimaryText]}>
+                  Áp dụng
+                </Text>
+              </TouchableOpacity>
+            </View>
           </View>
         </View>
-      </View>
-    </Modal>
+      </Modal>
     </>
   );
 };
@@ -439,7 +448,12 @@ const styles = StyleSheet.create({
     padding: 16,
   },
   modalTitle: { fontSize: 18, fontWeight: '700', marginBottom: 8 },
-  sectionTitle: { marginTop: 12, marginBottom: 6, fontWeight: '700', color: '#333' },
+  sectionTitle: {
+    marginTop: 12,
+    marginBottom: 6,
+    fontWeight: '700',
+    color: '#333',
+  },
   optionsWrap: { flexDirection: 'row', flexWrap: 'wrap' },
   optionPill: {
     borderWidth: 1,
