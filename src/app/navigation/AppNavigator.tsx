@@ -7,6 +7,7 @@ import PhoneLoginScreen from '@features/auth/screens/PhoneLoginScreen';
 import WorkScheduleScreen from '@features/work-schdule/screens/WorkScheduleScreen';
 import MyWorkScheduleScreen from '@features/work-schdule/screens/MyWorkScheduleScreen';
 import CheckinCheckoutScreen from '@features/checkin-checkout/screens/CheckinCheckoutScreen';
+import ImportListScreen from '@features/warehouse/screens/ImportListScreen';
 import { ROUTES } from '@shared/constants/routes';
 import { HomeNavigator, TabItem } from '@shared/components';
 import HomeScreen from '@shared/screens/HomeScreen';
@@ -62,6 +63,11 @@ const MainAppNavigator = () => (
     <MainStack.Screen
       name={ROUTES.CHECKIN_CHECKOUT}
       component={CheckinCheckoutScreen}
+    />
+    <MainStack.Screen
+      name={ROUTES.IMPORT_LIST}
+      component={ImportListScreen}
+      options={{ headerShown: false }}
     />
   </MainStack.Navigator>
 );
