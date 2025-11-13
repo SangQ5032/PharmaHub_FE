@@ -121,6 +121,11 @@ export const branchEmployeeStyles = StyleSheet.create({
     fontWeight: '600',
     color: '#2E7D32',
   },
+  addButton: {
+    fontSize: 14,
+    color: '#2196F3',
+    fontWeight: '600',
+  },
   sortText: {
     fontSize: 12,
     color: '#666',
@@ -243,5 +248,15 @@ export const branchEmployeeStyles = StyleSheet.create({
   },
   bottomActionButtonPrimaryText: {
     color: '#FFF',
+  },
+  emptyState: {
+    padding: 32,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  emptyStateText: {
+    fontSize: 14,
+    color: '#999',
+    textAlign: 'center',
   },
 });

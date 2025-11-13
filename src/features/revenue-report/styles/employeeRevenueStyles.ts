@@ -8,6 +8,17 @@ export const employeeRevenueStyles = StyleSheet.create({
   content: {
     flex: 1,
   },
+  errorContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  errorText: {
+    fontSize: 16,
+    color: '#999',
+    textAlign: 'center',
+  },
   headerCard: {
     backgroundColor: '#2E7D32',
     margin: 12,

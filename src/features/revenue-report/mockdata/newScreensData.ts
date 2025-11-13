@@ -8,6 +8,51 @@ import type {
   MedicineCategory,
   MedicineStats,
 } from '../types';
+import { FAKE_EMPLOYEES } from './employeeData';
+
+// Helper function to generate daily revenue for an employee
+const generateDailyRevenues = (totalRevenue: number): DailyRevenue[] => {
+  const days = 13; // 13 days in current month so far
+  const revenues: DailyRevenue[] = [];
+  let remaining = totalRevenue;
+
+  for (let i = 1; i <= days; i++) {
+    const isLastDay = i === days;
+    const revenue = isLastDay
+      ? remaining
+      : Math.floor(Math.random() * (totalRevenue / days) * 1.5);
+    remaining -= revenue;
+    revenues.push({
+      date: `${String(i).padStart(2, '0')}/11`,
+      revenue: Math.max(0, revenue),
+      invoiceCount: Math.floor(Math.random() * 20) + 5,
+    });
+  }
+  return revenues;
+};
+
+// Function to get employee revenue by ID
+export const getEmployeeRevenueById = (
+  employeeId: string,
+): EmployeeRevenue | null => {
+  const employee = FAKE_EMPLOYEES.find(emp => emp.id === employeeId);
+  if (!employee) return null;
+
+  return {
+    employeeId: employee.id,
+    employeeName: employee.name,
+    avatar: employee.avatar,
+    role: employee.role,
+    period: 'Tháng 11/2025',
+    totalRevenue: employee.totalRevenue || 0,
+    totalInvoices: employee.totalInvoices || 0,
+    commission: employee.commission || 0,
+    commissionRate: employee.commissionRate || 0,
+    targetRevenue: employee.targetRevenue || 0,
+    achievementRate: employee.achievementRate || 0,
+    dailyRevenues: generateDailyRevenues(employee.totalRevenue || 0),
+  };
+};
 
 // ========== WORK HISTORY DATA ==========
 export const FAKE_WORK_HISTORY: WorkHistory[] = [

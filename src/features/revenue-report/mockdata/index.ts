@@ -9,4 +9,5 @@ export {
   FAKE_MEDICINES,
   FAKE_MEDICINE_CATEGORIES,
   FAKE_MEDICINE_STATS,
+  getEmployeeRevenueById,
 } from './newScreensData';

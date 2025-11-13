@@ -15,4 +15,7 @@ export const ROUTES = {
   EMPLOYEE_WORK_HISTORY: 'EmployeeWorkHistory',
   EMPLOYEE_REVENUE: 'EmployeeRevenue',
   MEDICINE_MANAGEMENT: 'MedicineManagement',
+  // Employee Management routes
+  EMPLOYEE_MANAGEMENT: 'EmployeeManagement',
+  ADD_EDIT_EMPLOYEE: 'AddEditEmployee',
 };

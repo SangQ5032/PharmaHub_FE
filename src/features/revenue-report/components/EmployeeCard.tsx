@@ -10,10 +10,9 @@ interface EmployeeCardProps {
   status: string;
   statusText: string;
   statusColor: string;
-  onDetailPress?: () => void;
-  onActionPress?: () => void;
-  actionButtonText?: string;
-  showActionButton?: boolean;
+  onPress?: () => void; // Khi bấm vào card để xem doanh thu
+  onEditPress?: () => void; // Khi bấm vào nút chỉnh sửa
+  showEditButton?: boolean;
 }
 
 export const EmployeeCard: React.FC<EmployeeCardProps> = ({
@@ -22,13 +21,12 @@ export const EmployeeCard: React.FC<EmployeeCardProps> = ({
   phone,
   statusText,
   statusColor,
-  onDetailPress,
-  onActionPress,
-  actionButtonText = 'Mở',
-  showActionButton = false,
+  onPress,
+  onEditPress,
+  showEditButton = true,
 }) => {
   return (
-    <View style={styles.card}>
+    <TouchableOpacity style={styles.card} onPress={onPress} activeOpacity={0.7}>
       <View style={styles.avatar}>
         <Text style={styles.avatarText}>{getInitials(name)}</Text>
       </View>
@@ -44,33 +42,19 @@ export const EmployeeCard: React.FC<EmployeeCardProps> = ({
           backgroundColor={statusColor + '20'}
           textColor={statusColor}
         />
-        <View style={styles.actionButtons}>
-          {onDetailPress && (
-            <TouchableOpacity
-              style={styles.actionButton}
-              onPress={onDetailPress}
-            >
-              <Text style={styles.actionButtonText}>Chi tiết</Text>
-            </TouchableOpacity>
-          )}
-          {showActionButton && onActionPress && (
-            <TouchableOpacity
-              style={[styles.actionButton, styles.actionButtonPrimary]}
-              onPress={onActionPress}
-            >
-              <Text
-                style={[
-                  styles.actionButtonText,
-                  styles.actionButtonPrimaryText,
-                ]}
-              >
-                {actionButtonText}
-              </Text>
-            </TouchableOpacity>
-          )}
-        </View>
+        {showEditButton && (
+          <TouchableOpacity
+            style={styles.editButton}
+            onPress={e => {
+              e.stopPropagation(); // Prevent card press
+              onEditPress?.();
+            }}
+          >
+            <Text style={styles.editButtonText}>✏️ Sửa</Text>
+          </TouchableOpacity>
+        )}
       </View>
-    </View>
+    </TouchableOpacity>
   );
 };
 
@@ -118,6 +102,18 @@ const styles = StyleSheet.create({
   },
   actions: {
     alignItems: 'flex-end',
+  },
+  editButton: {
+    marginTop: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 4,
+    backgroundColor: '#2196F3',
+  },
+  editButtonText: {
+    fontSize: 12,
+    color: '#FFF',
+    fontWeight: '600',
   },
   actionButtons: {
     flexDirection: 'row',

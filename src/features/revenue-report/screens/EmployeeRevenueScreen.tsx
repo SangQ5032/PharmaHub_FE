@@ -1,12 +1,29 @@
 import React from 'react';
 import { View, Text, ScrollView, SafeAreaView } from 'react-native';
 import { Header } from '@shared/components/header/Header';
-import { FAKE_EMPLOYEE_REVENUE, FAKE_REVENUE_STATS } from '../mockdata';
+import { getEmployeeRevenueById } from '../mockdata';
 import { employeeRevenueStyles as styles } from '../styles';
 import { formatCurrencyShort, formatFullCurrency, getInitials } from '../utils';
 
-export default function EmployeeRevenueScreen() {
-  const employee = FAKE_EMPLOYEE_REVENUE;
+export default function EmployeeRevenueScreen({ route }: any) {
+  const { employeeId } = route?.params || {};
+
+  // Get employee data by ID
+  const employee = getEmployeeRevenueById(employeeId);
+
+  // If employee not found, show error
+  if (!employee) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <Header title="Danh sách nhân viên" showBack={true} />
+        <View style={styles.errorContainer}>
+          <Text style={styles.errorText}>
+            Không tìm thấy thông tin nhân viên
+          </Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   // Calculate max revenue for chart scaling
   const maxRevenue = Math.max(...employee.dailyRevenues.map(d => d.revenue));
@@ -14,7 +31,7 @@ export default function EmployeeRevenueScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <Header title="Doanh thu nhân viên" showBack={true} />
+      <Header title="Danh sách nhân viên" showBack={true} />
 
       <ScrollView style={styles.content}>
         {/* Header Card with Employee Info */}
@@ -60,21 +77,17 @@ export default function EmployeeRevenueScreen() {
           <View style={styles.statsRow}>
             <View style={styles.statItem}>
               <Text style={styles.statValue}>
-                {formatCurrencyShort(FAKE_REVENUE_STATS.thisMonth)}
+                {formatCurrencyShort(employee.totalRevenue)}
               </Text>
-              <Text style={styles.statLabel}>Tháng này</Text>
+              <Text style={styles.statLabel}>Doanh thu</Text>
             </View>
             <View style={styles.statItem}>
-              <Text style={styles.statValue}>
-                {formatCurrencyShort(FAKE_REVENUE_STATS.lastMonth)}
-              </Text>
-              <Text style={styles.statLabel}>Tháng trước</Text>
+              <Text style={styles.statValue}>{employee.totalInvoices}</Text>
+              <Text style={styles.statLabel}>Hóa đơn</Text>
             </View>
             <View style={styles.statItem}>
-              <Text style={styles.statValue}>
-                +{FAKE_REVENUE_STATS.growth}%
-              </Text>
-              <Text style={styles.statLabel}>Tăng trưởng</Text>
+              <Text style={styles.statValue}>{employee.achievementRate}%</Text>
+              <Text style={styles.statLabel}>Hoàn thành</Text>
             </View>
           </View>
         </View>

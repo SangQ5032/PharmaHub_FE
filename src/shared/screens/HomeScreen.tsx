@@ -46,9 +46,9 @@ const FUNCTIONS: FunctionItem[] = [
   },
   {
     id: '6',
-    name: 'Doanh thu nhân viên',
-    icon: 'account-cash',
-    route: ROUTES.EMPLOYEE_REVENUE,
+    name: 'Quản lý nhân viên',
+    icon: 'account-group',
+    route: ROUTES.EMPLOYEE_MANAGEMENT,
   },
   {
     id: '7',

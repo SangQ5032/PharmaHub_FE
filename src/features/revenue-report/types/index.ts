@@ -22,9 +22,17 @@ export interface Employee {
   name: string;
   role: string;
   phone: string;
+  email?: string;
   avatar?: string;
   status: 'active' | 'inactive' | 'blocked';
   branchId: string;
+  // Thông tin doanh thu
+  totalRevenue?: number;
+  totalInvoices?: number;
+  commission?: number;
+  commissionRate?: number;
+  targetRevenue?: number;
+  achievementRate?: number;
 }
 
 export interface EmployeeFilter {
