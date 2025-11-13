@@ -1,4 +1,3 @@
-import MedicineListScreen from './screens/MedicineListScreen';
-import AddMedicineScreen from './screens/AddMedicineScreen';
-import MedicinesHubScreen from './screens/MedicinesHubScreen';
-export { MedicinesHubScreen, MedicineListScreen, AddMedicineScreen };
+export { default as MedicineListScreen } from './screens/MedicineListScreen';
+export { default as AddMedicineScreen } from './screens/AddMedicineScreen';
+export { default as MedicinesHubScreen } from './screens/MedicinesHubScreen';

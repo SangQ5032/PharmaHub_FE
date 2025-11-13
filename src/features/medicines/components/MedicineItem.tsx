@@ -1,6 +1,13 @@
 /* eslint-disable react-native/no-inline-styles */
-import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Alert } from 'react-native';
+import React, { useState } from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  Alert,
+  Modal,
+} from 'react-native';
 import { Medicine } from '../types';
 import { useNavigation } from '@react-navigation/native';
 import { ROUTES } from '@shared/constants/routes';
@@ -42,6 +49,7 @@ const MedicineItem: React.FC<{ item: Medicine; onUpdated?: () => void }> = ({
   onUpdated,
 }) => {
   const navigation = useNavigation<any>();
+  const [actionsVisible, setActionsVisible] = useState(false);
   // Tag removed
 
   const handleEdit = () => {
@@ -71,17 +79,19 @@ const MedicineItem: React.FC<{ item: Medicine; onUpdated?: () => void }> = ({
     );
   };
 
-  const handlePress = () => {
-    Alert.alert(
-      'Chọn hành động',
-      'Bạn muốn làm gì với thuốc này?',
-      [
-        { text: 'Hủy', style: 'cancel' },
-        { text: 'Sửa', onPress: handleEdit },
-        { text: 'Xóa', onPress: confirmDelete, style: 'destructive' },
-      ],
-      { cancelable: true },
-    );
+  const openActions = () => setActionsVisible(true);
+  const closeActions = () => setActionsVisible(false);
+  const handleViewDetail = () => {
+    closeActions();
+    navigation.navigate(ROUTES.MEDICINE_DETAIL, { item });
+  };
+  const handleEditFromSheet = () => {
+    closeActions();
+    handleEdit();
+  };
+  const handleDeleteFromSheet = () => {
+    closeActions();
+    confirmDelete();
   };
 
   // xác định màu nền card theo hạn sử dụng
@@ -96,32 +106,75 @@ const MedicineItem: React.FC<{ item: Medicine; onUpdated?: () => void }> = ({
       : styles.cardValid;
 
   return (
-    <TouchableOpacity onPress={handlePress} activeOpacity={0.8}>
-      <View style={[styles.card, cardBgStyle]}>
-        <View style={styles.row}>
-          {/* Name (25%) */}
-          <View style={[styles.cell, { flex: 25 }]}>
-            <Text style={[styles.cellText, styles.left]} numberOfLines={1}>
-              {item.name || '-'}
-            </Text>
-          </View>
+    <>
+      <TouchableOpacity onPress={openActions} activeOpacity={0.8}>
+        <View style={[styles.card, cardBgStyle]}>
+          <View style={styles.row}>
+            {/* Name (25%) */}
+            <View style={[styles.cell, { flex: 25 }]}>
+              <Text style={[styles.cellText, styles.left]} numberOfLines={1}>
+                {item.name || '-'}
+              </Text>
+            </View>
 
-          {/* Price (25%) */}
-          <View style={[styles.cell, { flex: 25 }]}>
-            <Text style={[styles.cellText, styles.center]}>
-              {formatPrice(item.price)}
-            </Text>
-          </View>
+            {/* Price (25%) */}
+            <View style={[styles.cell, { flex: 25 }]}>
+              <Text style={[styles.cellText, styles.center]}>
+                {formatPrice(item.price)}
+              </Text>
+            </View>
 
-          {/* Expiry (30%) */}
-          <View style={[styles.cell, { flex: 30 }]}>
-            <Text style={[styles.cellText, styles.center]}>
-              {formatDate(item.expiry_date)}
-            </Text>
+            {/* Expiry (30%) */}
+            <View style={[styles.cell, { flex: 30 }]}>
+              <Text style={[styles.cellText, styles.center]}>
+                {formatDate(item.expiry_date)}
+              </Text>
+            </View>
           </View>
         </View>
-      </View>
-    </TouchableOpacity>
+      </TouchableOpacity>
+      {/* Action Sheet Modal (outside Touchable to avoid text child warning) */}
+      <Modal
+        visible={actionsVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={closeActions}
+      >
+        <View style={styles.modalBackdrop}>
+          <View style={styles.sheet}>
+            <Text style={styles.sheetTitle}>Chọn hành động</Text>
+            <TouchableOpacity
+              style={styles.actionButton}
+              onPress={handleViewDetail}
+            >
+              <Text style={styles.actionText}>Xem chi tiết</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.actionButton}
+              onPress={handleEditFromSheet}
+            >
+              <Text style={styles.actionText}>Sửa</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.actionButton, styles.actionDanger]}
+              onPress={handleDeleteFromSheet}
+            >
+              <Text style={[styles.actionText, styles.actionDangerText]}>
+                Xóa
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.actionButton, styles.actionCancel]}
+              onPress={closeActions}
+            >
+              <Text style={[styles.actionText, styles.actionCancelText]}>
+                Hủy
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+    </>
   );
 };
 
@@ -163,6 +216,40 @@ const styles = StyleSheet.create({
   center: { textAlign: 'center' },
   right: { textAlign: 'right' },
   // tag styles removed
+  // modal styles
+  modalBackdrop: {
+    position: 'absolute',
+    top: 0,
+    bottom: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: 'rgba(0,0,0,0.25)',
+    justifyContent: 'flex-end',
+  },
+  sheet: {
+    backgroundColor: '#fff',
+    borderTopLeftRadius: 16,
+    borderTopRightRadius: 16,
+    paddingHorizontal: 16,
+    paddingTop: 12,
+    paddingBottom: 24,
+  },
+  sheetTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+    textAlign: 'center',
+    marginBottom: 8,
+  },
+  actionButton: {
+    paddingVertical: 14,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: '#EEE',
+  },
+  actionText: { textAlign: 'center', fontWeight: '700', color: '#333' },
+  actionDanger: {},
+  actionDangerText: { color: '#D32F2F' },
+  actionCancel: { borderBottomWidth: 0, marginTop: 6 },
+  actionCancelText: { color: '#2EB872' },
 });
 
 export default MedicineItem;

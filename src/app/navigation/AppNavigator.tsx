@@ -10,7 +10,12 @@ import CheckinCheckoutScreen from '@features/checkin-checkout/screens/CheckinChe
 import { ROUTES } from '@shared/constants/routes';
 import { HomeNavigator, TabItem } from '@shared/components';
 import HomeScreen from '@shared/screens/HomeScreen';
-import { MedicinesHubScreen, MedicineListScreen, AddMedicineScreen } from '@features/medicines'; // <-- ensure AddMedicineScreen import if present
+import {
+  MedicinesHubScreen,
+  MedicineListScreen,
+  AddMedicineScreen,
+} from '@features/medicines'; // <-- ensure AddMedicineScreen import if present
+import MedicineDetailScreen from '@features/medicines/screens/MedicineDetailScreen';
 import { SuppliersScreen, AddSupplierScreen } from '@features/suppliers';
 import {
   RootStackParamList,
@@ -22,7 +27,11 @@ const Stack = createNativeStackNavigator<RootStackParamList>();
 
 const tabs: TabItem[] = [
   { name: 'Home', component: HomeScreen, label: 'Trang chủ' },
-  { name: ROUTES.MEDICINES_HUB, component: MedicinesHubScreen, label: 'Medicines Hub' },
+  {
+    name: ROUTES.MEDICINES_HUB,
+    component: MedicinesHubScreen,
+    label: 'Medicines Hub',
+  },
 ];
 
 // Create Auth Navigator
@@ -70,10 +79,20 @@ const MainAppNavigator = () => (
       name={ROUTES.CHECKIN_CHECKOUT}
       component={CheckinCheckoutScreen}
     />
-  <MainStack.Screen name={ROUTES.MEDICINES_HUB} component={MedicinesHubScreen} />
-  <MainStack.Screen name={ROUTES.MEDICINES} component={MedicineListScreen} />
-  <MainStack.Screen name={ROUTES.SUPPLIERS} component={SuppliersScreen} />
-  <MainStack.Screen name={ROUTES.ADD_SUPPLIER} component={AddSupplierScreen} />
+    <MainStack.Screen
+      name={ROUTES.MEDICINES_HUB}
+      component={MedicinesHubScreen}
+    />
+    <MainStack.Screen name={ROUTES.MEDICINES} component={MedicineListScreen} />
+    <MainStack.Screen
+      name={ROUTES.MEDICINE_DETAIL}
+      component={MedicineDetailScreen}
+    />
+    <MainStack.Screen name={ROUTES.SUPPLIERS} component={SuppliersScreen} />
+    <MainStack.Screen
+      name={ROUTES.ADD_SUPPLIER}
+      component={AddSupplierScreen}
+    />
     {/* If AddMedicineScreen exists */}
     <MainStack.Screen
       name={ROUTES.ADD_MEDICINE}

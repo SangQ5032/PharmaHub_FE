@@ -7,6 +7,7 @@ export const ROUTES = {
   CHECKIN_CHECKOUT: 'CheckinCheckout',
   MEDICINES_HUB: 'MedicinesHub',
   MEDICINES: 'Medicines',
+  MEDICINE_DETAIL: 'MedicineDetail',
   ADD_MEDICINE: 'AddMedicine',
   SUPPLIERS: 'Suppliers',
   ADD_SUPPLIER: 'AddSupplier',
