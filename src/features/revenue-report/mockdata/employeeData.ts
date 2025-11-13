@@ -1,0 +1,68 @@
+import { Employee } from '../types';
+
+export const FAKE_EMPLOYEES: Employee[] = [
+  {
+    id: '1',
+    name: 'Nguyễn Văn A',
+    role: 'Thu ngân',
+    phone: '0901 234 567',
+    status: 'active',
+    branchId: '1',
+  },
+  {
+    id: '2',
+    name: 'Trần Thị B',
+    role: 'Dược sĩ',
+    phone: '0912 888 333',
+    status: 'inactive',
+    branchId: '1',
+  },
+  {
+    id: '3',
+    name: 'Lê Quốc Cường',
+    role: 'Quản lý ca',
+    phone: '0974 123 456',
+    status: 'active',
+    branchId: '3',
+  },
+  {
+    id: '4',
+    name: 'Phạm Minh D',
+    role: 'Bán hàng',
+    phone: '0909 567 888',
+    status: 'active',
+    branchId: '3',
+  },
+  {
+    id: '5',
+    name: 'Hoàng Thị E',
+    role: 'Kế toán',
+    phone: '0988 234 567',
+    status: 'active',
+    branchId: '1',
+  },
+  {
+    id: '6',
+    name: 'Đỗ Văn F',
+    role: 'Thu ngân',
+    phone: '0903 456 789',
+    status: 'inactive',
+    branchId: '3',
+  },
+  {
+    id: '7',
+    name: 'Võ Thị G',
+    role: 'Dược sĩ',
+    phone: '0915 678 901',
+    status: 'active',
+    branchId: '1',
+  },
+  {
+    id: '8',
+    name: 'Bùi Văn H',
+    role: 'Bán hàng',
+    phone: '0907 890 123',
+    status: 'blocked',
+    branchId: '1',
+  },
+];
