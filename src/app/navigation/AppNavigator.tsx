@@ -16,6 +16,7 @@ import {
   EmployeeManagementScreen,
   AddEditEmployeeScreen,
 } from '@features/revenue-report';
+import CreateImportScreen from '@features/warehouse/screens/CreateImportScreen';
 import { ROUTES } from '@shared/constants/routes';
 import { HomeNavigator, TabItem } from '@shared/components';
 import HomeScreen from '@shared/screens/HomeScreen';
@@ -183,6 +184,11 @@ export default function AppNavigator() {
       >
         <Stack.Screen name="Auth" component={AuthNavigator} />
         <Stack.Screen name="MainApp" component={MainAppNavigator} />
+        <Stack.Screen
+          name={ROUTES.CREATE_IMPORT}
+          component={CreateImportScreen}
+          options={{ headerShown: false }}
+        />
       </Stack.Navigator>
     </NavigationContainer>
   );
