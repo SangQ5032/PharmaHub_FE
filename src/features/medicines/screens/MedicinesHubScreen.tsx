@@ -3,9 +3,16 @@ import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { ROUTES } from '@shared/constants/routes';
 
-const CardButton: React.FC<{ label: string; onPress: () => void; color?: string }>
-  = ({ label, onPress, color = '#2EB872' }) => (
-  <TouchableOpacity style={[styles.card, { borderColor: color }]} onPress={onPress} activeOpacity={0.85}>
+const CardButton: React.FC<{
+  label: string;
+  onPress: () => void;
+  color?: string;
+}> = ({ label, onPress, color = '#2EB872' }) => (
+  <TouchableOpacity
+    style={[styles.card, { borderColor: color }]}
+    onPress={onPress}
+    activeOpacity={0.85}
+  >
     <Text style={[styles.cardText, { color }]}>{label}</Text>
   </TouchableOpacity>
 );
@@ -20,8 +27,15 @@ const MedicinesHubScreen: React.FC = () => {
       </View>
 
       <View style={styles.content}>
-        <CardButton label="Quản lý thuốc" onPress={() => navigation.navigate(ROUTES.MEDICINES)} />
-        <CardButton label="Quản lý nhà cung cấp" color="#1B5E20" onPress={() => navigation.navigate(ROUTES.SUPPLIERS)} />
+        <CardButton
+          label="Quản lý thuốc"
+          onPress={() => navigation.navigate(ROUTES.MEDICINES)}
+        />
+        <CardButton
+          label="Quản lý nhà cung cấp"
+          color="#1B5E20"
+          onPress={() => navigation.navigate(ROUTES.SUPPLIERS)}
+        />
       </View>
     </View>
   );

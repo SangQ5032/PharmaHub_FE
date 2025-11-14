@@ -16,7 +16,10 @@ export function useMedicines() {
     setErrorDetail(null);
     try {
       const q = search.trim();
-  const data = await fetchMedicines(q || undefined, { page: 1, limit: 100 });
+      const data = await fetchMedicines(q || undefined, {
+        page: 1,
+        limit: 100,
+      });
       console.log(
         '[useMedicines] load success, count =',
         Array.isArray(data) ? data.length : 'not-array',
@@ -49,5 +52,13 @@ export function useMedicines() {
     return () => clearTimeout(h);
   }, [search, load]);
 
-  return { medicines, loading, error, errorDetail, refresh: load, search, setSearch };
+  return {
+    medicines,
+    loading,
+    error,
+    errorDetail,
+    refresh: load,
+    search,
+    setSearch,
+  };
 }

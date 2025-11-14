@@ -67,7 +67,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
    */
   setUser: user => {
     set({ user });
-    AsyncStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(user));
+    // Không còn lưu vào AsyncStorage nữa
   },
 
   /**

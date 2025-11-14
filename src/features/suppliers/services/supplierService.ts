@@ -1,6 +1,9 @@
 import apiClient from '@shared/services/api';
 
-export async function fetchSuppliers(name?: string, options?: { page?: number; limit?: number }) {
+export async function fetchSuppliers(
+  name?: string,
+  options?: { page?: number; limit?: number },
+) {
   const url = '/suppliers';
   const page = options?.page ?? 1;
   const limit = options?.limit ?? 100;

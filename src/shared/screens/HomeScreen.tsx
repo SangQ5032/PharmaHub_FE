@@ -10,6 +10,7 @@ import { Header } from '@shared/components/header/Header';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { useNavigation } from '@react-navigation/native';
 import { ROUTES } from '@shared/constants/routes';
+import { useAuthStore } from '@features/auth/stores/useAuthStore';
 
 export interface FunctionItem {
   id: string;
@@ -61,6 +62,16 @@ const FUNCTIONS: FunctionItem[] = [
 
 const HomeScreen = () => {
   const navigation = useNavigation();
+  const user = useAuthStore(state => state.user);
+  const role = user?.role;
+
+  // Gán menu theo role
+  const visibleFunctions = React.useMemo(() => {
+    if (role === 'admin') return FUNCTIONS;
+    if (role === 'staff')
+      return FUNCTIONS.filter(item => !['4', '5'].includes(item.id)); // Ẩn Doanh thu, Hoá đơn cho staff
+    return FUNCTIONS;
+  }, [role]);
 
   const renderFunctionCard = ({ item }: { item: FunctionItem }) => (
     <TouchableOpacity
@@ -83,7 +94,7 @@ const HomeScreen = () => {
       />
       <View style={styles.content}>
         <FlatList
-          data={FUNCTIONS}
+          data={visibleFunctions}
           renderItem={renderFunctionCard}
           keyExtractor={item => item.id}
           numColumns={2}

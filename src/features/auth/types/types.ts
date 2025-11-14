@@ -4,63 +4,8 @@ export interface User {
   email: string;
 }
 
-// export interface AuthState {
-// user: User | null;
-// token?: string | null;
-// loading: boolean;
-// error?: string | null;
-// }
-
-// Login với username/password
-export interface LoginUsernameBody {
-  username: string;
-  password: string;
-}
-
-// Login với Firebase ID Token
+// Login với Firebase ID Token (cho phone auth)
 export interface LoginFirebaseBody {
-  idToken: string;
-}
-
-// Backward compatibility
-export interface LoginBody {
-  username: string;
-  password: string;
-}
-
-export interface LoginData {
-  accessToken: string;
-  refreshToken?: string;
-  user?: any; // sẽ refine sau
-}
-
-export interface SendOTPBody {
-  phone: string;
-}
-
-export interface SendOTPResponse {
-  success: boolean;
-  message: string;
-  data: {
-    expiresIn: number;
-  };
-}
-
-export interface VerifyOTPBody {
-  phone: string;
-  otp: string;
-  sessionId?: string; // Nếu backend cần sessionId
-}
-
-export interface VerifyOTPResponse {
-  success: boolean;
-  accessToken?: string;
-  refreshToken?: string;
-  user?: any;
-  message?: string;
-}
-
-export interface VerifyFirebaseTokenBody {
   idToken: string;
 }
 

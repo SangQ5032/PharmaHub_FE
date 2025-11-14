@@ -1,5 +1,13 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, TextInput, TouchableOpacity, Alert, ScrollView } from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  TextInput,
+  TouchableOpacity,
+  Alert,
+  ScrollView,
+} from 'react-native';
 import { RouteProp, useNavigation, useRoute } from '@react-navigation/native';
 import { ROUTES } from '@shared/constants/routes';
 import { MainStackParamList } from '@shared/types/navigation';
@@ -7,7 +15,8 @@ import { createSupplier, updateSupplier } from '../services/supplierService';
 
 const AddSupplierScreen: React.FC = () => {
   const navigation = useNavigation<any>();
-  const route = useRoute<RouteProp<MainStackParamList, typeof ROUTES.ADD_SUPPLIER>>();
+  const route =
+    useRoute<RouteProp<MainStackParamList, typeof ROUTES.ADD_SUPPLIER>>();
   const mode = (route.params as any)?.mode as 'edit' | undefined;
   const editingItem = (route.params as any)?.item;
 
@@ -26,7 +35,7 @@ const AddSupplierScreen: React.FC = () => {
       setPhone(editingItem?.contact?.phone || editingItem.phone || '');
       setEmail(editingItem?.contact?.email || editingItem.email || '');
       setAddress(editingItem?.contact?.address || editingItem.address || '');
-  setNote(editingItem?.note || editingItem.description || '');
+      setNote(editingItem?.note || editingItem.description || '');
       setStatus(editingItem?.status || 'active');
     }
   }, [mode, editingItem]);
@@ -39,7 +48,8 @@ const AddSupplierScreen: React.FC = () => {
   const onSubmit = async () => {
     const err = validate();
     if (err) {
-      Alert.alert('Lỗi', err); return;
+      Alert.alert('Lỗi', err);
+      return;
     }
     setSubmitting(true);
     try {
@@ -70,23 +80,53 @@ const AddSupplierScreen: React.FC = () => {
   return (
     <View style={styles.container}>
       <View style={styles.titleContainer}>
-        <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
+        <TouchableOpacity
+          style={styles.backBtn}
+          onPress={() => navigation.goBack()}
+        >
           <Text style={styles.backText}>Back</Text>
         </TouchableOpacity>
-        <Text style={styles.titleText}>{mode === 'edit' ? 'Sửa nhà cung cấp' : 'Thêm nhà cung cấp'}</Text>
+        <Text style={styles.titleText}>
+          {mode === 'edit' ? 'Sửa nhà cung cấp' : 'Thêm nhà cung cấp'}
+        </Text>
       </View>
-      <ScrollView contentContainerStyle={styles.form} keyboardShouldPersistTaps="handled">
+      <ScrollView
+        contentContainerStyle={styles.form}
+        keyboardShouldPersistTaps="handled"
+      >
         <Text style={styles.label}>Tên *</Text>
-        <TextInput style={styles.input} value={name} onChangeText={setName} placeholder="Tên nhà cung cấp" />
+        <TextInput
+          style={styles.input}
+          value={name}
+          onChangeText={setName}
+          placeholder="Tên nhà cung cấp"
+        />
 
         <Text style={styles.label}>SĐT</Text>
-        <TextInput style={styles.input} value={phone} onChangeText={setPhone} placeholder="Số điện thoại" keyboardType="phone-pad" />
+        <TextInput
+          style={styles.input}
+          value={phone}
+          onChangeText={setPhone}
+          placeholder="Số điện thoại"
+          keyboardType="phone-pad"
+        />
 
         <Text style={styles.label}>Email</Text>
-        <TextInput style={styles.input} value={email} onChangeText={setEmail} placeholder="Email" keyboardType="email-address" />
+        <TextInput
+          style={styles.input}
+          value={email}
+          onChangeText={setEmail}
+          placeholder="Email"
+          keyboardType="email-address"
+        />
 
         <Text style={styles.label}>Địa chỉ</Text>
-        <TextInput style={styles.input} value={address} onChangeText={setAddress} placeholder="Địa chỉ" />
+        <TextInput
+          style={styles.input}
+          value={address}
+          onChangeText={setAddress}
+          placeholder="Địa chỉ"
+        />
 
         <Text style={styles.label}>Ghi chú</Text>
         <TextInput
@@ -102,8 +142,14 @@ const AddSupplierScreen: React.FC = () => {
         <View style={{ height: 80 }} />
       </ScrollView>
       <View style={styles.bottomBar}>
-        <TouchableOpacity style={[styles.submitBtn, submitting && { opacity: 0.6 }]} disabled={submitting} onPress={onSubmit}>
-          <Text style={styles.submitText}>{submitting ? 'Đang lưu...' : 'Lưu'}</Text>
+        <TouchableOpacity
+          style={[styles.submitBtn, submitting && { opacity: 0.6 }]}
+          disabled={submitting}
+          onPress={onSubmit}
+        >
+          <Text style={styles.submitText}>
+            {submitting ? 'Đang lưu...' : 'Lưu'}
+          </Text>
         </TouchableOpacity>
       </View>
     </View>
