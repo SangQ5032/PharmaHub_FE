@@ -2,52 +2,106 @@
 import React from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import LoginScreen from '@features/auth/screens/LoginScreen';
 import PhoneLoginScreen from '@features/auth/screens/PhoneLoginScreen';
+import WorkScheduleScreen from '@features/work-schdule/screens/WorkScheduleScreen';
+import MyWorkScheduleScreen from '@features/work-schdule/screens/MyWorkScheduleScreen';
+import CheckinCheckoutScreen from '@features/checkin-checkout/screens/CheckinCheckoutScreen';
+import ImportListScreen from '@features/warehouse/screens/ImportListScreen';
+import {
+  BranchRevenueReportScreen,
+  BranchEmployeeListScreen,
+  EmployeeWorkHistoryScreen,
+  EmployeeRevenueScreen,
+  MedicineManagementScreen,
+} from '@features/revenue-report';
 import { ROUTES } from '@shared/constants/routes';
 import { HomeNavigator, TabItem } from '@shared/components';
 import HomeScreen from '@shared/screens/HomeScreen';
 import {
+  MedicinesHubScreen,
+  MedicineListScreen,
+  AddMedicineScreen,
+} from '@features/medicines'; // <-- ensure AddMedicineScreen import if present
+import MedicineDetailScreen from '@features/medicines/screens/MedicineDetailScreen';
+import { SuppliersScreen, AddSupplierScreen } from '@features/suppliers';
+import {
   RootStackParamList,
   AuthStackParamList,
+  MainStackParamList,
 } from '@shared/types/navigation';
+import { useAuthStore } from '@features/auth/stores/useAuthStore';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
 const tabs: TabItem[] = [
   { name: 'Home', component: HomeScreen, label: 'Trang chủ' },
-  // { name: 'Orders', component: OrdersScreen, label: 'Đơn hàng' },
-  // { name: 'Notifications', component: NotificationsScreen, label: 'Thông báo' },
-  // { name: 'Profile', component: ProfileScreen, label: 'Tài khoản' },
+  {
+    name: ROUTES.MEDICINES_HUB,
+    component: MedicinesHubScreen,
+    label: 'Medicines Hub',
+  },
 ];
 
-// Create Auth Navigator
+// Create Auth Navigator - chỉ có PhoneLoginScreen
 const AuthStack = createNativeStackNavigator<AuthStackParamList>();
 const AuthNavigator = () => (
   <AuthStack.Navigator screenOptions={{ headerShown: false }}>
     <AuthStack.Screen name={ROUTES.PHONE_LOGIN} component={PhoneLoginScreen} />
-    <AuthStack.Screen name={ROUTES.LOGIN} component={LoginScreen} />
   </AuthStack.Navigator>
 );
 
-// Create Main App Navigator with Tabs
-const MainAppNavigator = () => (
-  <HomeNavigator
-    tabs={tabs}
-    activeTintColor="#4CAF50"
-    inactiveTintColor="#9E9E9E"
-    tabBarStyle={{
-      backgroundColor: '#FFFFFF',
-      borderTopColor: '#E0E0E0',
-    }}
-  />
-);
+// Create Main Stack Navigator (contains tabs and other screens)
+const MainStack = createNativeStackNavigator<MainStackParamList>();
+const MainAppNavigator = () => {
+  const user = useAuthStore(state => state.user);
+
+  return (
+    <MainStack.Navigator screenOptions={{ headerShown: false }}>
+      <MainStack.Screen name="HomeTabs">
+        {() => (
+          <HomeNavigator
+            tabs={tabs}
+            activeTintColor="#4CAF50"
+            inactiveTintColor="#9E9E9E"
+            tabBarStyle={{
+              backgroundColor: '#FFFFFF',
+              borderTopColor: '#E0E0E0',
+            }}
+          />
+        )}
+      </MainStack.Screen>
+      <MainStack.Screen
+        name={ROUTES.WORK_SCHEDULE}
+        component={WorkScheduleScreen}
+      />
+      <MainStack.Screen
+        name={ROUTES.MY_WORK_SCHEDULE}
+        component={MyWorkScheduleScreen}
+      />
+      <MainStack.Screen
+        name={ROUTES.CHECKIN_CHECKOUT}
+        component={CheckinCheckoutScreen}
+      />
+      <MainStack.Screen
+        name={ROUTES.IMPORT_LIST}
+        component={ImportListScreen}
+        options={{ headerShown: false }}
+      />
+    </MainStack.Navigator>
+  );
+};
 
 export default function AppNavigator() {
   return (
     <NavigationContainer>
-      <Stack.Navigator screenOptions={{ headerShown: false }}>
+      {/* Khi mở app, vào luôn MainApp. Tạm comment màn Auth và set initialRouteName */}
+      <Stack.Navigator
+        screenOptions={{ headerShown: false }}
+        initialRouteName="MainApp"
+      >
+        {/*
         <Stack.Screen name="Auth" component={AuthNavigator} />
+        */}
         <Stack.Screen name="MainApp" component={MainAppNavigator} />
       </Stack.Navigator>
     </NavigationContainer>

@@ -1,8 +1,14 @@
-import axios, { AxiosError, AxiosInstance, AxiosResponse } from 'axios';
-import { Alert } from 'react-native';
+import axios, { AxiosError, AxiosInstance } from 'axios';
+import { Platform } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-const API_URL = 'http://10.0.2.2:8080/api'; // 👈 đổi sang domain backend của bạn
+// Lưu ý: Trên Android emulator, dùng 10.0.2.2 thay vì localhost
+// Trên iOS simulator, có thể dùng localhost
+// Trên thiết bị thật, dùng IP thực tế của máy tính (ví dụ: 192.168.1.100:5000)
+const API_URL =
+  Platform.OS === 'android'
+    ? 'http://192.168.50.115:5000/api' // Android emulator
+    : 'http://192.168.50.115:5000/api'; // iOS simulator hoặc thiết bị thật
 
 // Tạo instance axios
 const api: AxiosInstance = axios.create({
@@ -17,9 +23,35 @@ const api: AxiosInstance = axios.create({
 // ====== REQUEST INTERCEPTOR ======
 api.interceptors.request.use(
   async config => {
-    const token = await AsyncStorage.getItem('accessToken');
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
+    try {
+      // Thử lấy token từ AsyncStorage trước
+      let token = await AsyncStorage.getItem('accessToken');
+
+      // Nếu không có trong AsyncStorage, thử lấy từ Zustand store
+      if (!token) {
+        try {
+          // Dynamic import để tránh circular dependency
+          const { useAuthStore } = await import(
+            '@features/auth/stores/useAuthStore'
+          );
+          const storeToken = useAuthStore.getState().accessToken;
+          if (storeToken) {
+            token = storeToken;
+            // Đồng bộ lại vào AsyncStorage
+            await AsyncStorage.setItem('accessToken', storeToken);
+          }
+        } catch (storeError) {
+          // XÓA TOÀN BỘ LOG DEBUG (chỉ giữ lại return config, return response, throw error)
+        }
+      }
+
+      if (token) {
+        config.headers.Authorization = `Bearer ${token}`;
+      } else {
+        // XÓA TOÀN BỘ LOG DEBUG (chỉ giữ lại return config, return response, throw error)
+      }
+    } catch (error) {
+      // XÓA TOÀN BỘ LOG DEBUG (chỉ giữ lại return config, return response, throw error)
     }
     return config;
   },
@@ -27,42 +59,27 @@ api.interceptors.request.use(
 );
 
 // ====== RESPONSE INTERCEPTOR ======
-// api.interceptors.response.use(
-//   (response: AxiosResponse) => response,
-//   async (error: AxiosError) => {
-//     if (error.response) {
-//       const { status } = error.response;
-
-//       if (status === 401) {
-//         // Token hết hạn → có thể logout hoặc refresh
-//         Alert.alert('Phiên đăng nhập hết hạn', 'Vui lòng đăng nhập lại.');
-//         await AsyncStorage.removeItem('accessToken');
-//       } else if (status >= 500) {
-//         Alert.alert('Lỗi máy chủ', 'Vui lòng thử lại sau.');
-//       }
-//     } else if (error.request) {
-//       Alert.alert('Lỗi mạng', 'Không thể kết nối đến máy chủ.');
-//     } else {
-//       Alert.alert('Lỗi không xác định', error.message);
-//     }
-//     return Promise.reject(error);
-//   },
-// );
 api.interceptors.response.use(
   response => {
-    console.log('API Response:', {
-      url: response.config.url,
-      status: response.status,
-      data: response.data,
-    });
+    // XÓA TOÀN BỘ LOG DEBUG (chỉ giữ lại return config, return response, throw error)
     return response;
   },
-  error => {
-    console.error('API Error:', {
-      url: error.config?.url,
-      status: error.response?.status,
-      data: error.response?.data,
-    });
+  async (error: AxiosError) => {
+    // XÓA TOÀN BỘ LOG DEBUG (chỉ giữ lại return config, return response, throw error)
+
+    // Xử lý lỗi 401 (Unauthorized) - Token hết hạn hoặc không hợp lệ
+    if (error.response?.status === 401) {
+      // Xóa token khỏi AsyncStorage
+      await AsyncStorage.multiRemove(['accessToken', 'refreshToken', 'user']);
+
+      // Có thể thêm logic logout ở đây nếu cần
+      // import { useAuthStore } from '@features/auth/stores/useAuthStore';
+      // useAuthStore.getState().logout();
+
+      // Không hiển thị alert ở đây vì có thể gây spam
+      // Các màn hình sẽ tự xử lý lỗi 401
+    }
+
     return Promise.reject(error);
   },
 );
