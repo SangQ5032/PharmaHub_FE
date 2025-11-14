@@ -7,6 +7,14 @@ import PhoneLoginScreen from '@features/auth/screens/PhoneLoginScreen';
 import WorkScheduleScreen from '@features/work-schdule/screens/WorkScheduleScreen';
 import MyWorkScheduleScreen from '@features/work-schdule/screens/MyWorkScheduleScreen';
 import CheckinCheckoutScreen from '@features/checkin-checkout/screens/CheckinCheckoutScreen';
+import ImportListScreen from '@features/warehouse/screens/ImportListScreen';
+import {
+  BranchRevenueReportScreen,
+  BranchEmployeeListScreen,
+  EmployeeWorkHistoryScreen,
+  EmployeeRevenueScreen,
+  MedicineManagementScreen,
+} from '@features/revenue-report';
 import { ROUTES } from '@shared/constants/routes';
 import { HomeNavigator, TabItem } from '@shared/components';
 import HomeScreen from '@shared/screens/HomeScreen';
@@ -97,6 +105,34 @@ const MainAppNavigator = () => (
     <MainStack.Screen
       name={ROUTES.ADD_MEDICINE}
       component={AddMedicineScreen}
+      name={ROUTES.IMPORT_LIST}
+      component={ImportListScreen}
+      options={{ headerShown: false }}
+    />
+    <MainStack.Screen
+      name={ROUTES.BRANCH_REVENUE_REPORT}
+      component={BranchRevenueReportScreen}
+      options={{ headerShown: false }}
+    />
+    <MainStack.Screen
+      name={ROUTES.BRANCH_EMPLOYEE_LIST}
+      component={BranchEmployeeListScreen}
+      options={{ headerShown: false }}
+    />
+    <MainStack.Screen
+      name={ROUTES.EMPLOYEE_WORK_HISTORY}
+      component={EmployeeWorkHistoryScreen}
+      options={{ headerShown: false }}
+    />
+    <MainStack.Screen
+      name={ROUTES.EMPLOYEE_REVENUE}
+      component={EmployeeRevenueScreen}
+      options={{ headerShown: false }}
+    />
+    <MainStack.Screen
+      name={ROUTES.MEDICINE_MANAGEMENT}
+      component={MedicineManagementScreen}
+      options={{ headerShown: false }}
     />
   </MainStack.Navigator>
 );

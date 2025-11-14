@@ -21,4 +21,19 @@ export type MainStackParamList = {
   [ROUTES.ADD_MEDICINE]: { mode?: 'edit'; item?: any } | undefined;
   [ROUTES.SUPPLIERS]: undefined;
   [ROUTES.ADD_SUPPLIER]: { mode?: 'edit'; item?: any } | undefined;
+  [ROUTES.IMPORT_LIST]: undefined;
+  [ROUTES.BRANCH_REVENUE_REPORT]: undefined;
+  [ROUTES.BRANCH_EMPLOYEE_LIST]: {
+    branchId: string;
+    branchName: string;
+  };
+  [ROUTES.EMPLOYEE_WORK_HISTORY]: {
+    employeeId?: string;
+    employeeName?: string;
+  };
+  [ROUTES.EMPLOYEE_REVENUE]: {
+    employeeId?: string;
+    employeeName?: string;
+  };
+  [ROUTES.MEDICINE_MANAGEMENT]: undefined;
 };
