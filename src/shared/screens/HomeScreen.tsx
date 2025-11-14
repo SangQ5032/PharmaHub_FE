@@ -9,6 +9,8 @@ import {
 import { Header } from '@shared/components/header/Header';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { useNavigation } from '@react-navigation/native';
+import { ROUTES } from '@shared/constants/routes';
+import { useAuthStore } from '@features/auth/stores/useAuthStore';
 
 export interface FunctionItem {
   id: string;
@@ -18,15 +20,35 @@ export interface FunctionItem {
 }
 
 const FUNCTIONS: FunctionItem[] = [
-  { id: '1', name: 'Bán hàng', icon: 'cart', route: 'Sales' },
-  { id: '2', name: 'Sản phẩm', icon: 'package-variant', route: 'Products' },
-  { id: '3', name: 'Thống kê', icon: 'chart-bar', route: 'Statistics' },
+  { id: '1', name: 'Lịch Làm Việc', icon: 'cart', route: ROUTES.WORK_SCHEDULE },
+  {
+    id: '2',
+    name: 'Lịch Làm Việc Của Tôi',
+    icon: 'package-variant',
+    route: ROUTES.MY_WORK_SCHEDULE,
+  },
+  {
+    id: '3',
+    name: 'Checkin',
+    icon: 'chart-bar',
+    route: ROUTES.CHECKIN_CHECKOUT,
+  },
   { id: '4', name: 'Doanh thu', icon: 'cash', route: 'Revenue' },
   { id: '5', name: 'Hoá đơn', icon: 'receipt', route: 'Invoices' },
 ];
 
 const HomeScreen = () => {
   const navigation = useNavigation();
+  const user = useAuthStore(state => state.user);
+  const role = user?.role;
+
+  // Gán menu theo role
+  const visibleFunctions = React.useMemo(() => {
+    if (role === 'admin') return FUNCTIONS;
+    if (role === 'staff')
+      return FUNCTIONS.filter(item => !['4', '5'].includes(item.id)); // Ẩn Doanh thu, Hoá đơn cho staff
+    return FUNCTIONS;
+  }, [role]);
 
   const renderFunctionCard = ({ item }: { item: FunctionItem }) => (
     <TouchableOpacity
@@ -49,7 +71,7 @@ const HomeScreen = () => {
       />
       <View style={styles.content}>
         <FlatList
-          data={FUNCTIONS}
+          data={visibleFunctions}
           renderItem={renderFunctionCard}
           keyExtractor={item => item.id}
           numColumns={2}
