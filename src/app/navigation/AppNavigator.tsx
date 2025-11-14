@@ -7,9 +7,23 @@ import WorkScheduleScreen from '@features/work-schdule/screens/WorkScheduleScree
 import MyWorkScheduleScreen from '@features/work-schdule/screens/MyWorkScheduleScreen';
 import CheckinCheckoutScreen from '@features/checkin-checkout/screens/CheckinCheckoutScreen';
 import ImportListScreen from '@features/warehouse/screens/ImportListScreen';
+import {
+  BranchRevenueReportScreen,
+  BranchEmployeeListScreen,
+  EmployeeWorkHistoryScreen,
+  EmployeeRevenueScreen,
+  MedicineManagementScreen,
+} from '@features/revenue-report';
 import { ROUTES } from '@shared/constants/routes';
 import { HomeNavigator, TabItem } from '@shared/components';
 import HomeScreen from '@shared/screens/HomeScreen';
+import {
+  MedicinesHubScreen,
+  MedicineListScreen,
+  AddMedicineScreen,
+} from '@features/medicines'; // <-- ensure AddMedicineScreen import if present
+import MedicineDetailScreen from '@features/medicines/screens/MedicineDetailScreen';
+import { SuppliersScreen, AddSupplierScreen } from '@features/suppliers';
 import {
   RootStackParamList,
   AuthStackParamList,
@@ -21,6 +35,11 @@ const Stack = createNativeStackNavigator<RootStackParamList>();
 
 const tabs: TabItem[] = [
   { name: 'Home', component: HomeScreen, label: 'Trang chủ' },
+  {
+    name: ROUTES.MEDICINES_HUB,
+    component: MedicinesHubScreen,
+    label: 'Medicines Hub',
+  },
 ];
 
 // Create Auth Navigator - chỉ có PhoneLoginScreen
@@ -75,8 +94,14 @@ const MainAppNavigator = () => {
 export default function AppNavigator() {
   return (
     <NavigationContainer>
-      <Stack.Navigator screenOptions={{ headerShown: false }}>
+      {/* Khi mở app, vào luôn MainApp. Tạm comment màn Auth và set initialRouteName */}
+      <Stack.Navigator
+        screenOptions={{ headerShown: false }}
+        initialRouteName="MainApp"
+      >
+        {/*
         <Stack.Screen name="Auth" component={AuthNavigator} />
+        */}
         <Stack.Screen name="MainApp" component={MainAppNavigator} />
       </Stack.Navigator>
     </NavigationContainer>
