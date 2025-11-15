@@ -284,4 +284,21 @@ export const medicineManagementStyles = StyleSheet.create({
   categoryScroll: {
     marginBottom: 8,
   },
+  // Loading and Error states
+  centerContainer: {
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  loadingText: {
+    marginTop: 10,
+    color: '#666',
+  },
+  errorText: {
+    color: '#FF3B30',
+    fontSize: 16,
+  },
+  errorSubText: {
+    color: '#666',
+    marginTop: 8,
+  },
 });

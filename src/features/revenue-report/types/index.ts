@@ -143,3 +143,6 @@ export interface MedicineStats {
   expired: number;
   totalValue: number;
 }
+
+// Export statistics types
+export * from './statistics.types';
