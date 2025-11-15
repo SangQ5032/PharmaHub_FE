@@ -1,101 +1,142 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   View,
   Text,
   TouchableOpacity,
   ScrollView,
   SafeAreaView,
+  ActivityIndicator,
 } from 'react-native';
 import { Header } from '@shared/components/header/Header';
-import {
-  FAKE_MEDICINES,
-  FAKE_MEDICINE_CATEGORIES,
-  FAKE_MEDICINE_STATS,
-} from '../mockdata';
 import { medicineManagementStyles as styles } from '../styles';
-import { SearchBar, FilterChips, StatusBadge } from '../components';
-import {
-  formatCurrency,
-  getMedicineStatusText,
-  getMedicineStatusColor,
-} from '../utils';
+import { SearchBar, FilterChips } from '../components';
+import { formatCurrency } from '../utils';
+import { useMedicineStats, useOverallStats } from '../hooks/useStatistics';
+import { MedicineStatsItem } from '../types';
 
 export default function MedicineManagementScreen() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('Tất cả');
-  const [selectedStatus, setSelectedStatus] = useState<string>('all');
+
+  // Fetch medicine statistics from API
+  const {
+    data: medicineData,
+    isLoading: isLoadingMedicines,
+    error: medicineError,
+  } = useMedicineStats();
+  const { data: overallData, isLoading: isLoadingOverall } = useOverallStats();
+
+  // Extract data from API response
+  const medicines = useMemo(
+    () => medicineData?.data || [],
+    [medicineData?.data],
+  );
+  const totalMedicines = medicineData?.total || 0;
+  const overallStats = overallData?.data;
+
+  // Get unique categories from medicines
+  const categories = useMemo(() => {
+    const uniqueCategories = Array.from(
+      new Set(medicines.map((med: MedicineStatsItem) => med.medicineCategory)),
+    ) as string[];
+    return ['Tất cả', ...uniqueCategories];
+  }, [medicines]);
 
   // Filter medicines
-  const filteredMedicines = FAKE_MEDICINES.filter(medicine => {
-    const matchesSearch =
-      medicine.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      medicine.sku.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      medicine.manufacturer.toLowerCase().includes(searchQuery.toLowerCase());
+  const filteredMedicines = useMemo(() => {
+    return medicines.filter((medicine: MedicineStatsItem) => {
+      const matchesSearch =
+        medicine.medicineName
+          .toLowerCase()
+          .includes(searchQuery.toLowerCase()) ||
+        medicine._id.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        medicine.medicineCategory
+          .toLowerCase()
+          .includes(searchQuery.toLowerCase());
 
-    const matchesCategory =
-      selectedCategory === 'Tất cả' || medicine.category === selectedCategory;
+      const matchesCategory =
+        selectedCategory === 'Tất cả' ||
+        medicine.medicineCategory === selectedCategory;
 
-    const matchesStatus =
-      selectedStatus === 'all' || medicine.status === selectedStatus;
+      return matchesSearch && matchesCategory;
+    });
+  }, [medicines, searchQuery, selectedCategory]);
 
-    return matchesSearch && matchesCategory && matchesStatus;
-  });
-
-  const statusFilters = [
-    { value: 'all', label: 'Tất cả' },
-    { value: 'in-stock', label: 'Còn hàng' },
-    { value: 'low-stock', label: 'Sắp hết' },
-    { value: 'out-of-stock', label: 'Hết hàng' },
-    { value: 'expired', label: 'Hết hạn' },
-  ];
-
-  const categoryFilters = FAKE_MEDICINE_CATEGORIES.map(cat => ({
-    value: cat.name,
-    label: cat.name,
+  const categoryFilters = categories.map(cat => ({
+    value: cat,
+    label: cat,
   }));
+
+  // Loading state
+  if (isLoadingMedicines || isLoadingOverall) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <Header title="Thống kê thuốc" showBack={true} />
+        <View style={[styles.content, styles.centerContainer]}>
+          <ActivityIndicator size="large" color="#007AFF" />
+          <Text style={styles.loadingText}>Đang tải dữ liệu...</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  // Error state
+  if (medicineError) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <Header title="Thống kê thuốc" showBack={true} />
+        <View style={[styles.content, styles.centerContainer]}>
+          <Text style={styles.errorText}>Không thể tải dữ liệu</Text>
+          <Text style={styles.errorSubText}>
+            {medicineError.message || 'Đã xảy ra lỗi'}
+          </Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.container}>
-      <Header title="Quản lý thuốc" showBack={true} />
+      <Header title="Thống kê thuốc" showBack={true} />
 
       <ScrollView style={styles.content}>
         {/* Stats Section */}
         <View style={styles.statsContainer}>
-          <Text style={styles.statsTitle}>Tổng quan kho thuốc</Text>
+          <Text style={styles.statsTitle}>Tổng quan thống kê bán hàng</Text>
           <View style={styles.statsGrid}>
             <View style={[styles.statCard, styles.statCardTotal]}>
-              <Text style={styles.statValue}>{FAKE_MEDICINE_STATS.total}</Text>
-              <Text style={styles.statLabel}>Tổng thuốc</Text>
+              <Text style={styles.statValue}>{totalMedicines}</Text>
+              <Text style={styles.statLabel}>Loại thuốc</Text>
             </View>
             <View style={[styles.statCard, styles.statCardInStock]}>
               <Text style={styles.statValue}>
-                {FAKE_MEDICINE_STATS.inStock}
+                {overallStats?.totalQuantity || 0}
               </Text>
-              <Text style={styles.statLabel}>Còn hàng</Text>
+              <Text style={styles.statLabel}>Tổng SL bán</Text>
             </View>
             <View style={[styles.statCard, styles.statCardLowStock]}>
               <Text style={styles.statValue}>
-                {FAKE_MEDICINE_STATS.lowStock}
+                {overallStats?.totalInvoices || 0}
               </Text>
-              <Text style={styles.statLabel}>Sắp hết</Text>
-            </View>
-            <View style={[styles.statCard, styles.statCardOutOfStock]}>
-              <Text style={styles.statValue}>
-                {FAKE_MEDICINE_STATS.outOfStock}
-              </Text>
-              <Text style={styles.statLabel}>Hết hàng</Text>
-            </View>
-            <View style={[styles.statCard, styles.statCardExpired]}>
-              <Text style={styles.statValue}>
-                {FAKE_MEDICINE_STATS.expired}
-              </Text>
-              <Text style={styles.statLabel}>Hết hạn</Text>
+              <Text style={styles.statLabel}>Hóa đơn</Text>
             </View>
             <View style={[styles.statCard, styles.statCardValue]}>
               <Text style={styles.statValue}>
-                {(FAKE_MEDICINE_STATS.totalValue / 1000000).toFixed(1)}M
+                {((overallStats?.totalRevenue || 0) / 1000000).toFixed(1)}M
               </Text>
-              <Text style={styles.statLabel}>Giá trị kho</Text>
+              <Text style={styles.statLabel}>Doanh thu</Text>
+            </View>
+            <View style={[styles.statCard, styles.statCardOutOfStock]}>
+              <Text style={styles.statValue}>
+                {((overallStats?.totalDiscount || 0) / 1000).toFixed(0)}K
+              </Text>
+              <Text style={styles.statLabel}>Giảm giá</Text>
+            </View>
+            <View style={[styles.statCard, styles.statCardExpired]}>
+              <Text style={styles.statValue}>
+                {((overallStats?.totalTax || 0) / 1000).toFixed(0)}K
+              </Text>
+              <Text style={styles.statLabel}>Thuế</Text>
             </View>
           </View>
         </View>
@@ -104,7 +145,7 @@ export default function MedicineManagementScreen() {
         <SearchBar
           value={searchQuery}
           onChangeText={setSearchQuery}
-          placeholder="Tìm theo tên, mã, nhà sản xuất..."
+          placeholder="Tìm theo tên thuốc, mã, danh mục..."
         />
 
         {/* Category Filter */}
@@ -117,16 +158,6 @@ export default function MedicineManagementScreen() {
           />
         </View>
 
-        {/* Status Filter */}
-        <View style={styles.filterContainer}>
-          <Text style={styles.filterTitle}>Trạng thái</Text>
-          <FilterChips
-            filters={statusFilters}
-            selectedValue={selectedStatus}
-            onSelect={setSelectedStatus}
-          />
-        </View>
-
         {/* Medicine List */}
         <View style={styles.listContainer}>
           <View style={styles.listHeader}>
@@ -135,71 +166,55 @@ export default function MedicineManagementScreen() {
             </Text>
           </View>
 
-          {filteredMedicines.map(medicine => (
-            <View key={medicine.id} style={styles.medicineCard}>
+          {filteredMedicines.map((medicine: MedicineStatsItem) => (
+            <View key={medicine._id} style={styles.medicineCard}>
               <View style={styles.medicineHeader}>
                 <View style={styles.medicineInfo}>
-                  <Text style={styles.medicineName}>{medicine.name}</Text>
-                  <Text style={styles.medicineSku}>Mã: {medicine.sku}</Text>
+                  <Text style={styles.medicineName}>
+                    {medicine.medicineName}
+                  </Text>
+                  <Text style={styles.medicineSku}>Mã: {medicine._id}</Text>
                   <Text style={styles.medicineCategory}>
-                    {medicine.category}
+                    {medicine.medicineCategory}
                   </Text>
                 </View>
-                <StatusBadge
-                  text={getMedicineStatusText(medicine.status)}
-                  backgroundColor={getMedicineStatusColor(medicine.status)}
-                />
               </View>
 
               <View style={styles.medicineBody}>
                 <View style={styles.medicineRow}>
-                  <Text style={styles.medicineLabel}>Nhà sản xuất:</Text>
+                  <Text style={styles.medicineLabel}>Đơn vị:</Text>
                   <Text style={styles.medicineValue}>
-                    {medicine.manufacturer}
+                    {medicine.medicineUnit}
                   </Text>
                 </View>
 
                 <View style={styles.medicineRow}>
-                  <Text style={styles.medicineLabel}>Đơn giá:</Text>
+                  <Text style={styles.medicineLabel}>Đơn giá TB:</Text>
                   <Text style={styles.medicinePrice}>
-                    {formatCurrency(medicine.price)}
+                    {formatCurrency(medicine.averagePrice)}
                   </Text>
                 </View>
 
                 <View style={styles.medicineRow}>
-                  <Text style={styles.medicineLabel}>Tồn kho:</Text>
-                  <Text
-                    style={[
-                      styles.medicineStock,
-                      medicine.status === 'in-stock'
-                        ? styles.stockInStock
-                        : medicine.status === 'low-stock'
-                        ? styles.stockLowStock
-                        : styles.stockOutOfStock,
-                    ]}
-                  >
-                    {medicine.stock} {medicine.unit}
+                  <Text style={styles.medicineLabel}>Đã bán:</Text>
+                  <Text style={styles.medicineStock}>
+                    {medicine.totalQuantity} {medicine.medicineUnit}
                   </Text>
                 </View>
 
                 <View style={styles.medicineRow}>
-                  <Text style={styles.medicineLabel}>Hạn sử dụng:</Text>
+                  <Text style={styles.medicineLabel}>Doanh thu:</Text>
+                  <Text style={styles.medicinePrice}>
+                    {formatCurrency(medicine.totalRevenue)}
+                  </Text>
+                </View>
+
+                <View style={styles.medicineRow}>
+                  <Text style={styles.medicineLabel}>Số lần bán:</Text>
                   <Text style={styles.medicineValue}>
-                    {medicine.expiryDate}
+                    {medicine.timesOrdered} lần
                   </Text>
                 </View>
-
-                {medicine.description && (
-                  <View style={styles.medicineRow}>
-                    <Text style={styles.medicineLabel}>Mô tả:</Text>
-                    <Text
-                      style={styles.medicineDescriptionValue}
-                      numberOfLines={2}
-                    >
-                      {medicine.description}
-                    </Text>
-                  </View>
-                )}
               </View>
 
               <View style={styles.medicineFooter}>
@@ -213,18 +228,6 @@ export default function MedicineManagementScreen() {
                     ]}
                   >
                     Chi tiết
-                  </Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={[styles.actionButton, styles.actionButtonPrimary]}
-                >
-                  <Text
-                    style={[
-                      styles.actionButtonText,
-                      styles.actionButtonTextPrimary,
-                    ]}
-                  >
-                    Cập nhật
                   </Text>
                 </TouchableOpacity>
               </View>
