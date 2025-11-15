@@ -13,15 +13,18 @@ import {
   EmployeeWorkHistoryScreen,
   EmployeeRevenueScreen,
   MedicineManagementScreen,
+  EmployeeManagementScreen,
+  AddEditEmployeeScreen,
 } from '@features/revenue-report';
 import { ROUTES } from '@shared/constants/routes';
 import { HomeNavigator, TabItem } from '@shared/components';
 import HomeScreen from '@shared/screens/HomeScreen';
+import ReportsHubScreen from '@shared/screens/ReportsHubScreen';
 import {
   MedicinesHubScreen,
   MedicineListScreen,
   AddMedicineScreen,
-} from '@features/medicines'; // <-- ensure AddMedicineScreen import if present
+} from '@features/medicines';
 import MedicineDetailScreen from '@features/medicines/screens/MedicineDetailScreen';
 import { SuppliersScreen, AddSupplierScreen } from '@features/suppliers';
 import {
@@ -30,17 +33,16 @@ import {
   MainStackParamList,
 } from '@shared/types/navigation';
 import { useAuthStore } from '@features/auth/stores/useAuthStore';
+import { getRoleConfig } from '@shared/config/roleConfig';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
-const tabs: TabItem[] = [
-  { name: 'Home', component: HomeScreen, label: 'Trang chủ' },
-  {
-    name: ROUTES.MEDICINES_HUB,
-    component: MedicinesHubScreen,
-    label: 'Medicines Hub',
-  },
-];
+// Map tab names to components
+const TAB_COMPONENTS: Record<string, React.ComponentType<any>> = {
+  Home: HomeScreen,
+  MedicinesHub: MedicinesHubScreen,
+  ReportsHub: ReportsHubScreen,
+};
 
 // Create Auth Navigator - chỉ có PhoneLoginScreen
 const AuthStack = createNativeStackNavigator<AuthStackParamList>();
@@ -54,6 +56,27 @@ const AuthNavigator = () => (
 const MainStack = createNativeStackNavigator<MainStackParamList>();
 const MainAppNavigator = () => {
   const user = useAuthStore(state => state.user);
+  const role = user?.role;
+
+  // Lấy config tabs dựa trên role
+  const roleConfig = React.useMemo(() => {
+    return getRoleConfig(role);
+  }, [role]);
+
+  // Chuyển đổi tab config thành TabItem
+  const tabs: TabItem[] = React.useMemo(() => {
+    return roleConfig.tabs
+      .map(tabConfig => {
+        const component = TAB_COMPONENTS[tabConfig.name];
+        if (!component) return null;
+        return {
+          name: tabConfig.name as keyof any,
+          component,
+          label: tabConfig.label,
+        };
+      })
+      .filter((tab): tab is TabItem => tab !== null);
+  }, [roleConfig.tabs]);
 
   return (
     <MainStack.Navigator screenOptions={{ headerShown: false }}>
@@ -70,6 +93,8 @@ const MainAppNavigator = () => {
           />
         )}
       </MainStack.Screen>
+
+      {/* Work Schedule Routes */}
       <MainStack.Screen
         name={ROUTES.WORK_SCHEDULE}
         component={WorkScheduleScreen}
@@ -78,14 +103,71 @@ const MainAppNavigator = () => {
         name={ROUTES.MY_WORK_SCHEDULE}
         component={MyWorkScheduleScreen}
       />
+
+      {/* Checkin/Checkout */}
       <MainStack.Screen
         name={ROUTES.CHECKIN_CHECKOUT}
         component={CheckinCheckoutScreen}
       />
+
+      {/* Medicine Routes */}
+      <MainStack.Screen
+        name={ROUTES.MEDICINES}
+        component={MedicineListScreen}
+      />
+      <MainStack.Screen
+        name={ROUTES.ADD_MEDICINE}
+        component={AddMedicineScreen}
+      />
+      <MainStack.Screen
+        name={ROUTES.MEDICINE_DETAIL}
+        component={MedicineDetailScreen}
+      />
+      <MainStack.Screen
+        name={ROUTES.MEDICINE_MANAGEMENT}
+        component={MedicineManagementScreen}
+      />
+
+      {/* Revenue Report Routes */}
+      <MainStack.Screen
+        name={ROUTES.BRANCH_REVENUE_REPORT}
+        component={BranchRevenueReportScreen}
+      />
+      <MainStack.Screen
+        name={ROUTES.BRANCH_EMPLOYEE_LIST}
+        component={BranchEmployeeListScreen}
+      />
+      <MainStack.Screen
+        name={ROUTES.EMPLOYEE_WORK_HISTORY}
+        component={EmployeeWorkHistoryScreen}
+      />
+      <MainStack.Screen
+        name={ROUTES.EMPLOYEE_REVENUE}
+        component={EmployeeRevenueScreen}
+      />
+
+      {/* Employee Management Routes */}
+      <MainStack.Screen
+        name={ROUTES.EMPLOYEE_MANAGEMENT}
+        component={EmployeeManagementScreen}
+      />
+      <MainStack.Screen
+        name={ROUTES.ADD_EDIT_EMPLOYEE}
+        component={AddEditEmployeeScreen}
+      />
+
+      {/* Warehouse Routes */}
       <MainStack.Screen
         name={ROUTES.IMPORT_LIST}
         component={ImportListScreen}
         options={{ headerShown: false }}
+      />
+
+      {/* Suppliers Routes */}
+      <MainStack.Screen name={ROUTES.SUPPLIERS} component={SuppliersScreen} />
+      <MainStack.Screen
+        name={ROUTES.ADD_SUPPLIER}
+        component={AddSupplierScreen}
       />
     </MainStack.Navigator>
   );
@@ -97,11 +179,9 @@ export default function AppNavigator() {
       {/* Khi mở app, vào luôn MainApp. Tạm comment màn Auth và set initialRouteName */}
       <Stack.Navigator
         screenOptions={{ headerShown: false }}
-        initialRouteName="MainApp"
+        initialRouteName="Auth"
       >
-        {/*
         <Stack.Screen name="Auth" component={AuthNavigator} />
-        */}
         <Stack.Screen name="MainApp" component={MainAppNavigator} />
       </Stack.Navigator>
     </NavigationContainer>

@@ -36,4 +36,6 @@ export type MainStackParamList = {
     employeeName?: string;
   };
   [ROUTES.MEDICINE_MANAGEMENT]: undefined;
+  [ROUTES.EMPLOYEE_MANAGEMENT]: undefined;
+  [ROUTES.ADD_EDIT_EMPLOYEE]: { mode?: 'edit'; item?: any } | undefined;
 };

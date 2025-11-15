@@ -1,7 +1,10 @@
+export type UserRole = 'system_admin' | 'branch_manager' | 'employee';
+
 export interface User {
   id: string;
   name: string;
   email: string;
+  role: UserRole;
 }
 
 // Login với Firebase ID Token (cho phone auth)

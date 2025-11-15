@@ -9,26 +9,46 @@ import {
 import { Header } from '@shared/components/header/Header';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { useNavigation } from '@react-navigation/native';
-import { useAuthStore } from '@features/auth/stores/useAuthStore';
-import { getRoleConfig, RoleOption } from '@shared/config/roleConfig';
+import { ROUTES } from '@shared/constants/routes';
 
-const HomeScreen = () => {
+interface ReportItem {
+  id: string;
+  name: string;
+  icon: string;
+  route: string;
+}
+
+const REPORTS: ReportItem[] = [
+  {
+    id: '1',
+    name: 'Báo cáo doanh thu',
+    icon: 'chart-line',
+    route: ROUTES.BRANCH_REVENUE_REPORT,
+  },
+  {
+    id: '2',
+    name: 'Lịch sử làm việc',
+    icon: 'history',
+    route: ROUTES.EMPLOYEE_WORK_HISTORY,
+  },
+  {
+    id: '3',
+    name: 'Doanh thu nhân viên',
+    icon: 'account-multiple',
+    route: ROUTES.EMPLOYEE_REVENUE,
+  },
+];
+
+const ReportsHubScreen = () => {
   const navigation = useNavigation();
-  const user = useAuthStore(state => state.user);
-  const role = user?.role;
 
-  // Lấy config theo role
-  const roleConfig = React.useMemo(() => {
-    return getRoleConfig(role);
-  }, [role]);
-
-  const renderFunctionCard = ({ item }: { item: RoleOption }) => (
+  const renderReportCard = ({ item }: { item: ReportItem }) => (
     <TouchableOpacity
       style={styles.card}
       onPress={() => navigation.navigate(item.route as never)}
     >
       <View style={styles.iconContainer}>
-        <Icon name={item.icon} size={32} color="#4CAF50" />
+        <Icon name={item.icon} size={32} color="#FF6B6B" />
       </View>
       <Text style={styles.cardText}>{item.name}</Text>
     </TouchableOpacity>
@@ -37,14 +57,14 @@ const HomeScreen = () => {
   return (
     <View style={styles.container}>
       <Header
-        title="Trang chủ"
+        title="Báo Cáo"
         showBack={false}
         avatarUrl="https://your-avatar-url.com"
       />
       <View style={styles.content}>
         <FlatList
-          data={roleConfig.options}
-          renderItem={renderFunctionCard}
+          data={REPORTS}
+          renderItem={renderReportCard}
           keyExtractor={item => item.id}
           numColumns={2}
           contentContainerStyle={styles.gridContainer}
@@ -89,7 +109,7 @@ const styles = StyleSheet.create({
   iconContainer: {
     width: 60,
     height: 60,
-    backgroundColor: '#E8F5E9',
+    backgroundColor: '#FFE5E5',
     borderRadius: 30,
     alignItems: 'center',
     justifyContent: 'center',
@@ -103,4 +123,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default HomeScreen;
+export default ReportsHubScreen;
