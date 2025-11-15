@@ -5,10 +5,14 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 // Lưu ý: Trên Android emulator, dùng 10.0.2.2 thay vì localhost
 // Trên iOS simulator, có thể dùng localhost
 // Trên thiết bị thật, dùng IP thực tế của máy tính (ví dụ: 192.168.1.100:5000)
+// const API_URL =
+//   Platform.OS === 'android'
+//     ? 'http://192.168.50.115:5000/api' // Android emulator
+//     : 'http://192.168.50.115:5000/api'; // iOS simulator hoặc thiết bị thật
 const API_URL =
   Platform.OS === 'android'
-    ? 'http://192.168.50.115:5000/api' // Android emulator
-    : 'http://192.168.50.115:5000/api'; // iOS simulator hoặc thiết bị thật
+    ? 'http://10.0.2.2:8080/api'
+    : 'http://localhost:8080/api';
 
 // Tạo instance axios
 const api: AxiosInstance = axios.create({

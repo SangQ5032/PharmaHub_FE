@@ -117,6 +117,8 @@ export default function PhoneLoginScreen() {
         }
         if (result.user) {
           setUser(result.user);
+          Alert.alert('Thong tin user', JSON.stringify(result.user));
+          console.tron.log('User info:', result.user);
         }
 
         // Navigate to MainApp (RootStack level)
