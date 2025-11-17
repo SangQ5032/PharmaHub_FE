@@ -11,6 +11,8 @@ import {
   RootStackParamList,
   AuthStackParamList,
 } from '@shared/types/navigation';
+import CustomerSelectModal from 'components/CustomerSelectModal';
+import MedicineSelectModal from 'components/MedicineSelectModal';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
@@ -25,8 +27,10 @@ const tabs: TabItem[] = [
 const AuthStack = createNativeStackNavigator<AuthStackParamList>();
 const AuthNavigator = () => (
   <AuthStack.Navigator screenOptions={{ headerShown: false }}>
-    <AuthStack.Screen name={ROUTES.PHONE_LOGIN} component={PhoneLoginScreen} />
-    <AuthStack.Screen name={ROUTES.LOGIN} component={LoginScreen} />
+    {/* <AuthStack.Screen name={ROUTES.PHONE_LOGIN} component={PhoneLoginScreen} /> */}
+    {/* <AuthStack.Screen name={ROUTES.LOGIN} component={LoginScreen} /> */}
+    {/* màn hình đầu tiên: dùng CustomerSelectModal */}
+    <AuthStack.Screen name={ROUTES.LOGIN} component={MedicineSelectModal} />
   </AuthStack.Navigator>
 );
 
