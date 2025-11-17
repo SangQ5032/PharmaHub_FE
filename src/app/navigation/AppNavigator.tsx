@@ -30,7 +30,7 @@ const AuthNavigator = () => (
     {/* <AuthStack.Screen name={ROUTES.PHONE_LOGIN} component={PhoneLoginScreen} /> */}
     {/* <AuthStack.Screen name={ROUTES.LOGIN} component={LoginScreen} /> */}
     {/* màn hình đầu tiên: dùng CustomerSelectModal */}
-    <AuthStack.Screen name={ROUTES.LOGIN} component={MedicineSelectModal} />
+    <AuthStack.Screen name={ROUTES.LOGIN} component={CustomerSelectModal} />
   </AuthStack.Navigator>
 );
 
