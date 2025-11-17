@@ -9,26 +9,20 @@ import {
 import { Header } from '@shared/components/header/Header';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { useNavigation } from '@react-navigation/native';
-
-export interface FunctionItem {
-  id: string;
-  name: string;
-  icon: string;
-  route: string;
-}
-
-const FUNCTIONS: FunctionItem[] = [
-  { id: '1', name: 'Bán hàng', icon: 'cart', route: 'Sales' },
-  { id: '2', name: 'Sản phẩm', icon: 'package-variant', route: 'Products' },
-  { id: '3', name: 'Thống kê', icon: 'chart-bar', route: 'Statistics' },
-  { id: '4', name: 'Doanh thu', icon: 'cash', route: 'Revenue' },
-  { id: '5', name: 'Hoá đơn', icon: 'receipt', route: 'Invoices' },
-];
+import { useAuthStore } from '@features/auth/stores/useAuthStore';
+import { getRoleConfig, RoleOption } from '@shared/config/roleConfig';
 
 const HomeScreen = () => {
   const navigation = useNavigation();
+  const user = useAuthStore(state => state.user);
+  const role = user?.role;
 
-  const renderFunctionCard = ({ item }: { item: FunctionItem }) => (
+  // Lấy config theo role
+  const roleConfig = React.useMemo(() => {
+    return getRoleConfig(role);
+  }, [role]);
+
+  const renderFunctionCard = ({ item }: { item: RoleOption }) => (
     <TouchableOpacity
       style={styles.card}
       onPress={() => navigation.navigate(item.route as never)}
@@ -49,7 +43,7 @@ const HomeScreen = () => {
       />
       <View style={styles.content}>
         <FlatList
-          data={FUNCTIONS}
+          data={roleConfig.options}
           renderItem={renderFunctionCard}
           keyExtractor={item => item.id}
           numColumns={2}

@@ -81,9 +81,9 @@ class PhoneAuthService {
 
         return {
           success: true,
-          accessToken: response.accessToken,
-          refreshToken: response.refreshToken,
-          user: response.user,
+          accessToken: response.data.accessToken,
+          refreshToken: response.data.refreshToken,
+          user: response.data.user,
         };
       } else {
         return {

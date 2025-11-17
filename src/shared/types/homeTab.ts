@@ -1,6 +1,5 @@
 export type HomeTabParamList = {
   Home: undefined;
-  Orders: undefined;
-  Notifications: undefined;
-  Profile: undefined;
+  MedicinesHub: undefined;
+  ReportsHub: undefined;
 };
