@@ -15,6 +15,8 @@ export const ROUTES = {
   IMPORT_LIST: 'ImportList',
   CREATE_IMPORT: 'CreateImport',
   IMPORT_DETAIL: 'ImportDetail',
+  INVENTORY_LIST: 'InventoryList',
+  INVENTORY_DETAIL: 'InventoryDetail',
   // Revenue Report routes
   BRANCH_REVENUE_REPORT: 'BranchRevenueReport',
   BRANCH_EMPLOYEE_LIST: 'BranchEmployeeList',
