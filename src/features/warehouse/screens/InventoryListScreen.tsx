@@ -15,6 +15,7 @@ import { useNavigation } from '@react-navigation/native';
 import { useGetInventoryByBranch } from '@features/warehouse/hooks/useInventory';
 import { InventoryCard } from '@features/warehouse/components/InventoryCard';
 import { InventoryItem } from '@features/warehouse/types/inventory.types';
+import { ROUTES } from '@shared/constants/routes';
 
 export default function InventoryListScreen() {
   const navigation = useNavigation();
@@ -39,8 +40,12 @@ export default function InventoryListScreen() {
   // Handle item press
   const handleItemPress = (item: InventoryItem) => {
     // Navigate to detail screen
-    // navigation.navigate('InventoryDetail', { id: item._id });
-    console.log('Navigate to detail:', item._id);
+    navigation.navigate(
+      ROUTES.INVENTORY_DETAIL as never,
+      {
+        id: item._id,
+      } as never,
+    );
   };
 
   // Filter buttons
