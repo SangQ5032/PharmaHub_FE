@@ -17,6 +17,8 @@ export const ROUTES = {
   IMPORT_DETAIL: 'ImportDetail',
   INVENTORY_LIST: 'InventoryList',
   INVENTORY_DETAIL: 'InventoryDetail',
+  REPORT_SELECTION: 'ReportSelection',
+  REPORT_VIEW: 'ReportView',
   // Revenue Report routes
   BRANCH_REVENUE_REPORT: 'BranchRevenueReport',
   BRANCH_EMPLOYEE_LIST: 'BranchEmployeeList',
