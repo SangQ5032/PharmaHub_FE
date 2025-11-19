@@ -9,6 +9,7 @@ import CheckinCheckoutScreen from '@features/checkin-checkout/screens/CheckinChe
 import ImportListScreen from '@features/warehouse/screens/ImportListScreen';
 import InventoryListScreen from '@features/warehouse/screens/InventoryListScreen';
 import InventoryDetailScreen from '@features/warehouse/screens/InventoryDetailScreen';
+import ReportSelectionScreen from '@features/warehouse/screens/ReportSelectionScreen';
 import {
   BranchRevenueReportScreen,
   BranchEmployeeListScreen,
@@ -173,6 +174,11 @@ const MainAppNavigator = () => {
       <MainStack.Screen
         name={ROUTES.INVENTORY_DETAIL}
         component={InventoryDetailScreen}
+        options={{ headerShown: false }}
+      />
+      <MainStack.Screen
+        name={ROUTES.REPORT_SELECTION}
+        component={ReportSelectionScreen}
         options={{ headerShown: false }}
       />
 
