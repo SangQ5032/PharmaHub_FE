@@ -1,0 +1,32 @@
+import { useQuery } from '@tanstack/react-query';
+import { getCustomers, getCustomerById } from '../api/customers.api';
+
+// export const useGetCustomers = (page: number = 1, limit: number = 20, q?: string) => {
+//   return useQuery({
+//     queryKey: ['customers', page, limit, q],
+//     queryFn: () => getCustomers(page, limit, q),
+//   });
+// };
+export const useGetCustomers = (
+  page: number = 1,
+  limit: number = 20,
+  q?: string,
+) => {
+  return useQuery({
+    queryKey: [
+      'customers',
+      page,
+      limit,
+      ...(q ? [q] : []), // chỉ thêm q vào queryKey khi có
+    ],
+    queryFn: () => getCustomers(page, limit, q),
+  });
+};
+
+export const useGetCustomerById = (id: string) => {
+  return useQuery({
+    queryKey: ['customer', id],
+    queryFn: () => getCustomerById(id),
+    enabled: !!id,
+  });
+};

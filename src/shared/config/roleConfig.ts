@@ -120,10 +120,10 @@ export const ROLE_CONFIG: Record<UserRole, RoleConfig> = {
       },
       {
         id: 'staff-3',
-        name: 'Quản lý thuốc',
-        icon: 'pill',
-        route: ROUTES.MEDICINE_MANAGEMENT,
-        description: 'Xem danh sách thuốc',
+        name: 'Bán Hàng',
+        icon: 'cash-register',
+        route: ROUTES.SALES,
+        description: 'Quản lý bán hàng',
       },
     ],
     tabs: [
