@@ -30,6 +30,12 @@ import {
 import MedicineDetailScreen from '@features/medicines/screens/MedicineDetailScreen';
 import { SuppliersScreen, AddSupplierScreen } from '@features/suppliers';
 import {
+  CreateInvoiceScreen,
+  SalesHubScreen,
+  InvoiceListScreen,
+  InvoiceDetailScreen,
+} from '@features/sales';
+import {
   RootStackParamList,
   AuthStackParamList,
   MainStackParamList,
@@ -176,6 +182,28 @@ const MainAppNavigator = () => {
         name={ROUTES.ADD_SUPPLIER}
         component={AddSupplierScreen}
       />
+
+      {/* Sales Routes */}
+      <MainStack.Screen
+        name={ROUTES.SALES}
+        component={SalesHubScreen}
+        options={{ headerShown: true, title: 'Bán hàng' }}
+      />
+      <MainStack.Screen
+        name={ROUTES.CREATE_INVOICE}
+        component={CreateInvoiceScreen}
+        options={{ headerShown: true, title: 'Tạo Hóa Đơn' }}
+      />
+      <MainStack.Screen
+        name={ROUTES.INVOICE_LIST}
+        component={InvoiceListScreen}
+        options={{ headerShown: true, title: 'Danh sách hóa đơn' }}
+      />
+      <MainStack.Screen
+        name={ROUTES.INVOICE_DETAIL}
+        component={InvoiceDetailScreen}
+        options={{ headerShown: true, title: 'Chi tiết hóa đơn' }}
+      />
     </MainStack.Navigator>
   );
 };
@@ -190,11 +218,11 @@ export default function AppNavigator() {
       >
         <Stack.Screen name="Auth" component={AuthNavigator} />
         <Stack.Screen name="MainApp" component={MainAppNavigator} />
-        <Stack.Screen
+        {/* <Stack.Screen
           name={ROUTES.CREATE_IMPORT}
           component={CreateImportScreen}
           options={{ headerShown: false }}
-        />
+        /> */}
       </Stack.Navigator>
     </NavigationContainer>
   );

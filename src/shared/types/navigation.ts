@@ -38,4 +38,8 @@ export type MainStackParamList = {
   [ROUTES.MEDICINE_MANAGEMENT]: undefined;
   [ROUTES.EMPLOYEE_MANAGEMENT]: undefined;
   [ROUTES.ADD_EDIT_EMPLOYEE]: { mode?: 'edit'; item?: any } | undefined;
+  [ROUTES.SALES]: undefined;
+  [ROUTES.CREATE_INVOICE]: undefined;
+  [ROUTES.INVOICE_LIST]: undefined;
+  [ROUTES.INVOICE_DETAIL]: { invoiceId: string } | undefined;
 };

@@ -26,4 +26,9 @@ export const ROUTES = {
   // Employee Management routes
   EMPLOYEE_MANAGEMENT: 'EmployeeManagement',
   ADD_EDIT_EMPLOYEE: 'AddEditEmployee',
+  // Sales routes
+  SALES: 'Sales',
+  CREATE_INVOICE: 'CreateInvoice',
+  INVOICE_DETAIL: 'InvoiceDetail',
+  INVOICE_LIST: 'InvoiceList',
 };
