@@ -12,6 +12,22 @@ export type Medicine = {
   expiry_date?: string;
   supplier_id?: string | { [key: string]: any };
   warning_threshold?: number;
+  in_stock?: boolean;
+  quantity?: number;
+};
+
+export type GetMedicinesByBranchResponse = {
+  success: boolean;
+  message: string;
+  data: {
+    data: Medicine[];
+    pagination: {
+      page: number;
+      limit: number;
+      total: number;
+      totalPages: number;
+    };
+  };
 };
 
 export const getMedicines = async (
@@ -25,6 +41,15 @@ export const getMedicines = async (
     },
   });
   return response.data;
+};
+
+export const getMedicinesByBranch = async (
+  branchId: string,
+): Promise<Medicine[]> => {
+  const response = await api.get<GetMedicinesByBranchResponse>(
+    `${MEDICINES_ENDPOINT}/branch/${branchId}`,
+  );
+  return response.data.data.data;
 };
 
 export const getMedicineById = async (id: string): Promise<any> => {
