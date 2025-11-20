@@ -8,6 +8,9 @@ import MyWorkScheduleScreen from '@features/work-schdule/screens/MyWorkScheduleS
 import CheckinCheckoutScreen from '@features/checkin-checkout/screens/CheckinCheckoutScreen';
 import ImportListScreen from '@features/warehouse/screens/ImportListScreen';
 import InventoryListScreen from '@features/warehouse/screens/InventoryListScreen';
+import InventoryDetailScreen from '@features/warehouse/screens/InventoryDetailScreen';
+import ReportSelectionScreen from '@features/warehouse/screens/ReportSelectionScreen';
+import ReportViewScreen from '@features/warehouse/screens/ReportViewScreen';
 import {
   BranchRevenueReportScreen,
   BranchEmployeeListScreen,
@@ -175,6 +178,21 @@ const MainAppNavigator = () => {
         component={InventoryListScreen}
         options={{ headerShown: false }}
       />
+      <MainStack.Screen
+        name={ROUTES.INVENTORY_DETAIL}
+        component={InventoryDetailScreen}
+        options={{ headerShown: false }}
+      />
+      <MainStack.Screen
+        name={ROUTES.REPORT_SELECTION}
+        component={ReportSelectionScreen}
+        options={{ headerShown: false }}
+      />
+      <MainStack.Screen
+        name={ROUTES.REPORT_VIEW}
+        component={ReportViewScreen}
+        options={{ headerShown: false }}
+      />
 
       {/* Suppliers Routes */}
       <MainStack.Screen name={ROUTES.SUPPLIERS} component={SuppliersScreen} />
@@ -211,18 +229,12 @@ const MainAppNavigator = () => {
 export default function AppNavigator() {
   return (
     <NavigationContainer>
-      {/* Khi mở app, vào luôn MainApp. Tạm comment màn Auth và set initialRouteName */}
       <Stack.Navigator
         screenOptions={{ headerShown: false }}
         initialRouteName="Auth"
       >
         <Stack.Screen name="Auth" component={AuthNavigator} />
         <Stack.Screen name="MainApp" component={MainAppNavigator} />
-        {/* <Stack.Screen
-          name={ROUTES.CREATE_IMPORT}
-          component={CreateImportScreen}
-          options={{ headerShown: false }}
-        /> */}
       </Stack.Navigator>
     </NavigationContainer>
   );

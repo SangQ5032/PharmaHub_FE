@@ -15,9 +15,10 @@ import { useNavigation } from '@react-navigation/native';
 import { useGetImports } from '@features/warehouse/hooks/useImports';
 import { ImportCard } from '@features/warehouse/components/ImportCard';
 import { ImportRecord } from '@features/warehouse/types/import.types';
+import { ROUTES } from '@shared/constants/routes';
 
 export default function ImportListScreen() {
-  const navigation = useNavigation();
+  const navigation = useNavigation<any>();
   const [page, setPage] = useState(1);
   const [refreshing, setRefreshing] = useState(false);
 
@@ -50,7 +51,7 @@ export default function ImportListScreen() {
   const handleCreateImport = () => {
     Alert.alert('Tạo phiếu nhập mới', 'Chức năng đang phát triển');
     // TODO: Navigate to create screen
-    // navigation.navigate('CreateImport');
+    navigation.navigate(ROUTES.CREATE_IMPORT);
   };
 
   // Render item
@@ -126,6 +127,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#F5F5F5',
+    marginTop: 16,
   },
   header: {
     flexDirection: 'row',
