@@ -13,17 +13,19 @@ import {
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { useCreateInvoice } from '../hooks/useSales';
-import { useMedicines } from '../hooks/useMedicines';
+import { useMedicinesByBranch } from '../hooks/useMedicines';
 import { useGetCustomers } from '../hooks/useCustomers';
+import { useAuthStore } from '../../auth/stores/useAuthStore';
 import { SaleItem, CreateInvoiceRequest } from '../types';
 
 const CreateInvoiceScreen: React.FC = () => {
   const navigation = useNavigation<any>();
+  const { user } = useAuthStore();
+  const branchId = user?.branch_id || '';
+
   const { mutate: createInvoiceMutation, isPending } = useCreateInvoice();
-  const { data: medicinesData, isLoading: medicinesLoading } = useMedicines(
-    100,
-    0,
-  );
+  const { data: medicinesData, isLoading: medicinesLoading } =
+    useMedicinesByBranch(branchId);
   const { data: customersData, isLoading: customersLoading } = useGetCustomers(
     1,
     50,
@@ -52,7 +54,7 @@ const CreateInvoiceScreen: React.FC = () => {
   const [showCustomerModal, setShowCustomerModal] = useState(false);
   const [customerSearchQuery, setCustomerSearchQuery] = useState('');
 
-  const medicines = medicinesData?.data || [];
+  const medicines = medicinesData || [];
   const customers = customersData || [];
 
   const filteredMedicines = medicines.filter((med: any) =>
@@ -470,14 +472,19 @@ const CreateInvoiceScreen: React.FC = () => {
               keyExtractor={item => item._id}
               renderItem={({ item }) => (
                 <TouchableOpacity
-                  style={styles.medicineListItem}
+                  style={[
+                    styles.medicineListItem,
+                    !item.in_stock && styles.medicineListItemOutOfStock,
+                  ]}
                   onPress={() => handleSelectMedicine(item)}
+                  disabled={!item.in_stock}
                 >
                   <View>
                     <Text style={styles.medicineName}>{item.name}</Text>
                     <Text style={styles.medicineInfo}>
                       Giá: {Number(item.price || 0).toLocaleString('vi-VN')}₫ |{' '}
                       {item.unit || 'viên'}
+                      {!item.in_stock && ' | Hết hàng'}
                     </Text>
                   </View>
                 </TouchableOpacity>
@@ -796,6 +803,12 @@ const styles = StyleSheet.create({
     padding: 12,
     borderBottomWidth: 1,
     borderBottomColor: '#EEE',
+  },
+  medicineListItemOutOfStock: {
+    backgroundColor: '#F0F0F0',
+    borderBottomWidth: 2,
+    opacity: 0.6,
+    marginVertical: 4,
   },
   medicineName: {
     fontSize: 14,

@@ -88,6 +88,13 @@ export const ROLE_CONFIG: Record<UserRole, RoleConfig> = {
         route: ROUTES.BRANCH_REVENUE_REPORT,
         description: 'Báo cáo doanh thu chi nhánh',
       },
+      {
+        id: 'manager-4',
+        name: 'Nhập Hàng',
+        icon: 'truck-delivery',
+        route: ROUTES.IMPORT_LIST,
+        description: 'Quản lý đơn nhập hàng',
+      },
     ],
     tabs: [
       {
@@ -140,13 +147,21 @@ export const ROLE_CONFIG: Record<UserRole, RoleConfig> = {
     ],
   },
 };
+const normalizeRole = (role?: string) => role?.replace(/-/g, '_').toLowerCase();
+export const getRoleConfig = (role: UserRole | undefined): RoleConfig => {
+  const normalized = normalizeRole(role);
+  if (!normalized || !ROLE_CONFIG[normalized as UserRole]) {
+    return ROLE_CONFIG.employee;
+  }
+  return ROLE_CONFIG[normalized as UserRole];
+};
 
 /**
  * Lấy config cho role cụ thể
  */
-export const getRoleConfig = (role: UserRole | undefined): RoleConfig => {
-  if (!role || !ROLE_CONFIG[role]) {
-    return ROLE_CONFIG.employee; // Default là staff
-  }
-  return ROLE_CONFIG[role];
-};
+// export const getRoleConfig = (role: UserRole | undefined): RoleConfig => {
+//   if (!role || !ROLE_CONFIG[role]) {
+//     return ROLE_CONFIG.employee; // Default là staff
+//   }
+//   return ROLE_CONFIG[role];
+// };

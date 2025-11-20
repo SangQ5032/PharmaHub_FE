@@ -17,6 +17,7 @@ import { useCreateImport } from '@features/warehouse/hooks/useImports';
 import { MedicineSearchModal } from '@features/warehouse/components/MedicineSearchModal';
 import { Medicine } from '@features/warehouse/types/medicine.types';
 import { Supplier } from '@features/warehouse/types/supplier.types';
+import { useAuthStore } from '@features/auth';
 
 interface ImportItem {
   medicine: Medicine;
@@ -26,6 +27,7 @@ interface ImportItem {
 
 export default function CreateImportScreen() {
   const navigation = useNavigation();
+  const { user } = useAuthStore();
 
   // State
   const [selectedSupplier, setSelectedSupplier] = useState<Supplier | null>(
@@ -115,7 +117,7 @@ export default function CreateImportScreen() {
 
     // Prepare data
     const body = {
-      branch_id: '507f1f77bcf86cd799439011', // TODO: Get from user's branch
+      branch_id: user.branch_id,
       supplier_id: selectedSupplier._id,
       items: items.map(item => ({
         medicine_id: item.medicine._id,
