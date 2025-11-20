@@ -22,6 +22,7 @@ export type MainStackParamList = {
   [ROUTES.SUPPLIERS]: undefined;
   [ROUTES.ADD_SUPPLIER]: { mode?: 'edit'; item?: any } | undefined;
   [ROUTES.IMPORT_LIST]: undefined;
+  [ROUTES.CREATE_IMPORT]: undefined;
   [ROUTES.BRANCH_REVENUE_REPORT]: undefined;
   [ROUTES.BRANCH_EMPLOYEE_LIST]: {
     branchId: string;

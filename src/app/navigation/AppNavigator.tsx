@@ -175,6 +175,11 @@ const MainAppNavigator = () => {
         component={InventoryListScreen}
         options={{ headerShown: false }}
       />
+      <MainStack.Screen
+        name={ROUTES.CREATE_IMPORT}
+        component={CreateImportScreen}
+        options={{ headerShown: false }}
+      />
 
       {/* Suppliers Routes */}
       <MainStack.Screen name={ROUTES.SUPPLIERS} component={SuppliersScreen} />
@@ -211,18 +216,12 @@ const MainAppNavigator = () => {
 export default function AppNavigator() {
   return (
     <NavigationContainer>
-      {/* Khi mở app, vào luôn MainApp. Tạm comment màn Auth và set initialRouteName */}
       <Stack.Navigator
         screenOptions={{ headerShown: false }}
         initialRouteName="Auth"
       >
         <Stack.Screen name="Auth" component={AuthNavigator} />
         <Stack.Screen name="MainApp" component={MainAppNavigator} />
-        {/* <Stack.Screen
-          name={ROUTES.CREATE_IMPORT}
-          component={CreateImportScreen}
-          options={{ headerShown: false }}
-        /> */}
       </Stack.Navigator>
     </NavigationContainer>
   );
