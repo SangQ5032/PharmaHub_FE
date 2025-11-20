@@ -1,4 +1,9 @@
 import { ROUTES } from '@shared/constants/routes';
+import {
+  ReportType,
+  ReportFormat,
+  ReportFilter,
+} from '@features/warehouse/types/report.types';
 
 export type RootStackParamList = {
   Auth: undefined;
@@ -42,4 +47,11 @@ export type MainStackParamList = {
   [ROUTES.CREATE_INVOICE]: undefined;
   [ROUTES.INVOICE_LIST]: undefined;
   [ROUTES.INVOICE_DETAIL]: { invoiceId: string } | undefined;
+  [ROUTES.REPORT_SELECTION]: undefined;
+  [ROUTES.REPORT_VIEW]: {
+    type: ReportType;
+    format: ReportFormat;
+    filter: ReportFilter;
+    title: string;
+  };
 };

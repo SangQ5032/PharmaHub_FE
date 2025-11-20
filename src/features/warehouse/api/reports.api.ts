@@ -1,6 +1,6 @@
 // src/features/warehouse/api/reports.api.ts
 
-import apiClient from '@shared/services/apiClient';
+import apiClient from '@shared/services/api';
 import {
   GenerateReportRequest,
   GenerateReportResponse,
