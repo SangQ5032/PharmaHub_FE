@@ -8,6 +8,9 @@ import MyWorkScheduleScreen from '@features/work-schdule/screens/MyWorkScheduleS
 import CheckinCheckoutScreen from '@features/checkin-checkout/screens/CheckinCheckoutScreen';
 import ImportListScreen from '@features/warehouse/screens/ImportListScreen';
 import InventoryListScreen from '@features/warehouse/screens/InventoryListScreen';
+import InventoryDetailScreen from '@features/warehouse/screens/InventoryDetailScreen';
+import ReportSelectionScreen from '@features/warehouse/screens/ReportSelectionScreen';
+import ReportViewScreen from '@features/warehouse/screens/ReportViewScreen';
 import {
   BranchRevenueReportScreen,
   BranchEmployeeListScreen,
@@ -176,8 +179,18 @@ const MainAppNavigator = () => {
         options={{ headerShown: false }}
       />
       <MainStack.Screen
-        name={ROUTES.CREATE_IMPORT}
-        component={CreateImportScreen}
+        name={ROUTES.INVENTORY_DETAIL}
+        component={InventoryDetailScreen}
+        options={{ headerShown: false }}
+      />
+      <MainStack.Screen
+        name={ROUTES.REPORT_SELECTION}
+        component={ReportSelectionScreen}
+        options={{ headerShown: false }}
+      />
+      <MainStack.Screen
+        name={ROUTES.REPORT_VIEW}
+        component={ReportViewScreen}
         options={{ headerShown: false }}
       />
 
