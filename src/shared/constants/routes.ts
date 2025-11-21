@@ -40,4 +40,5 @@ export const ROUTES = {
   CREATE_INVOICE: 'CreateInvoice',
   INVOICE_DETAIL: 'InvoiceDetail',
   INVOICE_LIST: 'InvoiceList',
+  BRANCH_INVOICE_HISTORY: 'BranchInvoiceHistory',
 };
