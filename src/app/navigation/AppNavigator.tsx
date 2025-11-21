@@ -35,6 +35,7 @@ import {
   SalesHubScreen,
   InvoiceListScreen,
   InvoiceDetailScreen,
+  BranchInvoiceHistoryScreen,
 } from '@features/sales';
 import {
   WorkScheduleListScreen,
@@ -254,6 +255,11 @@ const MainAppNavigator = () => {
         name={ROUTES.INVOICE_DETAIL}
         component={InvoiceDetailScreen}
         options={{ headerShown: true, title: 'Chi tiết hóa đơn' }}
+      />
+      <MainStack.Screen
+        name={ROUTES.BRANCH_INVOICE_HISTORY}
+        component={BranchInvoiceHistoryScreen}
+        options={{ headerShown: false }}
       />
     </MainStack.Navigator>
   );
