@@ -18,6 +18,7 @@ export interface WorkSchedule {
   date: string;
   shift: string;
   created_by: User | string;
+  note?: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -27,10 +28,56 @@ export interface CreateWorkScheduleBody {
   branch_id: string;
   date: string;
   shift: string;
+  note?: string;
+}
+
+export interface UpdateWorkScheduleBody {
+  note?: string;
+}
+
+// API Types for Day Schedule
+export interface ScheduleItem {
+  user_id: string;
+  note?: string;
+}
+
+export interface CreateDayScheduleBody {
+  branch_id: string;
+  date: string;
+  morning: ScheduleItem[];
+  afternoon: ScheduleItem[];
+}
+
+// API Types for Week Schedule
+export interface WeekScheduleItem {
+  user_id: string;
+  date: string;
+  shift: 'morning' | 'afternoon';
+  note?: string;
+}
+
+export interface CreateWeekScheduleBody {
+  branch_id: string;
+  from: string;
+  to: string;
+  schedules: WeekScheduleItem[];
+}
+
+// API Types for Get Week/Day Schedules
+export interface GetWeekScheduleParams {
+  branch_id: string;
+  from: string;
+  to: string;
+}
+
+export interface GetDayScheduleParams {
+  branch_id: string;
+  date: string;
 }
 
 export interface WorkScheduleResponse {
   success: boolean;
   data: WorkSchedule | WorkSchedule[];
   message?: string;
+  total?: number;
 }
