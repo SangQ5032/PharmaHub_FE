@@ -16,10 +16,14 @@ export interface UsersResponse {
 
 export const userApi = {
   /**
-   * Lấy danh sách users của chi nhánh hiện tại
-   * Endpoint: GET /api/users/branch/list
+   * Lấy danh sách users của chi nhánh hiện tại hoặc chi nhánh chỉ định
+   * Endpoint: GET /api/users/branch/list (hiện tại) hoặc GET /api/users/branch/:branchId (chỉ định)
    */
-  getUsersByBranchList: async (): Promise<UsersResponse> => {
+  getUsersByBranchList: async (branchId?: string): Promise<UsersResponse> => {
+    if (branchId) {
+      const res = await apiClient.get(`/users/branch/${branchId}`);
+      return res.data;
+    }
     const res = await apiClient.get('/users/branch/list');
     return res.data;
   },

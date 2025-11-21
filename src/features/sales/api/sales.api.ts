@@ -15,12 +15,13 @@ export const createInvoice = async (
 };
 
 /**
- * Lấy danh sách hoá đơn của toàn bộ chi nhánh
+ * Lấy danh sách hoá đơn của toàn bộ chi nhánh hoặc chi nhánh chỉ định
  * API: GET /api/sales/invoices/branch
  */
 export const getInvoicesByBranch = async (params?: {
   page?: number;
   limit?: number;
+  branch_id?: string;
   employee_id?: string;
   customer_id?: string;
   from_date?: string;
