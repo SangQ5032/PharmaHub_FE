@@ -71,8 +71,8 @@ export const ROLE_CONFIG: Record<UserRole, RoleConfig> = {
         id: 'manager-1',
         name: 'Lịch Làm Việc',
         icon: 'calendar',
-        route: ROUTES.WORK_SCHEDULE,
-        description: 'Xem lịch làm việc toàn bộ',
+        route: ROUTES.WORK_SCHEDULE_MENU,
+        description: 'Quản lý lịch làm việc',
       },
       {
         id: 'manager-2',

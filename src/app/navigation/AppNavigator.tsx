@@ -1,10 +1,7 @@
-/* eslint-disable react-native/no-inline-styles */
 import React from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import PhoneLoginScreen from '@features/auth/screens/PhoneLoginScreen';
-import WorkScheduleScreen from '@features/work-schdule/screens/WorkScheduleScreen';
-import MyWorkScheduleScreen from '@features/work-schdule/screens/MyWorkScheduleScreen';
 import CheckinCheckoutScreen from '@features/checkin-checkout/screens/CheckinCheckoutScreen';
 import ImportListScreen from '@features/warehouse/screens/ImportListScreen';
 import InventoryListScreen from '@features/warehouse/screens/InventoryListScreen';
@@ -20,7 +17,6 @@ import {
   EmployeeManagementScreen,
   AddEditEmployeeScreen,
 } from '@features/revenue-report';
-import CreateImportScreen from '@features/warehouse/screens/CreateImportScreen';
 import { ROUTES } from '@shared/constants/routes';
 import { HomeNavigator, TabItem } from '@shared/components';
 import HomeScreen from '@shared/screens/HomeScreen';
@@ -38,6 +34,11 @@ import {
   InvoiceListScreen,
   InvoiceDetailScreen,
 } from '@features/sales';
+import {
+  WorkScheduleListScreen,
+  CreateWeekScheduleScreen,
+  WorkScheduleMenuScreen,
+} from '@features/work-schdule';
 import {
   RootStackParamList,
   AuthStackParamList,
@@ -107,12 +108,19 @@ const MainAppNavigator = () => {
 
       {/* Work Schedule Routes */}
       <MainStack.Screen
-        name={ROUTES.WORK_SCHEDULE}
-        component={WorkScheduleScreen}
+        name={ROUTES.WORK_SCHEDULE_MENU}
+        component={WorkScheduleMenuScreen}
+        options={{ headerShown: true, title: 'Lịch Làm Việc' }}
       />
       <MainStack.Screen
-        name={ROUTES.MY_WORK_SCHEDULE}
-        component={MyWorkScheduleScreen}
+        name={ROUTES.WORK_SCHEDULE_LIST}
+        component={WorkScheduleListScreen}
+        options={{ headerShown: true, title: 'Lịch làm việc' }}
+      />
+      <MainStack.Screen
+        name={ROUTES.CREATE_WEEK_SCHEDULE}
+        component={CreateWeekScheduleScreen}
+        options={{ headerShown: true, title: 'Tạo lịch tuần' }}
       />
 
       {/* Checkin/Checkout */}
