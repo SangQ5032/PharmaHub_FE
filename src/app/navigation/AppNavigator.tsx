@@ -17,6 +17,8 @@ import {
   EmployeeManagementScreen,
   AddEditEmployeeScreen,
 } from '@features/revenue-report';
+import { BranchListScreen, BranchFormScreen } from '@features/branches';
+import BranchDetailScreen from '@features/branches/screens/BranchDetailScreen';
 import { ROUTES } from '@shared/constants/routes';
 import { HomeNavigator, TabItem } from '@shared/components';
 import HomeScreen from '@shared/screens/HomeScreen';
@@ -38,6 +40,7 @@ import {
   WorkScheduleListScreen,
   CreateWeekScheduleScreen,
   WorkScheduleMenuScreen,
+  MyWorkScheduleScreen,
 } from '@features/work-schdule';
 import {
   RootStackParamList,
@@ -118,6 +121,11 @@ const MainAppNavigator = () => {
         options={{ headerShown: true, title: 'Lịch làm việc' }}
       />
       <MainStack.Screen
+        name={ROUTES.MY_WORK_SCHEDULE}
+        component={MyWorkScheduleScreen}
+        options={{ headerShown: true, title: 'Lịch của tôi' }}
+      />
+      <MainStack.Screen
         name={ROUTES.CREATE_WEEK_SCHEDULE}
         component={CreateWeekScheduleScreen}
         options={{ headerShown: true, title: 'Tạo lịch tuần' }}
@@ -173,6 +181,23 @@ const MainAppNavigator = () => {
       <MainStack.Screen
         name={ROUTES.ADD_EDIT_EMPLOYEE}
         component={AddEditEmployeeScreen}
+      />
+
+      {/* Branch Management Routes */}
+      <MainStack.Screen
+        name={ROUTES.BRANCH_LIST}
+        component={BranchListScreen}
+        options={{ headerShown: true, title: 'Chi nhánh' }}
+      />
+      <MainStack.Screen
+        name={ROUTES.ADD_EDIT_BRANCH}
+        component={BranchFormScreen}
+        options={{ headerShown: true, title: 'Thêm / Sửa chi nhánh' }}
+      />
+      <MainStack.Screen
+        name={ROUTES.BRANCH_DETAIL}
+        component={BranchDetailScreen}
+        options={{ headerShown: false }}
       />
 
       {/* Warehouse Routes */}

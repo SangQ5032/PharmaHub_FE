@@ -46,6 +46,13 @@ export const ROLE_CONFIG: Record<UserRole, RoleConfig> = {
         route: ROUTES.MEDICINE_MANAGEMENT,
         description: 'Quản lý kho thuốc',
       },
+      {
+        id: 'admin-4',
+        name: 'Quản lý chi nhánh',
+        icon: 'office-building',
+        route: ROUTES.BRANCH_LIST,
+        description: 'Quản lý thông tin chi nhánh',
+      },
     ],
     tabs: [
       {
@@ -139,11 +146,11 @@ export const ROLE_CONFIG: Record<UserRole, RoleConfig> = {
         name: 'Home',
         label: 'Trang chủ',
       },
-      {
-        id: 'staff-tab-2',
-        name: 'MedicinesHub',
-        label: 'Medicines',
-      },
+      // {
+      //   id: 'staff-tab-2',
+      //   name: 'MedicinesHub',
+      //   label: 'Medicines',
+      // },
     ],
   },
 };

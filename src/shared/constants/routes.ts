@@ -2,6 +2,8 @@ export const ROUTES = {
   LOGIN: 'Login',
   PHONE_LOGIN: 'PhoneLogin',
   HOME: 'Home',
+  WORK_SCHEDULE: 'WorkSchedule',
+  MY_WORK_SCHEDULE: 'MyWorkSchedule',
   WORK_SCHEDULE_MENU: 'WorkScheduleMenu',
   WORK_SCHEDULE_LIST: 'WorkScheduleList',
   CREATE_WEEK_SCHEDULE: 'CreateWeekSchedule',
@@ -29,6 +31,10 @@ export const ROUTES = {
   // Employee Management routes
   EMPLOYEE_MANAGEMENT: 'EmployeeManagement',
   ADD_EDIT_EMPLOYEE: 'AddEditEmployee',
+  // Branch management
+  BRANCH_LIST: 'BranchList',
+  ADD_EDIT_BRANCH: 'AddEditBranch',
+  BRANCH_DETAIL: 'BranchDetail',
   // Sales routes
   SALES: 'Sales',
   CREATE_INVOICE: 'CreateInvoice',
