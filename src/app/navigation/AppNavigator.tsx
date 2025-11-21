@@ -29,6 +29,9 @@ import {
 } from '@features/medicines';
 import MedicineDetailScreen from '@features/medicines/screens/MedicineDetailScreen';
 import { SuppliersScreen, AddSupplierScreen } from '@features/suppliers';
+
+import { CustomerListScreen, CustomerDetailScreen } from '@features/Customer';
+
 import {
   RootStackParamList,
   AuthStackParamList,
@@ -36,8 +39,6 @@ import {
 } from '@shared/types/navigation';
 import { useAuthStore } from '@features/auth/stores/useAuthStore';
 import { getRoleConfig } from '@shared/config/roleConfig';
-import CustomerSelectModal from 'components/CustomerSelectModal';
-// import MedicineSelectModal from 'components/MedicineSelectModal';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
@@ -52,8 +53,8 @@ const TAB_COMPONENTS: Record<string, React.ComponentType<any>> = {
 const AuthStack = createNativeStackNavigator<AuthStackParamList>();
 const AuthNavigator = () => (
   <AuthStack.Navigator screenOptions={{ headerShown: false }}>
+    {/* <AuthStack.Screen name={ROUTES.PHONE_LOGIN} component={PhoneLoginScreen} /> */}
     <AuthStack.Screen name={ROUTES.PHONE_LOGIN} component={PhoneLoginScreen} />
-    {/* <AuthStack.Screen name={ROUTES.LOGIN} component={CustomerSelectModal} /> */}
   </AuthStack.Navigator>
 );
 
@@ -84,7 +85,10 @@ const MainAppNavigator = () => {
   }, [roleConfig.tabs]);
 
   return (
-    <MainStack.Navigator screenOptions={{ headerShown: false }}>
+    <MainStack.Navigator
+      screenOptions={{ headerShown: false }}
+      initialRouteName={ROUTES.CUSTOMERS}
+    >
       <MainStack.Screen name="HomeTabs">
         {() => (
           <HomeNavigator
@@ -131,6 +135,16 @@ const MainAppNavigator = () => {
       <MainStack.Screen
         name={ROUTES.MEDICINE_MANAGEMENT}
         component={MedicineManagementScreen}
+      />
+
+      {/* Customer Routes */}
+      <MainStack.Screen
+        name={ROUTES.CUSTOMERS}
+        component={CustomerListScreen}
+      />
+      <MainStack.Screen
+        name={ROUTES.CUSTOMER_DETAIL}
+        component={CustomerDetailScreen}
       />
 
       {/* Revenue Report Routes */}
@@ -189,7 +203,7 @@ export default function AppNavigator() {
       {/* Khi mở app, vào luôn MainApp. Tạm comment màn Auth và set initialRouteName */}
       <Stack.Navigator
         screenOptions={{ headerShown: false }}
-        initialRouteName="Auth"
+        initialRouteName="MainApp"
       >
         <Stack.Screen name="Auth" component={AuthNavigator} />
         <Stack.Screen name="MainApp" component={MainAppNavigator} />
