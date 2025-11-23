@@ -46,6 +46,13 @@ export const ROLE_CONFIG: Record<UserRole, RoleConfig> = {
         route: ROUTES.MEDICINE_MANAGEMENT,
         description: 'Quản lý kho thuốc',
       },
+      {
+        id: 'admin-4',
+        name: 'Quản lý chi nhánh',
+        icon: 'office-building',
+        route: ROUTES.BRANCH_LIST,
+        description: 'Quản lý thông tin chi nhánh',
+      },
     ],
     tabs: [
       {
@@ -71,8 +78,8 @@ export const ROLE_CONFIG: Record<UserRole, RoleConfig> = {
         id: 'manager-1',
         name: 'Lịch Làm Việc',
         icon: 'calendar',
-        route: ROUTES.WORK_SCHEDULE,
-        description: 'Xem lịch làm việc toàn bộ',
+        route: ROUTES.WORK_SCHEDULE_MENU,
+        description: 'Quản lý lịch làm việc',
       },
       {
         id: 'manager-2',
@@ -95,6 +102,13 @@ export const ROLE_CONFIG: Record<UserRole, RoleConfig> = {
         route: ROUTES.IMPORT_LIST,
         description: 'Quản lý đơn nhập hàng',
       },
+      {
+        id: 'manager-5',
+        name: 'Lịch sử hoá đơn',
+        icon: 'file-document-outline',
+        route: ROUTES.BRANCH_INVOICE_HISTORY,
+        description: 'Xem lịch sử bán hàng',
+      },
     ],
     tabs: [
       {
@@ -102,11 +116,11 @@ export const ROLE_CONFIG: Record<UserRole, RoleConfig> = {
         name: 'Home',
         label: 'Trang chủ',
       },
-      {
-        id: 'manager-tab-2',
-        name: 'MedicinesHub',
-        label: 'Medicines',
-      },
+      // {
+      //   id: 'manager-tab-2',
+      //   name: 'MedicinesHub',
+      //   label: 'Medicines',
+      // },
     ],
   },
   employee: {
@@ -139,11 +153,11 @@ export const ROLE_CONFIG: Record<UserRole, RoleConfig> = {
         name: 'Home',
         label: 'Trang chủ',
       },
-      {
-        id: 'staff-tab-2',
-        name: 'MedicinesHub',
-        label: 'Medicines',
-      },
+      // {
+      //   id: 'staff-tab-2',
+      //   name: 'MedicinesHub',
+      //   label: 'Medicines',
+      // },
     ],
   },
 };

@@ -8,13 +8,12 @@ import {
   StyleSheet,
   Text,
 } from 'react-native';
-import { useMyWorkSchedule } from '@features/work-schdule/hooks/useWorkSchedule';
-import { useAuthStore } from '@features/auth/stores/useAuthStore';
+import { useWorkSchedules } from '@features/work-schdule/hooks/useWorkSchedule';
+import { WorkSchedule } from '@features/work-schdule/types/types';
 
-export default function MyWorkScheduleScreen() {
-  const { data, isLoading, error, refetch } = useMyWorkSchedule();
+export default function WorkScheduleListScreen() {
+  const { data, isLoading, error, refetch } = useWorkSchedules();
   const [refreshing, setRefreshing] = useState(false);
-  const user = useAuthStore(state => state.user);
 
   const handleRefresh = async () => {
     setRefreshing(true);
@@ -24,13 +23,13 @@ export default function MyWorkScheduleScreen() {
 
   React.useEffect(() => {
     if (error) {
-      Alert.alert('Lỗi', 'Không thể tải lịch làm việc của bạn');
+      Alert.alert('Lỗi', 'Không thể tải lịch làm việc');
     }
   }, [error]);
 
   const schedules = Array.isArray(data?.data)
     ? data.data
-    : ([data?.data].filter(Boolean) as any[]);
+    : ([data?.data].filter(Boolean) as WorkSchedule[]);
 
   return (
     <View style={styles.container}>
@@ -39,17 +38,10 @@ export default function MyWorkScheduleScreen() {
           <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />
         }
       >
-        <View style={styles.headerSection}>
-          <Text style={styles.headerTitle}>Lịch làm việc của tôi</Text>
-          <Text style={styles.headerSubtitle}>
-            {user?.name || user?.username || 'Bạn'}
-          </Text>
-        </View>
-
         {isLoading ? (
           <ActivityIndicator size="large" style={styles.loader} />
         ) : schedules.length > 0 ? (
-          schedules.map((schedule: any) => (
+          schedules.map((schedule: WorkSchedule) => (
             <View key={schedule._id} style={styles.scheduleItem}>
               <View style={styles.row}>
                 <View>
@@ -72,7 +64,7 @@ export default function MyWorkScheduleScreen() {
             </View>
           ))
         ) : (
-          <Text style={styles.emptyText}>Bạn chưa có lịch làm việc</Text>
+          <Text style={styles.emptyText}>Không có lịch làm việc</Text>
         )}
       </ScrollView>
     </View>
@@ -87,24 +79,6 @@ const styles = StyleSheet.create({
   },
   loader: {
     marginTop: 50,
-  },
-  headerSection: {
-    alignItems: 'center',
-    paddingVertical: 24,
-    paddingHorizontal: 16,
-    backgroundColor: '#fff',
-    borderRadius: 8,
-    marginBottom: 12,
-  },
-  headerTitle: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: '#000',
-  },
-  headerSubtitle: {
-    fontSize: 14,
-    color: '#666',
-    marginTop: 8,
   },
   scheduleItem: {
     backgroundColor: '#fff',

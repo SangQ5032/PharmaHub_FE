@@ -9,22 +9,41 @@ import {
   RefreshControl,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
-import { useGetInvoices } from '../hooks/useSales';
+import { useGetInvoicesByBranch, useGetInvoicesByMe } from '../hooks/useSales';
 import { ROUTES } from '@shared/constants/routes';
 import { Invoice } from '../types';
 
-const InvoiceListScreen: React.FC = () => {
-  const navigation = useNavigation<any>();
-  const [limit] = useState(20);
-  const [offset, setOffset] = useState(0);
-  const {
-    data: invoicesData,
-    isLoading,
-    refetch,
-  } = useGetInvoices(limit, offset);
+type TabType = 'branch' | 'me';
 
+const InvoiceListScreen: React.FC = ({ route }: any) => {
+  const navigation = useNavigation<any>();
+  const branchId = route?.params?.branchId;
+  const [activeTab, setActiveTab] = useState<TabType>('branch');
+  const [page, setPage] = useState(1);
+  const limit = 20;
+
+  // Lấy dữ liệu cho cả 2 tab
+  const {
+    data: branchInvoicesData,
+    isLoading: isBranchLoading,
+    refetch: refetchBranch,
+  } = useGetInvoicesByBranch({ page, limit, branch_id: branchId });
+
+  const {
+    data: meInvoicesData,
+    isLoading: isMeLoading,
+    refetch: refetchMe,
+  } = useGetInvoicesByMe({ page, limit });
+
+  // Chọn dữ liệu dựa trên tab active
+  const isLoading = activeTab === 'branch' ? isBranchLoading : isMeLoading;
+  const invoicesData =
+    activeTab === 'branch' ? branchInvoicesData : meInvoicesData;
+
+  // Xử lý response format từ API
   const invoices: Invoice[] = invoicesData?.data || [];
-  const total = invoicesData?.total || 0;
+  const pagination = invoicesData?.pagination || { total: 0, totalPages: 0 };
+  const total = pagination.total || 0;
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -87,10 +106,12 @@ const InvoiceListScreen: React.FC = () => {
           <Text style={styles.label}>Số điện thoại:</Text>
           <Text style={styles.value}>{item.customer_phone}</Text>
         </View>
-        <View style={styles.contentRow}>
-          <Text style={styles.label}>Nhân viên:</Text>
-          <Text style={styles.value}>{item.employee_id?.name || '-'}</Text>
-        </View>
+        {activeTab === 'branch' && (
+          <View style={styles.contentRow}>
+            <Text style={styles.label}>Nhân viên:</Text>
+            <Text style={styles.value}>{item.employee_id?.name || '-'}</Text>
+          </View>
+        )}
         <View style={styles.contentRow}>
           <Text style={styles.label}>Sản phẩm:</Text>
           <Text style={styles.value}>{item.items?.length || 0} mặt hàng</Text>
@@ -115,13 +136,58 @@ const InvoiceListScreen: React.FC = () => {
   );
 
   const handleLoadMore = () => {
-    if (invoices.length + offset < total) {
-      setOffset(offset + limit);
+    if (page < pagination.totalPages) {
+      setPage(page + 1);
+    }
+  };
+
+  const handleTabChange = (tab: TabType) => {
+    setActiveTab(tab);
+    setPage(1);
+  };
+
+  const handleRefresh = () => {
+    setPage(1);
+    if (activeTab === 'branch') {
+      refetchBranch();
+    } else {
+      refetchMe();
     }
   };
 
   return (
     <View style={styles.container}>
+      {/* Tab Navigation */}
+      <View style={styles.tabContainer}>
+        <TouchableOpacity
+          style={[styles.tab, activeTab === 'branch' && styles.tabActive]}
+          onPress={() => handleTabChange('branch')}
+        >
+          <Text
+            style={[
+              styles.tabText,
+              activeTab === 'branch' && styles.tabTextActive,
+            ]}
+          >
+            Chi nhánh
+          </Text>
+          {activeTab === 'branch' && <View style={styles.tabIndicator} />}
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={[styles.tab, activeTab === 'me' && styles.tabActive]}
+          onPress={() => handleTabChange('me')}
+        >
+          <Text
+            style={[styles.tabText, activeTab === 'me' && styles.tabTextActive]}
+          >
+            Của tôi
+          </Text>
+          {activeTab === 'me' && <View style={styles.tabIndicator} />}
+        </TouchableOpacity>
+      </View>
+
+      {/* Content */}
       {isLoading && invoices.length === 0 ? (
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color="#0066CC" />
@@ -129,7 +195,11 @@ const InvoiceListScreen: React.FC = () => {
         </View>
       ) : invoices.length === 0 ? (
         <View style={styles.emptyContainer}>
-          <Text style={styles.emptyText}>Chưa có hóa đơn nào</Text>
+          <Text style={styles.emptyText}>
+            {activeTab === 'branch'
+              ? 'Chưa có hóa đơn nào trong chi nhánh'
+              : 'Bạn chưa tạo hóa đơn nào'}
+          </Text>
           <TouchableOpacity
             style={styles.createButton}
             onPress={() => navigation.navigate(ROUTES.CREATE_INVOICE)}
@@ -145,19 +215,20 @@ const InvoiceListScreen: React.FC = () => {
           onEndReached={handleLoadMore}
           onEndReachedThreshold={0.3}
           refreshControl={
-            <RefreshControl
-              refreshing={isLoading}
-              onRefresh={() => {
-                setOffset(0);
-                refetch();
-              }}
-            />
+            <RefreshControl refreshing={isLoading} onRefresh={handleRefresh} />
           }
           contentContainerStyle={styles.listContent}
           ListFooterComponent={
-            invoices.length > 0 && invoices.length + offset < total ? (
+            invoices.length > 0 && page < pagination.totalPages ? (
               <View style={styles.loadMoreContainer}>
                 <ActivityIndicator size="small" color="#0066CC" />
+                <Text style={styles.loadMoreText}>Đang tải thêm...</Text>
+              </View>
+            ) : invoices.length > 0 ? (
+              <View style={styles.endContainer}>
+                <Text style={styles.endText}>
+                  Đã hiển thị {invoices.length} / {total} hóa đơn
+                </Text>
               </View>
             ) : null
           }
@@ -178,6 +249,43 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#F5F5F5',
+  },
+  tabContainer: {
+    flexDirection: 'row',
+    backgroundColor: '#FFF',
+    borderBottomWidth: 1,
+    borderBottomColor: '#E0E0E0',
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+  },
+  tab: {
+    flex: 1,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  tabActive: {
+    backgroundColor: '#FAFAFA',
+  },
+  tabText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#999',
+  },
+  tabTextActive: {
+    color: '#0066CC',
+  },
+  tabIndicator: {
+    position: 'absolute',
+    bottom: 0,
+    height: 3,
+    backgroundColor: '#0066CC',
+    left: 0,
+    right: 0,
   },
   listContent: {
     padding: 12,
@@ -292,6 +400,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#999',
     marginBottom: 16,
+    textAlign: 'center',
   },
   createButton: {
     backgroundColor: '#0066CC',
@@ -305,8 +414,21 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   loadMoreContainer: {
-    paddingVertical: 12,
+    paddingVertical: 16,
     alignItems: 'center',
+  },
+  loadMoreText: {
+    marginTop: 8,
+    fontSize: 12,
+    color: '#666',
+  },
+  endContainer: {
+    paddingVertical: 16,
+    alignItems: 'center',
+  },
+  endText: {
+    fontSize: 12,
+    color: '#999',
   },
   fab: {
     position: 'absolute',

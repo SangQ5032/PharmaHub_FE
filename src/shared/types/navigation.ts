@@ -55,4 +55,7 @@ export type MainStackParamList = {
     filter: ReportFilter;
     title: string;
   };
+  [ROUTES.BRANCH_LIST]: undefined;
+  [ROUTES.ADD_EDIT_BRANCH]: { mode?: 'edit'; item?: any } | undefined;
+  [ROUTES.BRANCH_DETAIL]: { branchId: string; branchName?: string } | undefined;
 };

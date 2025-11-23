@@ -1,10 +1,7 @@
-/* eslint-disable react-native/no-inline-styles */
 import React from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import PhoneLoginScreen from '@features/auth/screens/PhoneLoginScreen';
-import WorkScheduleScreen from '@features/work-schdule/screens/WorkScheduleScreen';
-import MyWorkScheduleScreen from '@features/work-schdule/screens/MyWorkScheduleScreen';
 import CheckinCheckoutScreen from '@features/checkin-checkout/screens/CheckinCheckoutScreen';
 import ImportListScreen from '@features/warehouse/screens/ImportListScreen';
 import InventoryListScreen from '@features/warehouse/screens/InventoryListScreen';
@@ -20,7 +17,8 @@ import {
   EmployeeManagementScreen,
   AddEditEmployeeScreen,
 } from '@features/revenue-report';
-import CreateImportScreen from '@features/warehouse/screens/CreateImportScreen';
+import { BranchListScreen, BranchFormScreen } from '@features/branches';
+import BranchDetailScreen from '@features/branches/screens/BranchDetailScreen';
 import { ROUTES } from '@shared/constants/routes';
 import { HomeNavigator, TabItem } from '@shared/components';
 import HomeScreen from '@shared/screens/HomeScreen';
@@ -37,7 +35,14 @@ import {
   SalesHubScreen,
   InvoiceListScreen,
   InvoiceDetailScreen,
+  BranchInvoiceHistoryScreen,
 } from '@features/sales';
+import {
+  WorkScheduleListScreen,
+  CreateWeekScheduleScreen,
+  WorkScheduleMenuScreen,
+  MyWorkScheduleScreen,
+} from '@features/work-schdule';
 import {
   RootStackParamList,
   AuthStackParamList,
@@ -107,12 +112,24 @@ const MainAppNavigator = () => {
 
       {/* Work Schedule Routes */}
       <MainStack.Screen
-        name={ROUTES.WORK_SCHEDULE}
-        component={WorkScheduleScreen}
+        name={ROUTES.WORK_SCHEDULE_MENU}
+        component={WorkScheduleMenuScreen}
+        options={{ headerShown: true, title: 'Lịch Làm Việc' }}
+      />
+      <MainStack.Screen
+        name={ROUTES.WORK_SCHEDULE_LIST}
+        component={WorkScheduleListScreen}
+        options={{ headerShown: true, title: 'Lịch làm việc' }}
       />
       <MainStack.Screen
         name={ROUTES.MY_WORK_SCHEDULE}
         component={MyWorkScheduleScreen}
+        options={{ headerShown: true, title: 'Lịch của tôi' }}
+      />
+      <MainStack.Screen
+        name={ROUTES.CREATE_WEEK_SCHEDULE}
+        component={CreateWeekScheduleScreen}
+        options={{ headerShown: true, title: 'Tạo lịch tuần' }}
       />
 
       {/* Checkin/Checkout */}
@@ -165,6 +182,23 @@ const MainAppNavigator = () => {
       <MainStack.Screen
         name={ROUTES.ADD_EDIT_EMPLOYEE}
         component={AddEditEmployeeScreen}
+      />
+
+      {/* Branch Management Routes */}
+      <MainStack.Screen
+        name={ROUTES.BRANCH_LIST}
+        component={BranchListScreen}
+        options={{ headerShown: true, title: 'Chi nhánh' }}
+      />
+      <MainStack.Screen
+        name={ROUTES.ADD_EDIT_BRANCH}
+        component={BranchFormScreen}
+        options={{ headerShown: true, title: 'Thêm / Sửa chi nhánh' }}
+      />
+      <MainStack.Screen
+        name={ROUTES.BRANCH_DETAIL}
+        component={BranchDetailScreen}
+        options={{ headerShown: false }}
       />
 
       {/* Warehouse Routes */}
@@ -221,6 +255,11 @@ const MainAppNavigator = () => {
         name={ROUTES.INVOICE_DETAIL}
         component={InvoiceDetailScreen}
         options={{ headerShown: true, title: 'Chi tiết hóa đơn' }}
+      />
+      <MainStack.Screen
+        name={ROUTES.BRANCH_INVOICE_HISTORY}
+        component={BranchInvoiceHistoryScreen}
+        options={{ headerShown: false }}
       />
     </MainStack.Navigator>
   );

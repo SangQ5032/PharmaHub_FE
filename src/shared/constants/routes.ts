@@ -4,6 +4,9 @@ export const ROUTES = {
   HOME: 'Home',
   WORK_SCHEDULE: 'WorkSchedule',
   MY_WORK_SCHEDULE: 'MyWorkSchedule',
+  WORK_SCHEDULE_MENU: 'WorkScheduleMenu',
+  WORK_SCHEDULE_LIST: 'WorkScheduleList',
+  CREATE_WEEK_SCHEDULE: 'CreateWeekSchedule',
   CHECKIN_CHECKOUT: 'CheckinCheckout',
   MEDICINES_HUB: 'MedicinesHub',
   MEDICINES: 'Medicines',
@@ -28,9 +31,14 @@ export const ROUTES = {
   // Employee Management routes
   EMPLOYEE_MANAGEMENT: 'EmployeeManagement',
   ADD_EDIT_EMPLOYEE: 'AddEditEmployee',
+  // Branch management
+  BRANCH_LIST: 'BranchList',
+  ADD_EDIT_BRANCH: 'AddEditBranch',
+  BRANCH_DETAIL: 'BranchDetail',
   // Sales routes
   SALES: 'Sales',
   CREATE_INVOICE: 'CreateInvoice',
   INVOICE_DETAIL: 'InvoiceDetail',
   INVOICE_LIST: 'InvoiceList',
+  BRANCH_INVOICE_HISTORY: 'BranchInvoiceHistory',
 };
