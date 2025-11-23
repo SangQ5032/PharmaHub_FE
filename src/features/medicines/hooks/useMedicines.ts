@@ -16,19 +16,19 @@ export function useMedicines() {
     setErrorDetail(null);
     try {
       const q = search.trim();
-      const data = await fetchMedicines(q || undefined, {
+      const result = await fetchMedicines({
         page: 1,
         limit: 100,
+        name: q || undefined,
       });
       console.log(
         '[useMedicines] load success, count =',
-        Array.isArray(data) ? data.length : 'not-array',
+        result.medicines.length,
       );
-      setMedicines(data);
+      setMedicines(result.medicines);
     } catch (err: any) {
       console.error('[useMedicines] load error:', err?.message ?? err);
       setError(err instanceof Error ? err.message : String(err));
-      // capture extra details if available
       setErrorDetail({
         message: err?.message,
         responseStatus: err?.response?.status,
@@ -44,7 +44,7 @@ export function useMedicines() {
     load();
   }, [load]);
 
-  // debounce search input -> realtime fetch theo tên
+  // debounce search input
   useEffect(() => {
     const h = setTimeout(() => {
       load();

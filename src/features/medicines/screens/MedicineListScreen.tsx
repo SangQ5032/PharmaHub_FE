@@ -14,7 +14,6 @@ import { useMedicines } from '../hooks/useMedicines';
 import MedicineItem from '../components/MedicineItem';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { ROUTES } from '@shared/constants/routes';
-// import apiClient from '@shared/services/api';
 
 const MedicineListScreen: React.FC = () => {
   const { medicines, loading, error, refresh, search, setSearch } =
@@ -24,11 +23,6 @@ const MedicineListScreen: React.FC = () => {
   // ----- Filters state -----
   const [filterVisible, setFilterVisible] = useState(false);
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
-  // expiryOption: null(no filter) | 30 | 60 | 365
-  const [expiryOption, setExpiryOption] = useState<number | null>(null);
-  // quantity-based stock filters removed
-
-  // const baseURL = (apiClient && (apiClient.defaults as any)?.baseURL) || '<no-baseURL>';
 
   useFocusEffect(
     useCallback(() => {
@@ -40,51 +34,25 @@ const MedicineListScreen: React.FC = () => {
   const categories = useMemo(() => {
     const set = new Set<string>();
     medicines.forEach(m => {
-      const c = (m as any).category;
+      const c = m.category_id?.name;
       if (typeof c === 'string' && c.trim()) set.add(c.trim());
     });
     return Array.from(set).sort((a, b) => a.localeCompare(b));
   }, [medicines]);
 
-  const getDaysLeft = (d?: string) => {
-    if (!d) return undefined;
-    const exp = new Date(d);
-    if (Number.isNaN(exp.getTime())) return undefined;
-    const today = new Date();
-    exp.setHours(0, 0, 0, 0);
-    today.setHours(0, 0, 0, 0);
-    const msPerDay = 24 * 60 * 60 * 1000;
-    return Math.round((exp.getTime() - today.getTime()) / msPerDay);
-  };
-
-  // quantity-based stock level helpers removed
-
   const filteredMedicines = useMemo(() => {
     return medicines.filter(m => {
       // category filter (multi)
       if (selectedCategories.length > 0) {
-        const c = (m as any).category?.trim();
+        const c = m.category_id?.name?.trim();
         if (!c || !selectedCategories.includes(c)) return false;
       }
-
-      // expiry filter (single: <= N days)
-      if (expiryOption != null) {
-        const daysLeft = getDaysLeft((m as any).expiry_date);
-        if (typeof daysLeft !== 'number' || !(daysLeft <= expiryOption)) {
-          return false;
-        }
-      }
-
-      // quantity-based stock filtering removed
-
       return true;
     });
-  }, [medicines, selectedCategories, expiryOption]);
+  }, [medicines, selectedCategories]);
 
   const clearAllFilters = () => {
     setSelectedCategories([]);
-    setExpiryOption(null);
-    // reset for removed stock filters not needed
   };
 
   const selectedChips = useMemo(() => {
@@ -97,17 +65,8 @@ const MedicineListScreen: React.FC = () => {
           setSelectedCategories(prev => prev.filter(x => x !== c)),
       }),
     );
-    if (expiryOption != null) {
-      const label =
-        expiryOption === 365 ? 'HSD ≤ 1 năm' : `HSD ≤ ${expiryOption} ngày`;
-      chips.push({
-        key: `exp:${expiryOption}`,
-        label,
-        onRemove: () => setExpiryOption(null),
-      });
-    }
     return chips;
-  }, [selectedCategories, expiryOption]);
+  }, [selectedCategories]);
 
   return (
     <>
@@ -164,16 +123,18 @@ const MedicineListScreen: React.FC = () => {
 
         {/* Header row */}
         <View style={styles.headerRow}>
-          <View style={styles.headerCell}>
+          <View style={[styles.headerCell, { flex: 35 }]}>
             <Text style={[styles.headerText, styles.left]}>TÊN THUỐC</Text>
           </View>
-          <View style={styles.headerCell}>
+          <View style={[styles.headerCell, { flex: 25 }]}>
+            <Text style={[styles.headerText, styles.center]}>NHÓM</Text>
+          </View>
+          <View style={[styles.headerCell, { flex: 25 }]}>
             <Text style={[styles.headerText, styles.center]}>GIÁ</Text>
           </View>
-          <View style={styles.headerCell}>
-            <Text style={[styles.headerText, styles.center]}>HSD</Text>
+          <View style={[styles.headerCell, { flex: 15 }]}>
+            <Text style={[styles.headerText, styles.center]}>TRẠNG THÁI</Text>
           </View>
-          {/* SL column removed */}
         </View>
 
         {error ? (
@@ -227,10 +188,10 @@ const MedicineListScreen: React.FC = () => {
             <Text style={styles.modalTitle}>Bộ lọc</Text>
 
             {/* Category */}
-            <Text style={styles.sectionTitle}>Category</Text>
+            <Text style={styles.sectionTitle}>Nhóm thuốc</Text>
             <View style={styles.optionsWrap}>
               {categories.length === 0 ? (
-                <Text style={styles.muted}>Không có category</Text>
+                <Text style={styles.muted}>Không có nhóm thuốc</Text>
               ) : (
                 categories.map(c => {
                   const selected = selectedCategories.includes(c);
@@ -262,37 +223,6 @@ const MedicineListScreen: React.FC = () => {
                 })
               )}
             </View>
-
-            <Text style={styles.sectionTitle}>Hạn sử dụng</Text>
-            <View style={styles.optionsWrap}>
-              {[30, 60, 365].map(n => {
-                const selected = expiryOption === n;
-                const label = n === 365 ? '≤ 1 năm' : `≤ ${n} ngày`;
-                return (
-                  <TouchableOpacity
-                    key={n}
-                    style={[
-                      styles.optionPill,
-                      selected && styles.optionPillSelected,
-                    ]}
-                    onPress={() =>
-                      setExpiryOption(prev => (prev === n ? null : n))
-                    }
-                  >
-                    <Text
-                      style={[
-                        styles.optionPillText,
-                        selected && styles.optionPillTextSelected,
-                      ]}
-                    >
-                      {label}
-                    </Text>
-                  </TouchableOpacity>
-                );
-              })}
-            </View>
-
-            {/* Quantity-based filter section removed */}
 
             <View style={styles.modalActions}>
               <TouchableOpacity
@@ -396,12 +326,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   headerCell: {
-    flex: 1,
     paddingHorizontal: 6,
     minWidth: 0,
   },
   headerText: {
-    fontSize: 13,
+    fontSize: 12,
     fontWeight: '700',
     color: '#333',
   },
