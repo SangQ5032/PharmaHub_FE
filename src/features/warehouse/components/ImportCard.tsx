@@ -13,6 +13,33 @@ export const ImportCard: React.FC<ImportCardProps> = ({
   import: importRecord,
   onPress,
 }) => {
+  // Get status color and label
+  const getStatusColor = (status?: string) => {
+    switch (status) {
+      case 'pending':
+        return '#FF9800';
+      case 'completed':
+        return '#4CAF50';
+      case 'cancelled':
+        return '#F44336';
+      default:
+        return '#757575';
+    }
+  };
+
+  const getStatusLabel = (status?: string) => {
+    switch (status) {
+      case 'pending':
+        return 'Chờ xử lý';
+      case 'completed':
+        return 'Hoàn thành';
+      case 'cancelled':
+        return 'Đã hủy';
+      default:
+        return 'N/A';
+    }
+  };
+
   // Format date
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -37,17 +64,29 @@ export const ImportCard: React.FC<ImportCardProps> = ({
     <TouchableOpacity style={styles.card} onPress={onPress} activeOpacity={0.7}>
       {/* Header */}
       <View style={styles.header}>
-        <Text style={styles.id} numberOfLines={1}>
-          #{importRecord._id.slice(-8).toUpperCase()}
-        </Text>
-        <Text style={styles.date}>{formatDate(importRecord.created_at)}</Text>
+        <View style={styles.headerLeft}>
+          <Text style={styles.id} numberOfLines={1}>
+            #{importRecord._id.slice(-8).toUpperCase()}
+          </Text>
+          <View
+            style={[
+              styles.statusBadge,
+              { backgroundColor: getStatusColor(importRecord.status) },
+            ]}
+          >
+            <Text style={styles.statusText}>
+              {getStatusLabel(importRecord.status)}
+            </Text>
+          </View>
+        </View>
+        <Text style={styles.date}>{formatDate(importRecord.createdAt)}</Text>
       </View>
 
       {/* Supplier */}
       <View style={styles.row}>
         <Text style={styles.label}>Nhà cung cấp:</Text>
         <Text style={styles.value} numberOfLines={1}>
-          {importRecord.supplier?.name || 'N/A'}
+          {importRecord.supplier_id?.name || 'N/A'}
         </Text>
       </View>
 
@@ -55,7 +94,7 @@ export const ImportCard: React.FC<ImportCardProps> = ({
       <View style={styles.row}>
         <Text style={styles.label}>Chi nhánh:</Text>
         <Text style={styles.value} numberOfLines={1}>
-          {importRecord.branch?.name || 'N/A'}
+          {importRecord.branch_id?.name || 'N/A'}
         </Text>
       </View>
 
@@ -98,11 +137,26 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: '#E0E0E0',
   },
+  headerLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+    gap: 8,
+  },
   id: {
     fontSize: 16,
     fontWeight: '700',
     color: '#2196F3',
-    flex: 1,
+  },
+  statusBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
+  statusText: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: '#FFFFFF',
   },
   date: {
     fontSize: 12,
