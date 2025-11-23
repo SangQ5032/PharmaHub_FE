@@ -22,6 +22,8 @@ export const ROUTES = {
   INVENTORY_DETAIL: 'InventoryDetail',
   REPORT_SELECTION: 'ReportSelection',
   REPORT_VIEW: 'ReportView',
+  CROSS_BRANCH_INVENTORY: 'CrossBranchInventory',
+  MEDICINE_COMPARE: 'MedicineCompare',
   // Revenue Report routes
   BRANCH_REVENUE_REPORT: 'BranchRevenueReport',
   BRANCH_EMPLOYEE_LIST: 'BranchEmployeeList',
