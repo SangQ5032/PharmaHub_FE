@@ -4,6 +4,8 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import PhoneLoginScreen from '@features/auth/screens/PhoneLoginScreen';
 import CheckinCheckoutScreen from '@features/checkin-checkout/screens/CheckinCheckoutScreen';
 import ImportListScreen from '@features/warehouse/screens/ImportListScreen';
+import CreateImportScreen from '@features/warehouse/screens/CreateImportScreen';
+import ImportDetailScreen from '@features/warehouse/screens/ImportDetailScreen';
 import InventoryListScreen from '@features/warehouse/screens/InventoryListScreen';
 import InventoryDetailScreen from '@features/warehouse/screens/InventoryDetailScreen';
 import ReportSelectionScreen from '@features/warehouse/screens/ReportSelectionScreen';
@@ -205,6 +207,16 @@ const MainAppNavigator = () => {
       <MainStack.Screen
         name={ROUTES.IMPORT_LIST}
         component={ImportListScreen}
+        options={{ headerShown: false }}
+      />
+      <MainStack.Screen
+        name={ROUTES.CREATE_IMPORT}
+        component={CreateImportScreen}
+        options={{ headerShown: false }}
+      />
+      <MainStack.Screen
+        name={ROUTES.IMPORT_DETAIL}
+        component={ImportDetailScreen}
         options={{ headerShown: false }}
       />
       <MainStack.Screen

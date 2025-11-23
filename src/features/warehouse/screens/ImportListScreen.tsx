@@ -10,9 +10,13 @@ import {
   RefreshControl,
   TouchableOpacity,
   Alert,
+  ScrollView,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
-import { useGetImports } from '@features/warehouse/hooks/useImports';
+import {
+  useGetImports,
+  useCancelImport,
+} from '@features/warehouse/hooks/useImports';
 import { ImportCard } from '@features/warehouse/components/ImportCard';
 import { ImportRecord } from '@features/warehouse/types/import.types';
 import { ROUTES } from '@shared/constants/routes';
@@ -21,12 +25,20 @@ export default function ImportListScreen() {
   const navigation = useNavigation<any>();
   const [page, setPage] = useState(1);
   const [refreshing, setRefreshing] = useState(false);
+  const [statusFilter, setStatusFilter] = useState<
+    'all' | 'pending' | 'completed' | 'cancelled'
+  >('all');
 
   // Fetch danh sách phiếu nhập
-  const { data, isLoading, error, refetch } = useGetImports({
+  const queryParams = {
     page,
     limit: 20,
-  });
+    ...(statusFilter !== 'all' && { status: statusFilter as any }),
+  };
+  const { data, isLoading, error, refetch } = useGetImports(queryParams);
+
+  // Cancel import mutation
+  const cancelImportMutation = useCancelImport();
 
   // Handle refresh
   const onRefresh = async () => {
@@ -37,26 +49,113 @@ export default function ImportListScreen() {
 
   // Handle press card
   const handlePressCard = (importRecord: ImportRecord) => {
-    Alert.alert(
-      'Chi tiết phiếu nhập',
-      `ID: ${importRecord._id}\nNhà cung cấp: ${
-        importRecord.supplier?.name || 'N/A'
-      }`,
+    // Navigate to detail screen
+    navigation.navigate(ROUTES.IMPORT_DETAIL || 'ImportDetail', {
+      id: importRecord._id,
+    });
+  };
+
+  // Handle cancel import
+  const handleCancelImport = (importRecord: ImportRecord) => {
+    if (importRecord.status === 'cancelled') {
+      Alert.alert('Thông báo', 'Phiếu nhập này đã bị hủy');
+      return;
+    }
+
+    Alert.prompt(
+      'Hủy phiếu nhập',
+      'Vui lòng nhập lý do hủy phiếu nhập',
+      [
+        {
+          text: 'Hủy',
+          onPress: () => {},
+          style: 'cancel',
+        },
+        {
+          text: 'Xác nhận',
+          onPress: async (reason: string | undefined) => {
+            if (!reason || !reason.trim()) {
+              Alert.alert('Lỗi', 'Lý do hủy không được để trống');
+              return;
+            }
+
+            try {
+              await cancelImportMutation.mutateAsync({
+                id: importRecord._id,
+                body: { reason: reason.trim() },
+              });
+              Alert.alert('Thành công', 'Hủy phiếu nhập thành công');
+            } catch (err: any) {
+              Alert.alert('Lỗi', err.message || 'Không thể hủy phiếu nhập');
+            }
+          },
+        },
+      ],
+      'plain-text',
     );
-    // TODO: Navigate to detail screen
-    // navigation.navigate('ImportDetail', { id: importRecord._id });
   };
 
   // Handle create new import
   const handleCreateImport = () => {
-    Alert.alert('Tạo phiếu nhập mới', 'Chức năng đang phát triển');
-    // TODO: Navigate to create screen
     navigation.navigate(ROUTES.CREATE_IMPORT);
   };
 
+  // Render status filter buttons
+  const renderStatusFilters = () => (
+    <ScrollView
+      horizontal
+      showsHorizontalScrollIndicator={false}
+      style={styles.filterContainer}
+      contentContainerStyle={styles.filterContent}
+    >
+      {(['all', 'pending', 'completed', 'cancelled'] as const).map(status => (
+        <TouchableOpacity
+          key={status}
+          style={[
+            styles.filterButton,
+            statusFilter === status && styles.filterButtonActive,
+          ]}
+          onPress={() => {
+            setStatusFilter(status);
+            setPage(1);
+          }}
+        >
+          <Text
+            style={[
+              styles.filterButtonText,
+              statusFilter === status && styles.filterButtonTextActive,
+            ]}
+            numberOfLines={1}
+          >
+            {status === 'all'
+              ? 'Tất cả'
+              : status === 'pending'
+              ? 'Chờ xử lý'
+              : status === 'completed'
+              ? 'Hoàn thành'
+              : 'Đã hủy'}
+          </Text>
+        </TouchableOpacity>
+      ))}
+    </ScrollView>
+  );
+
   // Render item
   const renderItem = ({ item }: { item: ImportRecord }) => (
-    <ImportCard import={item} onPress={() => handlePressCard(item)} />
+    <View style={styles.itemContainer}>
+      <ImportCard import={item} onPress={() => handlePressCard(item)} />
+      {item.status !== 'cancelled' && (
+        <TouchableOpacity
+          style={styles.cancelButton}
+          onPress={() => handleCancelImport(item)}
+          disabled={cancelImportMutation.isPending}
+        >
+          <Text style={styles.cancelButtonText}>
+            {cancelImportMutation.isPending ? 'Đang xử lý...' : 'Hủy phiếu'}
+          </Text>
+        </TouchableOpacity>
+      )}
+    </View>
   );
 
   // Render empty
@@ -96,6 +195,9 @@ export default function ImportListScreen() {
           <Text style={styles.addButtonText}>+ Tạo mới</Text>
         </TouchableOpacity>
       </View>
+
+      {/* Status filters */}
+      {renderStatusFilters()}
 
       {/* List */}
       {isLoading && !refreshing ? (
@@ -155,8 +257,58 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '600',
   },
+  filterContainer: {
+    backgroundColor: '#FFFFFF',
+    borderBottomWidth: 1,
+    borderBottomColor: '#E0E0E0',
+    paddingVertical: 8,
+  },
+  filterContent: {
+    paddingHorizontal: 12,
+    gap: 8,
+  },
+  filterButton: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: '#E0E0E0',
+    backgroundColor: '#FFFFFF',
+    minWidth: 70,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  filterButtonActive: {
+    backgroundColor: '#4CAF50',
+    borderColor: '#4CAF50',
+  },
+  filterButtonText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#757575',
+  },
+  filterButtonTextActive: {
+    color: '#FFFFFF',
+  },
   listContent: {
     paddingVertical: 8,
+  },
+  itemContainer: {
+    marginHorizontal: 12,
+    marginVertical: 4,
+  },
+  cancelButton: {
+    backgroundColor: '#F44336',
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 6,
+    marginTop: 8,
+    alignItems: 'center',
+  },
+  cancelButtonText: {
+    color: '#FFFFFF',
+    fontSize: 14,
+    fontWeight: '600',
   },
   centerContainer: {
     flex: 1,

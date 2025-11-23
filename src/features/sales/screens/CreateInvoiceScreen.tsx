@@ -13,7 +13,7 @@ import {
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { useCreateInvoice } from '../hooks/useSales';
-import { useMedicinesByBranch } from '../hooks/useMedicines';
+import { useMedicinesWithBatches } from '../hooks/useMedicines';
 import { useGetCustomers } from '../hooks/useCustomers';
 import { useAuthStore } from '../../auth/stores/useAuthStore';
 import { SaleItem, CreateInvoiceRequest } from '../types';
@@ -24,8 +24,8 @@ const CreateInvoiceScreen: React.FC = () => {
   const branchId = user?.branch_id || '';
 
   const { mutate: createInvoiceMutation, isPending } = useCreateInvoice();
-  const { data: medicinesData, isLoading: medicinesLoading } =
-    useMedicinesByBranch(branchId);
+  const { data: medicinesResponse, isLoading: medicinesLoading } =
+    useMedicinesWithBatches(branchId, 1, 50);
   const { data: customersData, isLoading: customersLoading } = useGetCustomers(
     1,
     50,
@@ -54,7 +54,7 @@ const CreateInvoiceScreen: React.FC = () => {
   const [showCustomerModal, setShowCustomerModal] = useState(false);
   const [customerSearchQuery, setCustomerSearchQuery] = useState('');
 
-  const medicines = medicinesData || [];
+  const medicines = medicinesResponse?.data || [];
   const customers = customersData || [];
 
   const filteredMedicines = medicines.filter((med: any) =>
@@ -77,7 +77,9 @@ const CreateInvoiceScreen: React.FC = () => {
 
   const handleSelectMedicine = (medicine: any) => {
     setSelectedMedicineId(medicine._id);
-    setSelectedMedicinePrice(String(medicine.price || 0));
+    setSelectedMedicinePrice(
+      String(medicine.retail_price || medicine.price || 0),
+    );
     setMedicineSearchQuery(medicine.name);
     setShowMedicineModal(false);
   };
@@ -474,17 +476,26 @@ const CreateInvoiceScreen: React.FC = () => {
                 <TouchableOpacity
                   style={[
                     styles.medicineListItem,
-                    !item.in_stock && styles.medicineListItemOutOfStock,
+                    (!item.total_quantity || item.total_quantity === 0) &&
+                      styles.medicineListItemOutOfStock,
                   ]}
                   onPress={() => handleSelectMedicine(item)}
-                  disabled={!item.in_stock}
+                  disabled={!item.total_quantity || item.total_quantity === 0}
                 >
-                  <View>
+                  <View style={{ flex: 1 }}>
                     <Text style={styles.medicineName}>{item.name}</Text>
                     <Text style={styles.medicineInfo}>
-                      Giá: {Number(item.price || 0).toLocaleString('vi-VN')}₫ |{' '}
-                      {item.unit || 'viên'}
-                      {!item.in_stock && ' | Hết hàng'}
+                      Giá:{' '}
+                      {Number(
+                        item.retail_price || item.price || 0,
+                      ).toLocaleString('vi-VN')}
+                      ₫ | {item.unit || 'viên'}
+                    </Text>
+                    <Text style={styles.medicineInfo}>
+                      Tồn kho: {item.total_quantity || 0} {item.unit || 'viên'}
+                      {item.batch_count ? ` (${item.batch_count} lô)` : ''}
+                      {(!item.total_quantity || item.total_quantity === 0) &&
+                        ' | Hết hàng'}
                     </Text>
                   </View>
                 </TouchableOpacity>
