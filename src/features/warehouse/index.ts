@@ -7,6 +7,7 @@ export { default as InventoryListScreen } from './screens/InventoryListScreen';
 export { default as InventoryDetailScreen } from './screens/InventoryDetailScreen';
 export { default as ReportSelectionScreen } from './screens/ReportSelectionScreen';
 export { default as ReportViewScreen } from './screens/ReportViewScreen';
+export { default as CrossBranchInventoryScreen } from './screens/CrossBranchInventoryScreen';
 
 // Components
 export { ImportCard } from './components/ImportCard';
@@ -16,6 +17,8 @@ export { StatusBadge } from './components/StatusBadge';
 export { MedicineSearchModal } from './components/MedicineSearchModal';
 export { ReportTemplateCard } from './components/ReportTemplateCard';
 export { ReportSummaryCard } from './components/ReportSummaryCard';
+export { BranchStockBadge } from './components/BranchStockBadge';
+export { CrossBranchInventoryCard } from './components/CrossBranchInventoryCard';
 
 // Hooks
 export {
@@ -36,6 +39,11 @@ export {
   useExportReport,
   useGetReportPreview,
 } from './hooks/useReports';
+export {
+  useGetCrossBranchInventory,
+  useCompareBranchStock,
+  useFindAvailableBranches,
+} from './hooks/useCrossBranchInventory';
 
 // Types
 export type {
@@ -80,3 +88,13 @@ export type {
   ExportReportResponse,
   ReportTemplate,
 } from './types/report.types';
+
+export type {
+  BranchStock,
+  CrossBranchInventoryItem,
+  GetCrossBranchInventoryResponse,
+  CrossBranchInventoryQuery,
+  CompareBranchStockResponse,
+  AvailableBranchesResponse,
+  FindAvailableBranchesQuery,
+} from './types/cross-branch.types';
