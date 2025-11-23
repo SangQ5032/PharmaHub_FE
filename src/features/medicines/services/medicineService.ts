@@ -1,43 +1,96 @@
 import apiClient from '@shared/services/api';
+import { Medicine, MedicinesResponse } from '../types';
 
-// Lấy danh sách medicines (mặc định backend có thể trả về 10 item do pagination)
-// Thêm page & limit để lấy đủ dữ liệu (tạm thời limit lớn để đảm bảo thấy hết)
+export interface FetchMedicinesOptions {
+  page?: number;
+  limit?: number;
+  name?: string;
+}
+
+export interface FetchMedicinesResult {
+  medicines: Medicine[];
+  pagination: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+  };
+}
+
+export interface MedicineDetailResponse {
+  success: boolean;
+  message: string;
+  data: Medicine;
+}
+
+// Lấy danh sách medicines với pagination
 export async function fetchMedicines(
-  name?: string,
-  options?: { page?: number; limit?: number },
-): Promise<any[]> {
+  options: FetchMedicinesOptions = {},
+): Promise<FetchMedicinesResult> {
   const url = '/medicines';
-  const page = options?.page ?? 1;
-  const limit = options?.limit ?? 100; // có 14 record -> 100 đủ dư
+  const page = options.page ?? 1;
+  const limit = options.limit ?? 10;
+
   try {
-    // debug: log baseURL + full url
     console.log(
       '[medicineService] API baseURL =',
       (apiClient && (apiClient.defaults as any)?.baseURL) || '<no-baseURL>',
     );
-    console.log('[medicineService] GET', url, 'params:', { name, page, limit });
+    console.log('[medicineService] GET', url, 'params:', {
+      name: options.name,
+      page,
+      limit,
+    });
 
     const params: Record<string, any> = { page, limit };
-    if (name) params.name = name;
+    if (options.name) params.name = options.name;
 
-    const res = await apiClient.get(url, { params });
+    const res = await apiClient.get<MedicinesResponse>(url, { params });
     const payload = res.data;
 
-    // Các format payload khả dụng: array trực tiếp | {data:[]} | {items:[]} | {results:[]}
-    if (Array.isArray(payload)) return payload;
-    if (payload && Array.isArray(payload.data)) return payload.data;
-    if (payload && Array.isArray(payload.items)) return payload.items;
-    if (payload && Array.isArray(payload.results)) return payload.results;
+    // Response format: {success, message, data: [], pagination: {}}
+    if (payload.success && payload.data && payload.pagination) {
+      return {
+        medicines: payload.data,
+        pagination: payload.pagination,
+      };
+    }
 
-    // Nếu backend trả về {data:{items:[]}} dạng lồng
-    if (payload?.data && Array.isArray(payload.data.items))
-      return payload.data.items;
-
-    return [];
+    return {
+      medicines: [],
+      pagination: { page: 1, limit: 10, total: 0, totalPages: 0 },
+    };
   } catch (err: any) {
-    // detailed logging for debugging
     console.error(
       '[medicineService] fetchMedicines failed message:',
+      err?.message ?? err,
+    );
+    if (err?.response) {
+      console.error('[medicineService] response status:', err.response.status);
+      console.error('[medicineService] response data:', err.response.data);
+    }
+    throw err;
+  }
+}
+
+// Lấy chi tiết thuốc
+export async function fetchMedicineDetail(id: string): Promise<Medicine> {
+  const url = `/medicines/${id}`;
+  try {
+    console.log('[medicineService] GET', url);
+
+    const res = await apiClient.get<MedicineDetailResponse>(url);
+    const payload = res.data;
+
+    // Response format: {success, message, data: {}}
+    if (payload.success && payload.data) {
+      return payload.data;
+    }
+
+    throw new Error('Invalid response format');
+  } catch (err: any) {
+    console.error(
+      '[medicineService] fetchMedicineDetail failed message:',
       err?.message ?? err,
     );
     if (err?.response) {

@@ -9,75 +9,93 @@ import {
   TouchableOpacity,
   Alert,
   Platform,
+  Switch,
 } from 'react-native';
-import DateTimePicker from '@react-native-community/datetimepicker';
 import { createMedicine, updateMedicine } from '../services/medicineService';
 import { useNavigation, useRoute } from '@react-navigation/native';
+import { Medicine } from '../types';
 
 const AddMedicineScreen: React.FC = () => {
   const navigation = useNavigation<any>();
   const route = useRoute<any>();
-  const mode = route.params?.mode ?? 'create';
-  const editingItem = route.params?.item ?? null;
+  const mode = route?.params?.mode ?? 'create';
+  const editingItem: Medicine | null = route?.params?.item ?? null;
 
+  // Form fields
   const [name, setName] = useState('');
-  const [description, setDescription] = useState('');
-  const [category, setCategory] = useState('');
+  const [genericName, setGenericName] = useState('');
+  const [brandName, setBrandName] = useState('');
+  const [dosageForm, setDosageForm] = useState('');
+  const [strength, setStrength] = useState('');
   const [unit, setUnit] = useState('');
-  const [price, setPrice] = useState('');
-  const [expiryDate, setExpiryDate] = useState(''); // ISO yyyy-mm-dd
-  const [supplierId, setSupplierId] = useState('');
-  const [warningThreshold, setWarningThreshold] = useState('');
+  const [packaging, setPackaging] = useState('');
+  const [categoryId, setCategoryId] = useState('');
+  const [prescriptionRequired, setPrescriptionRequired] = useState(false);
+  const [isControlled, setIsControlled] = useState(false);
+  const [retailPrice, setRetailPrice] = useState('');
+  const [minimumPrice, setMinimumPrice] = useState('');
+  const [maxPrice, setMaxPrice] = useState('');
+  const [manufacturer, setManufacturer] = useState('');
+  const [countryOfOrigin, setCountryOfOrigin] = useState('');
+  const [indications, setIndications] = useState('');
+  const [contraindications, setContraindications] = useState('');
+  const [sideEffects, setSideEffects] = useState('');
+  const [usageInstructions, setUsageInstructions] = useState('');
+  const [storageConditions, setStorageConditions] = useState('');
+  const [registrationNumber, setRegistrationNumber] = useState('');
+  const [barcode, setBarcode] = useState('');
+  const [alertThreshold, setAlertThreshold] = useState('');
+  const [status, setStatus] = useState('active');
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
     if (mode === 'edit' && editingItem) {
       setName(editingItem.name ?? '');
-      setDescription(editingItem.description ?? '');
-      setCategory(editingItem.category ?? '');
+      setGenericName(editingItem.generic_name ?? '');
+      setBrandName(editingItem.brand_name ?? '');
+      setDosageForm(editingItem.dosage_form ?? '');
+      setStrength(editingItem.strength ?? '');
       setUnit(editingItem.unit ?? '');
-      setPrice(editingItem.price != null ? String(editingItem.price) : '');
-      setExpiryDate(editingItem.expiry_date ?? '');
-      setSupplierId(
-        editingItem.supplier_id ? String(editingItem.supplier_id) : '',
-      );
-      setWarningThreshold(
-        editingItem.warning_threshold != null
-          ? String(editingItem.warning_threshold)
+      setPackaging(editingItem.packaging ?? '');
+      setCategoryId(editingItem.category_id?._id ?? '');
+      setPrescriptionRequired(editingItem.prescription_required ?? false);
+      setIsControlled(editingItem.is_controlled ?? false);
+      setRetailPrice(
+        editingItem.retail_price != null
+          ? String(editingItem.retail_price)
           : '',
       );
-      // quantity has been removed from the form
+      setMinimumPrice(
+        editingItem.minimum_price != null
+          ? String(editingItem.minimum_price)
+          : '',
+      );
+      setMaxPrice(
+        editingItem.max_price != null ? String(editingItem.max_price) : '',
+      );
+      setManufacturer(editingItem.manufacturer ?? '');
+      setCountryOfOrigin(editingItem.country_of_origin ?? '');
+      setIndications(editingItem.indications ?? '');
+      setContraindications(editingItem.contraindications ?? '');
+      setSideEffects(editingItem.side_effects ?? '');
+      setUsageInstructions(editingItem.usage_instructions ?? '');
+      setStorageConditions(editingItem.storage_conditions ?? '');
+      setRegistrationNumber(editingItem.registration_number ?? '');
+      setBarcode(editingItem.barcode ?? '');
+      setAlertThreshold(
+        editingItem.alert_threshold != null
+          ? String(editingItem.alert_threshold)
+          : '',
+      );
+      setStatus(editingItem.status ?? 'active');
     }
   }, [mode, editingItem]);
 
-  // DatePicker state
-  const [showDatePicker, setShowDatePicker] = useState(false);
-
-  const formatISOToDDMMYYYY = (iso?: string) => {
-    if (!iso) return '';
-    const dt = new Date(iso);
-    if (Number.isNaN(dt.getTime())) return iso;
-    const dd = String(dt.getDate()).padStart(2, '0');
-    const mm = String(dt.getMonth() + 1).padStart(2, '0');
-    const yyyy = dt.getFullYear();
-    return `${dd}/${mm}/${yyyy}`;
-  };
-
-  const onDateChange = (_event: any, selected?: Date) => {
-    if (Platform.OS === 'android') {
-      setShowDatePicker(false);
-    }
-    if (selected) {
-      const iso = selected.toISOString().split('T')[0]; // yyyy-mm-dd
-      setExpiryDate(iso);
-    }
-  };
-
   const validate = () => {
     if (!name.trim()) return 'Tên thuốc là bắt buộc';
-    if (!price.trim() || Number.isNaN(Number(price)))
-      return 'Giá hợp lệ là bắt buộc';
-    if (!expiryDate.trim()) return 'Hạn sử dụng là bắt buộc';
+    if (!genericName.trim()) return 'Hoạt chất là bắt buộc';
+    if (!retailPrice.trim() || Number.isNaN(Number(retailPrice)))
+      return 'Giá bán lẻ hợp lệ là bắt buộc';
     return null;
   };
 
@@ -87,18 +105,34 @@ const AddMedicineScreen: React.FC = () => {
       Alert.alert('Lỗi', err);
       return;
     }
+
     const payload: any = {
       name: name.trim(),
-      description: description.trim() || undefined,
-      category: category.trim() || undefined,
+      generic_name: genericName.trim(),
+      brand_name: brandName.trim() || undefined,
+      dosage_form: dosageForm.trim() || undefined,
+      strength: strength.trim() || undefined,
       unit: unit.trim() || undefined,
-      price: Number(price),
-      expiry_date: expiryDate.trim(), // send ISO yyyy-mm-dd
-      supplier_id: supplierId.trim() || undefined,
-      warning_threshold: warningThreshold
-        ? Number(warningThreshold)
-        : undefined,
+      packaging: packaging.trim() || undefined,
+      category_id: categoryId.trim() || undefined,
+      prescription_required: prescriptionRequired,
+      is_controlled: isControlled,
+      retail_price: Number(retailPrice),
+      minimum_price: minimumPrice ? Number(minimumPrice) : null,
+      max_price: maxPrice ? Number(maxPrice) : null,
+      manufacturer: manufacturer.trim() || undefined,
+      country_of_origin: countryOfOrigin.trim() || undefined,
+      indications: indications.trim() || undefined,
+      contraindications: contraindications.trim() || undefined,
+      side_effects: sideEffects.trim() || undefined,
+      usage_instructions: usageInstructions.trim() || undefined,
+      storage_conditions: storageConditions.trim() || undefined,
+      registration_number: registrationNumber.trim() || undefined,
+      barcode: barcode.trim() || undefined,
+      alert_threshold: alertThreshold ? Number(alertThreshold) : undefined,
+      status: status,
     };
+
     setSubmitting(true);
     try {
       if (mode === 'edit' && editingItem) {
@@ -128,100 +162,264 @@ const AddMedicineScreen: React.FC = () => {
           onPress={() => navigation.goBack()}
           hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
         >
-          <Text style={styles.backText}>Back</Text>
+          <Text style={styles.backText}>← Back</Text>
         </TouchableOpacity>
         <Text style={styles.headerTitle}>
           {mode === 'edit' ? 'Cập nhật thuốc' : 'Thêm thuốc mới'}
         </Text>
-        <View style={{ width: 40 }} /> {/* placeholder để title căn giữa */}
+        <View style={{ width: 40 }} />
       </View>
 
       <ScrollView contentContainerStyle={styles.container}>
-        <Text style={styles.label}>Name</Text>
+        {/* Section 1: Thông tin cơ bản */}
+        <Text style={styles.sectionTitle}>Thông tin cơ bản</Text>
+
+        <Text style={styles.label}>Tên thuốc *</Text>
         <TextInput
           style={styles.input}
           value={name}
           onChangeText={setName}
-          placeholder="Tên thuốc"
+          placeholder="VD: Paracetamol"
         />
 
-        <Text style={styles.label}>Nhà cung cấp (id)</Text>
+        <Text style={styles.label}>Hoạt chất (Generic Name) *</Text>
         <TextInput
           style={styles.input}
-          value={supplierId}
-          onChangeText={setSupplierId}
-          placeholder="supplier id"
+          value={genericName}
+          onChangeText={setGenericName}
+          placeholder="VD: Acetaminophen"
         />
 
-        <Text style={styles.label}>Price</Text>
+        <Text style={styles.label}>Tên thương mại (Brand Name)</Text>
         <TextInput
           style={styles.input}
-          value={price}
-          onChangeText={setPrice}
-          keyboardType="numeric"
-          placeholder="10000"
+          value={brandName}
+          onChangeText={setBrandName}
+          placeholder="VD: Tylenol"
+        />
+
+        <Text style={styles.label}>Dạng liều</Text>
+        <TextInput
+          style={styles.input}
+          value={dosageForm}
+          onChangeText={setDosageForm}
+          placeholder="VD: Viên nén, Viên nang"
         />
 
         <View style={styles.rowHalf}>
           <View style={styles.halfContainer}>
-            <Text style={styles.label}>Unit</Text>
+            <Text style={styles.label}>Hàm lượng</Text>
+            <TextInput
+              style={[styles.input, styles.halfInput]}
+              value={strength}
+              onChangeText={setStrength}
+              placeholder="VD: 500mg"
+            />
+          </View>
+          <View style={styles.halfContainer}>
+            <Text style={styles.label}>Đơn vị</Text>
             <TextInput
               style={[styles.input, styles.halfInput]}
               value={unit}
               onChangeText={setUnit}
-              placeholder="Hộp/Viên..."
+              placeholder="VD: viên, hộp"
             />
           </View>
-
-          <View style={styles.halfContainer}>
-            <Text style={styles.label}>Expiry</Text>
-            <TouchableOpacity
-              onPress={() => setShowDatePicker(true)}
-              activeOpacity={0.7}
-            >
-              <View pointerEvents="none">
-                <TextInput
-                  style={[styles.input, styles.halfInput]}
-                  value={formatISOToDDMMYYYY(expiryDate)}
-                  editable={false}
-                  placeholder="Chọn ngày"
-                />
-              </View>
-            </TouchableOpacity>
-          </View>
         </View>
+
+        <Text style={styles.label}>Đóng gói</Text>
+        <TextInput
+          style={styles.input}
+          value={packaging}
+          onChangeText={setPackaging}
+          placeholder="VD: Hộp 2 vỉ x 10 viên"
+        />
+
+        {/* Section 2: Phân loại */}
+        <Text style={styles.sectionTitle}>Phân loại</Text>
+
+        <Text style={styles.label}>Category ID</Text>
+        <TextInput
+          style={styles.input}
+          value={categoryId}
+          onChangeText={setCategoryId}
+          placeholder="ID của nhóm thuốc"
+        />
+
+        <View style={styles.switchRow}>
+          <Text style={styles.label}>Yêu cầu đơn thuốc</Text>
+          <Switch
+            value={prescriptionRequired}
+            onValueChange={setPrescriptionRequired}
+            trackColor={{ false: '#ddd', true: '#81C784' }}
+            thumbColor={prescriptionRequired ? '#2EB872' : '#ccc'}
+          />
+        </View>
+
+        <View style={styles.switchRow}>
+          <Text style={styles.label}>Thuốc kiểm soát</Text>
+          <Switch
+            value={isControlled}
+            onValueChange={setIsControlled}
+            trackColor={{ false: '#ddd', true: '#81C784' }}
+            thumbColor={isControlled ? '#2EB872' : '#ccc'}
+          />
+        </View>
+
+        {/* Section 3: Giá cả */}
+        <Text style={styles.sectionTitle}>Giá cả</Text>
+
+        <Text style={styles.label}>Giá bán lẻ *</Text>
+        <TextInput
+          style={styles.input}
+          value={retailPrice}
+          onChangeText={setRetailPrice}
+          keyboardType="numeric"
+          placeholder="VD: 15000"
+        />
 
         <View style={styles.rowHalf}>
           <View style={styles.halfContainer}>
-            <Text style={styles.label}>Danh mục</Text>
+            <Text style={styles.label}>Giá tối thiểu</Text>
             <TextInput
               style={[styles.input, styles.halfInput]}
-              value={category}
-              onChangeText={setCategory}
-              placeholder="Danh mục"
+              value={minimumPrice}
+              onChangeText={setMinimumPrice}
+              keyboardType="numeric"
+              placeholder="Tùy chọn"
             />
           </View>
-
           <View style={styles.halfContainer}>
-            <Text style={styles.label}>Warning threshold</Text>
+            <Text style={styles.label}>Giá tối đa</Text>
             <TextInput
               style={[styles.input, styles.halfInput]}
-              value={warningThreshold}
-              onChangeText={setWarningThreshold}
+              value={maxPrice}
+              onChangeText={setMaxPrice}
               keyboardType="numeric"
-              placeholder="200"
+              placeholder="Tùy chọn"
             />
           </View>
         </View>
 
-        <Text style={styles.label}>Mô tả</Text>
+        {/* Section 4: Thông tin sản xuất */}
+        <Text style={styles.sectionTitle}>Thông tin sản xuất</Text>
+
+        <Text style={styles.label}>Nhà sản xuất</Text>
         <TextInput
-          style={[styles.input, { height: 80 }]}
-          value={description}
-          onChangeText={setDescription}
-          multiline
-          placeholder="Mô tả..."
+          style={styles.input}
+          value={manufacturer}
+          onChangeText={setManufacturer}
+          placeholder="VD: GSK"
         />
+
+        <Text style={styles.label}>Nước sản xuất</Text>
+        <TextInput
+          style={styles.input}
+          value={countryOfOrigin}
+          onChangeText={setCountryOfOrigin}
+          placeholder="VD: Anh Quốc"
+        />
+
+        <Text style={styles.label}>Số đăng ký</Text>
+        <TextInput
+          style={styles.input}
+          value={registrationNumber}
+          onChangeText={setRegistrationNumber}
+          placeholder="VD: VN20230001"
+        />
+
+        <Text style={styles.label}>Mã vạch</Text>
+        <TextInput
+          style={styles.input}
+          value={barcode}
+          onChangeText={setBarcode}
+          placeholder="VD: 8934123456789"
+        />
+
+        {/* Section 5: Chỉ định & Chống chỉ định */}
+        <Text style={styles.sectionTitle}>Chỉ định & Chống chỉ định</Text>
+
+        <Text style={styles.label}>Chỉ định</Text>
+        <TextInput
+          style={[styles.input, { height: 70 }]}
+          value={indications}
+          onChangeText={setIndications}
+          multiline
+          placeholder="VD: Giảm đau, hạ sốt"
+        />
+
+        <Text style={styles.label}>Chống chỉ định</Text>
+        <TextInput
+          style={[styles.input, { height: 70 }]}
+          value={contraindications}
+          onChangeText={setContraindications}
+          multiline
+          placeholder="VD: Hypersensitivity"
+        />
+
+        <Text style={styles.label}>Tác dụng phụ</Text>
+        <TextInput
+          style={[styles.input, { height: 70 }]}
+          value={sideEffects}
+          onChangeText={setSideEffects}
+          multiline
+          placeholder="VD: Hiếm gặp"
+        />
+
+        {/* Section 6: Hướng dẫn sử dụng & Bảo quản */}
+        <Text style={styles.sectionTitle}>Hướng dẫn sử dụng & Bảo quản</Text>
+
+        <Text style={styles.label}>Hướng dẫn sử dụng</Text>
+        <TextInput
+          style={[styles.input, { height: 70 }]}
+          value={usageInstructions}
+          onChangeText={setUsageInstructions}
+          multiline
+          placeholder="VD: Uống 1-2 viên, 3-4 lần/ngày"
+        />
+
+        <Text style={styles.label}>Điều kiện bảo quản</Text>
+        <TextInput
+          style={[styles.input, { height: 70 }]}
+          value={storageConditions}
+          onChangeText={setStorageConditions}
+          multiline
+          placeholder="VD: Nơi khô ráo, nhiệt độ dưới 25°C"
+        />
+
+        <Text style={styles.label}>Ngưỡng cảnh báo</Text>
+        <TextInput
+          style={styles.input}
+          value={alertThreshold}
+          onChangeText={setAlertThreshold}
+          keyboardType="numeric"
+          placeholder="VD: 50"
+        />
+
+        {/* Section 7: Trạng thái */}
+        <Text style={styles.sectionTitle}>Trạng thái</Text>
+
+        <Text style={styles.label}>Trạng thái</Text>
+        <TouchableOpacity
+          style={styles.statusButton}
+          onPress={() =>
+            Alert.alert('Chọn trạng thái', '', [
+              {
+                text: 'Hoạt động',
+                onPress: () => setStatus('active'),
+              },
+              {
+                text: 'Vô hiệu hóa',
+                onPress: () => setStatus('inactive'),
+              },
+              { text: 'Hủy', style: 'cancel' },
+            ])
+          }
+        >
+          <Text style={styles.statusButtonText}>
+            {status === 'active' ? 'Hoạt động' : 'Vô hiệu hóa'}
+          </Text>
+        </TouchableOpacity>
       </ScrollView>
 
       {/* Fixed bottom submit button */}
@@ -242,15 +440,6 @@ const AddMedicineScreen: React.FC = () => {
           </Text>
         </TouchableOpacity>
       </View>
-
-      {showDatePicker && (
-        <DateTimePicker
-          value={expiryDate ? new Date(expiryDate) : new Date()}
-          mode="date"
-          display={Platform.OS === 'ios' ? 'spinner' : 'default'}
-          onChange={onDateChange}
-        />
-      )}
     </View>
   );
 };
@@ -284,21 +473,24 @@ const styles = StyleSheet.create({
     color: '#222',
   },
 
-  container: { padding: 16, paddingBottom: 120 }, // paddingBottom to avoid being hidden by fixed button
-  title: {
-    fontSize: 18,
+  container: { padding: 16, paddingBottom: 120 },
+
+  sectionTitle: {
+    fontSize: 15,
     fontWeight: '700',
+    color: '#2EB872',
+    marginTop: 18,
     marginBottom: 12,
-    textAlign: 'center',
   },
 
-  label: { fontSize: 13, color: '#333', marginTop: 8 },
+  label: { fontSize: 13, color: '#333', marginTop: 8, fontWeight: '600' },
   input: {
     borderWidth: 1,
     borderColor: '#ddd',
     borderRadius: 6,
     padding: 10,
     marginTop: 6,
+    fontSize: 13,
   },
 
   rowHalf: {
@@ -314,13 +506,34 @@ const styles = StyleSheet.create({
     width: '100%',
   },
 
+  switchRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginTop: 12,
+    paddingVertical: 8,
+  },
+
+  statusButton: {
+    borderWidth: 1,
+    borderColor: '#ddd',
+    borderRadius: 6,
+    padding: 12,
+    marginTop: 6,
+    backgroundColor: '#f9f9f9',
+  },
+  statusButtonText: {
+    fontSize: 13,
+    color: '#333',
+  },
+
   fixedBottom: {
     position: 'absolute',
     left: 0,
     right: 0,
     bottom: 0,
     padding: 12,
-    backgroundColor: 'transparent',
+    backgroundColor: '#fff',
     borderTopWidth: 0.5,
     borderTopColor: '#eee',
   },
