@@ -1,5 +1,10 @@
 import apiClient from '@shared/services/api';
-import { Medicine, MedicinesResponse } from '../types';
+import {
+  Medicine,
+  MedicinesResponse,
+  InventoryResponse,
+  InventoryAllBranches,
+} from '../types';
 
 export interface FetchMedicinesOptions {
   page?: number;
@@ -136,4 +141,37 @@ export async function updateMedicine(
 export async function deleteMedicine(id: string): Promise<any> {
   const res = await apiClient.delete(`/medicines/${id}`);
   return res.data;
+}
+
+// Lấy tồn kho thuốc tại tất cả chi nhánh
+export async function fetchMedicineInventoryAllBranches(
+  medicineId: string,
+  sortBy: 'branch_name' | 'total_quantity' | 'low_quantity' = 'branch_name',
+): Promise<InventoryAllBranches> {
+  const url = `/medicines/${medicineId}/inventory-all-branches`;
+  try {
+    console.log('[medicineService] GET', url, 'sortBy:', sortBy);
+
+    const params: Record<string, any> = { sortBy };
+
+    const res = await apiClient.get<InventoryResponse>(url, { params });
+    const payload = res.data;
+
+    // Response format: {success, message, data: {medicine_id, branches: []}}
+    if (payload.success && payload.data) {
+      return payload.data;
+    }
+
+    throw new Error('Invalid response format');
+  } catch (err: any) {
+    console.error(
+      '[medicineService] fetchMedicineInventoryAllBranches failed message:',
+      err?.message ?? err,
+    );
+    if (err?.response) {
+      console.error('[medicineService] response status:', err.response.status);
+      console.error('[medicineService] response data:', err.response.data);
+    }
+    throw err;
+  }
 }
