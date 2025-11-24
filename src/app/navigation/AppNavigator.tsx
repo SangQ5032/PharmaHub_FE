@@ -38,6 +38,9 @@ import {
   InvoiceListScreen,
   InvoiceDetailScreen,
   BranchInvoiceHistoryScreen,
+  MedicineDetailScreen as SalesMedicineDetailScreen,
+  CreateCustomerScreen,
+  PaymentQRScreen,
 } from '@features/sales';
 import {
   WorkScheduleListScreen,
@@ -257,6 +260,21 @@ const MainAppNavigator = () => {
         name={ROUTES.CREATE_INVOICE}
         component={CreateInvoiceScreen}
         options={{ headerShown: true, title: 'Tạo Hóa Đơn' }}
+      />
+      <MainStack.Screen
+        name="SalesMedicineDetail"
+        component={SalesMedicineDetailScreen}
+        options={{ headerShown: true, title: 'Chi tiết thuốc' }}
+      />
+      <MainStack.Screen
+        name="CreateCustomer"
+        component={CreateCustomerScreen}
+        options={{ headerShown: true, title: 'Tạo khách hàng' }}
+      />
+      <MainStack.Screen
+        name="PaymentQR"
+        component={PaymentQRScreen}
+        options={{ headerShown: true, title: 'Thanh toán QR' }}
       />
       <MainStack.Screen
         name={ROUTES.INVOICE_LIST}

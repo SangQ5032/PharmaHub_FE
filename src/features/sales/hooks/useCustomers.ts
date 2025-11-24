@@ -1,5 +1,10 @@
-import { useQuery } from '@tanstack/react-query';
-import { getCustomers, getCustomerById } from '../api/customers.api';
+import { useQuery, useMutation } from '@tanstack/react-query';
+import {
+  getCustomers,
+  getCustomerById,
+  createCustomer,
+  CreateCustomerRequest,
+} from '../api/customers.api';
 
 // export const useGetCustomers = (page: number = 1, limit: number = 20, q?: string) => {
 //   return useQuery({
@@ -28,5 +33,11 @@ export const useGetCustomerById = (id: string) => {
     queryKey: ['customer', id],
     queryFn: () => getCustomerById(id),
     enabled: !!id,
+  });
+};
+
+export const useCreateCustomer = () => {
+  return useMutation({
+    mutationFn: (data: CreateCustomerRequest) => createCustomer(data),
   });
 };
