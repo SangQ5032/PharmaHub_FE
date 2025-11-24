@@ -11,14 +11,12 @@ import {
   ScrollView,
 } from 'react-native';
 import { useMedicines } from '../hooks/useMedicines';
-import MedicineItem from '../components/MedicineItem';
-import { useNavigation, useFocusEffect } from '@react-navigation/native';
-import { ROUTES } from '@shared/constants/routes';
+import MedicineItemReadOnly from '../components/MedicineItemReadOnly';
+import { useFocusEffect } from '@react-navigation/native';
 
-const MedicineListScreen: React.FC = () => {
+const EmployeeMedicineListScreen: React.FC = () => {
   const { medicines, loading, error, refresh, search, setSearch } =
     useMedicines();
-  const navigation = useNavigation<any>();
 
   // ----- Filters state -----
   const [filterVisible, setFilterVisible] = useState(false);
@@ -72,7 +70,7 @@ const MedicineListScreen: React.FC = () => {
     <>
       <View style={styles.container}>
         <View style={styles.titleContainer}>
-          <Text style={styles.titleText}>Quản lý thuốc</Text>
+          <Text style={styles.titleText}>Danh sách thuốc</Text>
         </View>
 
         {/* Search box */}
@@ -123,16 +121,16 @@ const MedicineListScreen: React.FC = () => {
 
         {/* Header row */}
         <View style={styles.headerRow}>
-          <View style={[styles.headerCell, { flex: 35 }]}>
+          <View style={[styles.headerCell, styles.headerCellName]}>
             <Text style={[styles.headerText, styles.left]}>TÊN THUỐC</Text>
           </View>
-          <View style={[styles.headerCell, { flex: 25 }]}>
+          <View style={[styles.headerCell, styles.headerCellSmall]}>
             <Text style={[styles.headerText, styles.center]}>NHÓM</Text>
           </View>
-          <View style={[styles.headerCell, { flex: 25 }]}>
+          <View style={[styles.headerCell, styles.headerCellSmall]}>
             <Text style={[styles.headerText, styles.center]}>GIÁ</Text>
           </View>
-          <View style={[styles.headerCell, { flex: 15 }]}>
+          <View style={[styles.headerCell, styles.headerCellTiny]}>
             <Text style={[styles.headerText, styles.center]}>TRẠNG THÁI</Text>
           </View>
         </View>
@@ -149,9 +147,7 @@ const MedicineListScreen: React.FC = () => {
         <FlatList
           data={filteredMedicines}
           keyExtractor={item => String(item._id)}
-          renderItem={({ item }) => (
-            <MedicineItem item={item} onUpdated={refresh} />
-          )}
+          renderItem={({ item }) => <MedicineItemReadOnly item={item} />}
           refreshControl={
             <RefreshControl refreshing={loading} onRefresh={refresh} />
           }
@@ -164,16 +160,6 @@ const MedicineListScreen: React.FC = () => {
             ) : null
           }
         />
-
-        <View style={styles.bottomBar}>
-          <TouchableOpacity
-            style={styles.pillButton}
-            onPress={() => navigation.navigate(ROUTES.ADD_MEDICINE)}
-            activeOpacity={0.8}
-          >
-            <Text style={styles.pillButtonText}>＋ Thêm thuốc</Text>
-          </TouchableOpacity>
-        </View>
       </View>
 
       {/* Filter Modal */}
@@ -199,8 +185,8 @@ const MedicineListScreen: React.FC = () => {
                     <TouchableOpacity
                       key={c}
                       style={[
-                        styles.optionPill,
-                        selected && styles.optionPillSelected,
+                        styles.checkboxRow,
+                        selected && styles.checkboxRowSelected,
                       ]}
                       onPress={() =>
                         setSelectedCategories(prev =>
@@ -210,10 +196,18 @@ const MedicineListScreen: React.FC = () => {
                         )
                       }
                     >
+                      <View
+                        style={[
+                          styles.checkbox,
+                          selected && styles.checkboxSelected,
+                        ]}
+                      >
+                        {selected && <Text style={styles.checkmark}>✓</Text>}
+                      </View>
                       <Text
                         style={[
-                          styles.optionPillText,
-                          selected && styles.optionPillTextSelected,
+                          styles.checkboxLabel,
+                          selected && styles.checkboxLabelSelected,
                         ]}
                       >
                         {c}
@@ -224,22 +218,22 @@ const MedicineListScreen: React.FC = () => {
               )}
             </View>
 
+            {/* Action buttons */}
             <View style={styles.modalActions}>
               <TouchableOpacity
-                style={[styles.modalButton, styles.btnGhost]}
-                onPress={clearAllFilters}
+                style={[styles.modalBtn, styles.clearBtn]}
+                onPress={() => {
+                  clearAllFilters();
+                  setFilterVisible(false);
+                }}
               >
-                <Text style={[styles.modalButtonText, styles.btnGhostText]}>
-                  Bỏ tất cả lựa chọn
-                </Text>
+                <Text style={styles.clearBtnText}>Xóa bộ lọc</Text>
               </TouchableOpacity>
               <TouchableOpacity
-                style={[styles.modalButton, styles.btnPrimary]}
+                style={[styles.modalBtn, styles.applyBtn]}
                 onPress={() => setFilterVisible(false)}
               >
-                <Text style={[styles.modalButtonText, styles.btnPrimaryText]}>
-                  Áp dụng
-                </Text>
+                <Text style={styles.applyBtnText}>Áp dụng</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -250,173 +244,261 @@ const MedicineListScreen: React.FC = () => {
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#fff' },
-  titleContainer: {
-    height: 56,
-    backgroundColor: '#2EB872',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 8,
+  container: {
+    flex: 1,
+    backgroundColor: '#f5f5f5',
   },
-  titleText: { fontSize: 20, fontWeight: '600', color: '#fff' },
-
-  // search
+  titleContainer: {
+    paddingVertical: 16,
+    paddingHorizontal: 16,
+    backgroundColor: '#fff',
+    borderBottomWidth: 1,
+    borderBottomColor: '#e0e0e0',
+  },
+  titleText: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: '#333',
+  },
   searchContainer: {
     paddingHorizontal: 12,
-    marginBottom: 8,
+    paddingVertical: 12,
+    backgroundColor: '#fff',
   },
   searchInput: {
-    height: 40,
-    borderWidth: 1,
-    borderColor: '#E0E0E0',
+    backgroundColor: '#f0f0f0',
     borderRadius: 8,
     paddingHorizontal: 12,
-    backgroundColor: '#fff',
+    paddingVertical: 10,
+    fontSize: 14,
+    color: '#333',
   },
-
-  // filters
   filtersRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    backgroundColor: '#fff',
     paddingHorizontal: 12,
     paddingVertical: 8,
-    marginHorizontal: 12,
-    marginBottom: 8,
-    backgroundColor: '#F9FBFA',
-    borderWidth: 1,
-    borderColor: '#E0E0E0',
-    borderRadius: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#e0e0e0',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    gap: 8,
   },
   chipsContainer: {
-    flexGrow: 1,
-    alignItems: 'center',
-    paddingRight: 8,
+    flexDirection: 'row',
+    paddingHorizontal: 8,
+    gap: 8,
   },
-  chipsPlaceholder: { color: '#888' },
+  chipsPlaceholder: {
+    color: '#999',
+    fontSize: 13,
+  },
   chip: {
+    backgroundColor: '#E3F2FD',
+    borderRadius: 16,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#FFFFFF',
-    borderColor: '#E6E6E6',
-    borderWidth: 1,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 999,
-    marginRight: 8,
+    gap: 6,
   },
-  chipText: { color: '#2E7D32', fontWeight: '600' },
-  chipRemove: { marginLeft: 6 },
-  chipRemoveText: { color: '#888', fontSize: 16, lineHeight: 16 },
+  chipText: {
+    fontSize: 12,
+    color: '#1976D2',
+    fontWeight: '500',
+  },
+  chipRemove: {
+    width: 18,
+    height: 18,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  chipRemoveText: {
+    fontSize: 16,
+    color: '#1976D2',
+    fontWeight: 'bold',
+  },
   filterButton: {
     backgroundColor: '#2EB872',
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderRadius: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 6,
   },
-  filterButtonText: { color: '#fff', fontWeight: '700' },
-
+  filterButtonText: {
+    color: '#fff',
+    fontSize: 13,
+    fontWeight: '600',
+  },
   headerRow: {
     flexDirection: 'row',
-    paddingVertical: 8,
+    backgroundColor: '#E8E8E8',
+    paddingVertical: 10,
     paddingHorizontal: 8,
-    backgroundColor: '#fff',
-    borderTopLeftRadius: 8,
-    borderTopRightRadius: 8,
-    marginBottom: 6,
-    alignItems: 'center',
+    borderBottomWidth: 1,
+    borderBottomColor: '#ddd',
   },
   headerCell: {
-    paddingHorizontal: 6,
-    minWidth: 0,
+    justifyContent: 'center',
+  },
+  headerCellName: {
+    flex: 35,
+  },
+  headerCellSmall: {
+    flex: 25,
+  },
+  headerCellTiny: {
+    flex: 15,
   },
   headerText: {
     fontSize: 12,
     fontWeight: '700',
     color: '#333',
   },
-
-  bottomBar: { padding: 12 },
-  pillButton: {
-    width: '100%',
-    backgroundColor: '#2EB872',
-    paddingVertical: 12,
-    borderRadius: 999,
-    justifyContent: 'center',
-    alignItems: 'center',
-    elevation: 4,
+  left: {
+    textAlign: 'left',
   },
-  pillButtonText: { color: '#fff', fontSize: 16, fontWeight: '700' },
-
-  left: { textAlign: 'left' },
-  center: { textAlign: 'center' },
-  right: { textAlign: 'right' },
-  error: { color: 'red', marginBottom: 8 },
-  errorContainer: { marginBottom: 8 },
-  emptyContainer: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  emptyText: { color: '#666', padding: 20 },
-  // retry button (error)
+  center: {
+    textAlign: 'center',
+  },
+  errorContainer: {
+    margin: 12,
+    padding: 12,
+    backgroundColor: '#FFEBEE',
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#FFCDD2',
+  },
+  error: {
+    color: '#C62828',
+    fontWeight: '600',
+    marginBottom: 8,
+  },
   retry: {
-    alignSelf: 'flex-start',
-    backgroundColor: '#2EB872',
+    backgroundColor: '#C62828',
     paddingHorizontal: 12,
     paddingVertical: 8,
-    borderRadius: 8,
+    borderRadius: 6,
+    alignSelf: 'flex-start',
   },
-  retryText: { color: '#fff', fontWeight: '700' },
-
-  // modal
+  retryText: {
+    color: '#fff',
+    fontWeight: '600',
+    fontSize: 13,
+  },
+  emptyContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  emptyText: {
+    fontSize: 14,
+    color: '#999',
+  },
   modalBackdrop: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.3)',
-    justifyContent: 'center',
-    padding: 16,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'flex-end',
   },
   modalCard: {
     backgroundColor: '#fff',
-    borderRadius: 12,
-    padding: 16,
+    borderTopLeftRadius: 16,
+    borderTopRightRadius: 16,
+    maxHeight: '80%',
+    paddingHorizontal: 16,
+    paddingTop: 16,
   },
-  modalTitle: { fontSize: 18, fontWeight: '700', marginBottom: 8 },
-  sectionTitle: {
-    marginTop: 12,
-    marginBottom: 6,
+  modalTitle: {
+    fontSize: 18,
     fontWeight: '700',
     color: '#333',
+    marginBottom: 16,
   },
-  optionsWrap: { flexDirection: 'row', flexWrap: 'wrap' },
-  optionPill: {
-    borderWidth: 1,
-    borderColor: '#E0E0E0',
-    paddingHorizontal: 10,
-    paddingVertical: 8,
-    borderRadius: 999,
-    marginRight: 8,
-    marginBottom: 8,
-    backgroundColor: '#fff',
+  sectionTitle: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#333',
+    marginBottom: 12,
+    marginTop: 16,
   },
-  optionPillSelected: {
-    backgroundColor: '#2EB872',
+  optionsWrap: {
+    gap: 8,
+  },
+  checkboxRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    borderRadius: 6,
+    backgroundColor: '#f9f9f9',
+  },
+  checkboxRowSelected: {
+    backgroundColor: '#E3F2FD',
+  },
+  checkbox: {
+    width: 20,
+    height: 20,
+    borderRadius: 4,
+    borderWidth: 2,
+    borderColor: '#999',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 10,
+  },
+  checkboxSelected: {
     borderColor: '#2EB872',
+    backgroundColor: '#2EB872',
   },
-  optionPillText: { color: '#333', fontWeight: '600' },
-  optionPillTextSelected: { color: '#fff' },
-  muted: { color: '#888' },
+  checkmark: {
+    color: '#fff',
+    fontWeight: 'bold',
+    fontSize: 12,
+  },
+  checkboxLabel: {
+    fontSize: 14,
+    color: '#333',
+    fontWeight: '500',
+    flex: 1,
+  },
+  checkboxLabelSelected: {
+    color: '#2EB872',
+    fontWeight: '600',
+  },
+  muted: {
+    color: '#999',
+    fontSize: 13,
+    fontStyle: 'italic',
+  },
   modalActions: {
     flexDirection: 'row',
-    justifyContent: 'flex-end',
-    marginTop: 12,
+    gap: 12,
+    marginTop: 20,
+    marginBottom: 20,
   },
-  modalButton: {
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    borderRadius: 8,
-    marginLeft: 8,
+  modalBtn: {
+    flex: 1,
+    paddingVertical: 12,
+    borderRadius: 6,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
-  modalButtonText: { fontWeight: '700' },
-  btnPrimary: { backgroundColor: '#2EB872' },
-  btnPrimaryText: { color: '#fff', fontWeight: '700' },
-  btnGhost: { backgroundColor: '#fff', borderWidth: 1, borderColor: '#E0E0E0' },
-  btnGhostText: { color: '#333', fontWeight: '600' },
+  clearBtn: {
+    backgroundColor: '#f0f0f0',
+    borderWidth: 1,
+    borderColor: '#ddd',
+  },
+  clearBtnText: {
+    color: '#666',
+    fontWeight: '600',
+    fontSize: 14,
+  },
+  applyBtn: {
+    backgroundColor: '#2EB872',
+  },
+  applyBtnText: {
+    color: '#fff',
+    fontWeight: '600',
+    fontSize: 14,
+  },
 });
 
-export default MedicineListScreen;
+export default EmployeeMedicineListScreen;

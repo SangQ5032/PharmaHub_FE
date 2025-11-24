@@ -10,6 +10,7 @@ export const ROUTES = {
   CHECKIN_CHECKOUT: 'CheckinCheckout',
   MEDICINES_HUB: 'MedicinesHub',
   MEDICINES: 'Medicines',
+  EMPLOYEE_MEDICINES: 'EmployeeMedicines',
   MEDICINE_DETAIL: 'MedicineDetail',
   ADD_MEDICINE: 'AddMedicine',
   SUPPLIERS: 'Suppliers',
@@ -40,4 +41,5 @@ export const ROUTES = {
   CREATE_INVOICE: 'CreateInvoice',
   INVOICE_DETAIL: 'InvoiceDetail',
   INVOICE_LIST: 'InvoiceList',
+  BRANCH_INVOICE_HISTORY: 'BranchInvoiceHistory',
 };

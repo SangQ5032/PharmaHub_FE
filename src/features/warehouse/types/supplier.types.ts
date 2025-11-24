@@ -17,8 +17,9 @@ export interface Supplier {
   name: string;
   contact: SupplierContact;
   note?: string;
-  created_at: string;
-  updated_at?: string;
+  status: 'active' | 'inactive';
+  createdAt: string;
+  updatedAt: string;
 }
 
 /**
@@ -26,6 +27,7 @@ export interface Supplier {
  */
 export interface GetSuppliersResponse {
   success: boolean;
+  message: string;
   data: Supplier[];
   pagination?: {
     page: number;
@@ -37,9 +39,11 @@ export interface GetSuppliersResponse {
 
 /**
  * Query params để lấy danh sách nhà cung cấp
+ * Tham khảo: SUPPLIERS_API_DOCUMENTATION.md
  */
 export interface GetSuppliersQuery {
   page?: number;
   limit?: number;
-  search?: string;
+  q?: string; // Tìm kiếm theo tên, email, hoặc số điện thoại
+  status?: 'active' | 'inactive'; // Lọc theo trạng thái
 }

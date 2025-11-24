@@ -102,6 +102,13 @@ export const ROLE_CONFIG: Record<UserRole, RoleConfig> = {
         route: ROUTES.IMPORT_LIST,
         description: 'Quản lý đơn nhập hàng',
       },
+      {
+        id: 'manager-5',
+        name: 'Lịch sử hoá đơn',
+        icon: 'file-document-outline',
+        route: ROUTES.BRANCH_INVOICE_HISTORY,
+        description: 'Xem lịch sử bán hàng',
+      },
     ],
     tabs: [
       {
@@ -109,11 +116,11 @@ export const ROLE_CONFIG: Record<UserRole, RoleConfig> = {
         name: 'Home',
         label: 'Trang chủ',
       },
-      {
-        id: 'manager-tab-2',
-        name: 'MedicinesHub',
-        label: 'Medicines',
-      },
+      // {
+      //   id: 'manager-tab-2',
+      //   name: 'MedicinesHub',
+      //   label: 'Medicines',
+      // },
     ],
   },
   employee: {
@@ -138,6 +145,13 @@ export const ROLE_CONFIG: Record<UserRole, RoleConfig> = {
         icon: 'cash-register',
         route: ROUTES.SALES,
         description: 'Quản lý bán hàng',
+      },
+      {
+        id: 'staff-4',
+        name: 'Danh Sách Thuốc',
+        icon: 'pill',
+        route: ROUTES.EMPLOYEE_MEDICINES,
+        description: 'Xem danh sách thuốc và tồn kho',
       },
     ],
     tabs: [

@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 import React from 'react';
 import {
   View,
@@ -8,6 +9,7 @@ import {
 } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { useNavigation } from '@react-navigation/native';
+import { useAuthStore } from '@features/auth/stores/useAuthStore';
 import { ROUTES } from '@shared/constants/routes';
 
 interface MenuOption {
@@ -21,8 +23,10 @@ interface MenuOption {
 
 const WorkScheduleMenuScreen = () => {
   const navigation = useNavigation();
+  const user = useAuthStore(state => state.user);
+  const role = user?.role;
 
-  const menuOptions: MenuOption[] = [
+  const allMenuOptions: MenuOption[] = [
     {
       id: '1',
       label: 'Danh sách lịch',
@@ -40,6 +44,16 @@ const WorkScheduleMenuScreen = () => {
       color: '#FF9500',
     },
   ];
+
+  // Filter menu options based on role
+  const menuOptions = React.useMemo(() => {
+    if (role === 'employee') {
+      // Employee only sees "Danh sách lịch"
+      return allMenuOptions.filter(option => option.id === '1');
+    }
+    // branch_manager sees all options
+    return allMenuOptions;
+  }, [role]);
 
   const handleMenuPress = (route: string) => {
     navigation.navigate(route as never);
