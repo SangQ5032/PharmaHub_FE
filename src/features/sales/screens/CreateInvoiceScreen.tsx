@@ -25,6 +25,8 @@ const CreateInvoiceScreen: React.FC = () => {
   const branchId = user?.branch_id || '';
 
   const { mutate: createInvoiceMutation, isPending } = useCreateInvoice();
+  // const { data: medicinesResponse, isLoading: medicinesLoading } =
+  //   useMedicinesWithBatches(branchId, 1, 50);
   const { data: medicinesResponse, isLoading: medicinesLoading } =
     useMedicinesWithBatches(branchId, 1, 50);
   const { data: customersData, isLoading: customersLoading } = useGetCustomers(
