@@ -9,7 +9,8 @@ export type Batch = {
   expiry_date: string;
   import_price: number;
   quantity: number;
-  supplier_id: string;
+  supplier_id?: string;
+  supplier_name?: string;
   createdAt: string;
 };
 
@@ -23,9 +24,12 @@ export type Medicine = {
   unit?: string;
   packaging?: string;
   category_name?: string;
+  category_id?: string;
   prescription_required?: boolean;
   is_controlled?: boolean;
   retail_price?: number;
+  minimum_price?: number;
+  max_price?: number;
   manufacturer?: string;
   country_of_origin?: string;
   barcode?: string;
@@ -43,6 +47,18 @@ export type Medicine = {
   total_quantity?: number;
   batch_count?: number;
   batches?: Batch[];
+  indications?: string;
+  contraindications?: string;
+  side_effects?: string;
+  usage_instructions?: string;
+  storage_conditions?: string;
+};
+
+export type MedicineWithBatches = {
+  _id: string;
+  medicine: Medicine;
+  total_quantity: number;
+  batches: Batch[];
 };
 
 export type GetMedicinesByBranchResponse = {
@@ -108,11 +124,30 @@ export const getMedicinesWithBatches = async (
     params.sort = JSON.stringify(sortParams);
   }
 
-  const response = await api.get<GetMedicinesWithBatchesResponse>(
-    `${BATCHES_ENDPOINT}/medicines-with-batches/by-branch/${branchId}`,
-    { params },
-  );
-  return response.data;
+  const response = await api.get<{
+    success: boolean;
+    message: string;
+    data: MedicineWithBatches[];
+    pagination: any;
+  }>(`${BATCHES_ENDPOINT}/medicines-with-batches/by-branch/${branchId}`, {
+    params,
+  });
+
+  // Transform the response to ensure flat structure for medicines
+  const rawData = response.data.data as MedicineWithBatches[];
+  const transformedData = rawData.map((item: MedicineWithBatches) => ({
+    ...item.medicine,
+    total_quantity: item.total_quantity,
+    batches: item.batches,
+    batch_count: item.batches?.length || 0,
+  }));
+
+  return {
+    success: response.data.success,
+    message: response.data.message,
+    data: transformedData,
+    pagination: response.data.pagination,
+  };
 };
 
 export const getMedicineById = async (id: string): Promise<any> => {
