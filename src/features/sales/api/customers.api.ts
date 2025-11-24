@@ -32,6 +32,19 @@ export type GetCustomerByIdResponse = {
   data: Customer;
 };
 
+export type CreateCustomerRequest = {
+  name: string;
+  phone: string;
+  address?: string;
+  email?: string;
+};
+
+export type CreateCustomerResponse = {
+  success: boolean;
+  message: string;
+  data: Customer;
+};
+
 export const getCustomers = async (
   page: number = 1,
   limit: number = 20,
@@ -51,6 +64,16 @@ export const getCustomers = async (
 export const getCustomerById = async (id: string): Promise<Customer> => {
   const response = await api.get<GetCustomerByIdResponse>(
     `${CUSTOMERS_ENDPOINT}/${id}`,
+  );
+  return response.data.data;
+};
+
+export const createCustomer = async (
+  data: CreateCustomerRequest,
+): Promise<Customer> => {
+  const response = await api.post<CreateCustomerResponse>(
+    CUSTOMERS_ENDPOINT,
+    data,
   );
   return response.data.data;
 };

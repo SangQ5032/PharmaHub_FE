@@ -11,21 +11,24 @@ import {
   TextInput,
   Modal,
 } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useRoute } from '@react-navigation/native';
 import { useCreateInvoice } from '../hooks/useSales';
-import { useMedicinesByBranch } from '../hooks/useMedicines';
+import { useMedicinesWithBatches } from '../hooks/useMedicines';
 import { useGetCustomers } from '../hooks/useCustomers';
 import { useAuthStore } from '../../auth/stores/useAuthStore';
 import { SaleItem, CreateInvoiceRequest } from '../types';
 
 const CreateInvoiceScreen: React.FC = () => {
   const navigation = useNavigation<any>();
+  const route = useRoute<any>();
   const { user } = useAuthStore();
   const branchId = user?.branch_id || '';
 
   const { mutate: createInvoiceMutation, isPending } = useCreateInvoice();
-  const { data: medicinesData, isLoading: medicinesLoading } =
-    useMedicinesByBranch(branchId);
+  // const { data: medicinesResponse, isLoading: medicinesLoading } =
+  //   useMedicinesWithBatches(branchId, 1, 50);
+  const { data: medicinesResponse, isLoading: medicinesLoading } =
+    useMedicinesWithBatches(branchId, 1, 50);
   const { data: customersData, isLoading: customersLoading } = useGetCustomers(
     1,
     50,
@@ -35,18 +38,11 @@ const CreateInvoiceScreen: React.FC = () => {
   const [customerId, setCustomerId] = useState('');
   const [customerName, setCustomerName] = useState('');
   const [customerPhone, setCustomerPhone] = useState('');
-  const [paymentMethod, setPaymentMethod] = useState<
-    'cash' | 'card' | 'transfer'
-  >('cash');
-  const [discount, setDiscount] = useState('0');
-  const [taxRate, setTaxRate] = useState('0');
+  const [paymentMethod, setPaymentMethod] = useState<'cash' | 'bank'>('cash');
   const [note, setNote] = useState('');
 
   // Items state
   const [items, setItems] = useState<SaleItem[]>([]);
-  const [selectedMedicineId, setSelectedMedicineId] = useState('');
-  const [selectedMedicineQuantity, setSelectedMedicineQuantity] = useState('1');
-  const [selectedMedicinePrice, setSelectedMedicinePrice] = useState('');
   const [showMedicineModal, setShowMedicineModal] = useState(false);
   const [medicineSearchQuery, setMedicineSearchQuery] = useState('');
 
@@ -54,17 +50,29 @@ const CreateInvoiceScreen: React.FC = () => {
   const [showCustomerModal, setShowCustomerModal] = useState(false);
   const [customerSearchQuery, setCustomerSearchQuery] = useState('');
 
-  const medicines = medicinesData || [];
+  // Handle new customer from CreateCustomerScreen
+  React.useEffect(() => {
+    if (route.params?.newCustomer) {
+      const newCustomer = route.params.newCustomer;
+      setCustomerId(newCustomer._id);
+      setCustomerName(newCustomer.name);
+      setCustomerPhone(newCustomer.phone);
+      // Clear the params so it doesn't auto-select on subsequent visits
+      navigation.setParams({ newCustomer: undefined });
+    }
+  }, [route.params?.newCustomer, navigation]);
+
+  const medicines = medicinesResponse?.data || [];
   const customers = customersData || [];
 
   const filteredMedicines = medicines.filter((med: any) =>
-    med.name.toLowerCase().includes(medicineSearchQuery.toLowerCase()),
+    med?.name?.toLowerCase().includes(medicineSearchQuery.toLowerCase()),
   );
 
   const filteredCustomers = customers.filter(
     (cust: any) =>
-      cust.name.toLowerCase().includes(customerSearchQuery.toLowerCase()) ||
-      cust.phone.includes(customerSearchQuery),
+      cust?.name?.toLowerCase().includes(customerSearchQuery.toLowerCase()) ||
+      cust?.phone?.includes(customerSearchQuery),
   );
 
   const handleSelectCustomer = (customer: any) => {
@@ -76,39 +84,23 @@ const CreateInvoiceScreen: React.FC = () => {
   };
 
   const handleSelectMedicine = (medicine: any) => {
-    setSelectedMedicineId(medicine._id);
-    setSelectedMedicinePrice(String(medicine.price || 0));
-    setMedicineSearchQuery(medicine.name);
     setShowMedicineModal(false);
-  };
-
-  const handleAddItem = () => {
-    if (!selectedMedicineId) {
-      Alert.alert('Lỗi', 'Vui lòng chọn thuốc');
-      return;
-    }
-    if (!selectedMedicineQuantity || Number(selectedMedicineQuantity) <= 0) {
-      Alert.alert('Lỗi', 'Số lượng không hợp lệ');
-      return;
-    }
-    if (!selectedMedicinePrice || Number(selectedMedicinePrice) < 0) {
-      Alert.alert('Lỗi', 'Giá bán không hợp lệ');
-      return;
-    }
-
-    const newItem: SaleItem = {
-      medicine_id: selectedMedicineId,
-      quantity: Number(selectedMedicineQuantity),
-      unit_price: Number(selectedMedicinePrice),
-    };
-
-    setItems([...items, newItem]);
-
-    // Reset form
-    setSelectedMedicineId('');
-    setSelectedMedicineQuantity('1');
-    setSelectedMedicinePrice('');
     setMedicineSearchQuery('');
+    navigation.navigate('SalesMedicineDetail', {
+      medicine,
+      onAddMedicine: (
+        selectedMedicine: any,
+        quantity: number,
+        price: number,
+      ) => {
+        const newItem: SaleItem = {
+          medicine_id: selectedMedicine._id,
+          quantity,
+          unit_price: price,
+        };
+        setItems([...items, newItem]);
+      },
+    });
   };
 
   const handleRemoveItem = (index: number) => {
@@ -120,20 +112,13 @@ const CreateInvoiceScreen: React.FC = () => {
       (sum, item) => sum + item.quantity * item.unit_price,
       0,
     );
-    const discountAmount = Number(discount) || 0;
-    const taxRatePercent = Number(taxRate) || 0;
-    const taxAmount = ((subtotal - discountAmount) * taxRatePercent) / 100;
-    const total = subtotal - discountAmount + taxAmount;
-
     return {
       subtotal,
-      discountAmount,
-      taxAmount,
-      total,
+      total: subtotal,
     };
   };
 
-  const { subtotal, discountAmount, taxAmount, total } = calculateTotals();
+  const { subtotal, total } = calculateTotals();
 
   const handleSubmit = async () => {
     // Validation
@@ -152,8 +137,8 @@ const CreateInvoiceScreen: React.FC = () => {
 
     const invoiceData: CreateInvoiceRequest = {
       items,
-      discount: discountAmount,
-      tax_rate: Number(taxRate) || 0,
+      discount: 0,
+      tax_rate: 0,
       payment_method: paymentMethod,
       customer_id: customerId || undefined,
       customer_name: customerName.trim(),
@@ -161,6 +146,16 @@ const CreateInvoiceScreen: React.FC = () => {
       note: note.trim() || undefined,
     };
 
+    // If payment method is bank (transfer), navigate to QR screen
+    if (paymentMethod === 'bank') {
+      navigation.navigate('PaymentQR', {
+        invoiceData,
+        total,
+      });
+      return;
+    }
+
+    // For cash payment, create invoice directly
     createInvoiceMutation(invoiceData, {
       onSuccess: response => {
         Alert.alert(
@@ -170,7 +165,7 @@ const CreateInvoiceScreen: React.FC = () => {
             {
               text: 'OK',
               onPress: () => {
-                navigation.goBack();
+                navigation.navigate('Sales');
               },
             },
           ],
@@ -235,6 +230,16 @@ const CreateInvoiceScreen: React.FC = () => {
                   </Text>
                 </TouchableOpacity>
               )}
+
+              <TouchableOpacity
+                style={styles.createCustomerButton}
+                onPress={() => navigation.navigate('CreateCustomer')}
+                disabled={isPending}
+              >
+                <Text style={styles.createCustomerButtonText}>
+                  + Tạo mới khách hàng
+                </Text>
+              </TouchableOpacity>
             </>
           )}
         </View>
@@ -255,39 +260,6 @@ const CreateInvoiceScreen: React.FC = () => {
                 <Text style={styles.medicineSelectButtonText}>
                   {medicineSearchQuery || 'Chọn thuốc/sản phẩm'}
                 </Text>
-              </TouchableOpacity>
-
-              <View style={styles.quantityPriceRow}>
-                <View style={[styles.inputContainer, styles.quantityInput]}>
-                  <Text style={styles.label}>Số lượng</Text>
-                  <TextInput
-                    style={styles.input}
-                    placeholder="0"
-                    value={selectedMedicineQuantity}
-                    onChangeText={setSelectedMedicineQuantity}
-                    keyboardType="number-pad"
-                    editable={!isPending}
-                  />
-                </View>
-                <View style={[styles.inputContainer, styles.priceInput]}>
-                  <Text style={styles.label}>Giá bán</Text>
-                  <TextInput
-                    style={styles.input}
-                    placeholder="0"
-                    value={selectedMedicinePrice}
-                    onChangeText={setSelectedMedicinePrice}
-                    keyboardType="decimal-pad"
-                    editable={!isPending}
-                  />
-                </View>
-              </View>
-
-              <TouchableOpacity
-                style={styles.addButton}
-                onPress={handleAddItem}
-                disabled={isPending}
-              >
-                <Text style={styles.addButtonText}>Thêm sản phẩm</Text>
               </TouchableOpacity>
             </>
           )}
@@ -330,14 +302,13 @@ const CreateInvoiceScreen: React.FC = () => {
           </View>
         )}
 
-        {/* Payment and Discount */}
+        {/* Payment */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Thanh toán</Text>
+          <Text style={styles.sectionTitle}>Phương thức thanh toán</Text>
 
           <View style={styles.paymentMethodContainer}>
-            <Text style={styles.label}>Phương thức thanh toán</Text>
             <View style={styles.paymentMethods}>
-              {(['cash', 'card', 'transfer'] as const).map(method => (
+              {(['cash', 'bank'] as const).map(method => (
                 <TouchableOpacity
                   key={method}
                   style={[
@@ -356,36 +327,10 @@ const CreateInvoiceScreen: React.FC = () => {
                     ]}
                   >
                     {method === 'cash' && 'Tiền mặt'}
-                    {method === 'card' && 'Thẻ'}
-                    {method === 'transfer' && 'Chuyển khoản'}
+                    {method === 'bank' && 'Chuyển khoản'}
                   </Text>
                 </TouchableOpacity>
               ))}
-            </View>
-          </View>
-
-          <View style={styles.discountTaxRow}>
-            <View style={[styles.inputContainer, styles.discountInput]}>
-              <Text style={styles.label}>Chiết khấu</Text>
-              <TextInput
-                style={styles.input}
-                placeholder="0"
-                value={discount}
-                onChangeText={setDiscount}
-                keyboardType="decimal-pad"
-                editable={!isPending}
-              />
-            </View>
-            <View style={[styles.inputContainer, styles.taxInput]}>
-              <Text style={styles.label}>Thuế (%)</Text>
-              <TextInput
-                style={styles.input}
-                placeholder="0"
-                value={taxRate}
-                onChangeText={setTaxRate}
-                keyboardType="decimal-pad"
-                editable={!isPending}
-              />
             </View>
           </View>
 
@@ -405,18 +350,6 @@ const CreateInvoiceScreen: React.FC = () => {
             <Text style={styles.summaryLabel}>Tổng tiền hàng:</Text>
             <Text style={styles.summaryValue}>
               {subtotal.toLocaleString('vi-VN')}₫
-            </Text>
-          </View>
-          <View style={styles.summaryRow}>
-            <Text style={styles.summaryLabel}>Chiết khấu:</Text>
-            <Text style={styles.summaryValue}>
-              -{discountAmount.toLocaleString('vi-VN')}₫
-            </Text>
-          </View>
-          <View style={styles.summaryRow}>
-            <Text style={styles.summaryLabel}>Thuế:</Text>
-            <Text style={styles.summaryValue}>
-              {taxAmount.toLocaleString('vi-VN')}₫
             </Text>
           </View>
           <View style={[styles.summaryRow, styles.totalRow]}>
@@ -474,17 +407,26 @@ const CreateInvoiceScreen: React.FC = () => {
                 <TouchableOpacity
                   style={[
                     styles.medicineListItem,
-                    !item.in_stock && styles.medicineListItemOutOfStock,
+                    (!item.total_quantity || item.total_quantity === 0) &&
+                      styles.medicineListItemOutOfStock,
                   ]}
                   onPress={() => handleSelectMedicine(item)}
-                  disabled={!item.in_stock}
+                  disabled={!item.total_quantity || item.total_quantity === 0}
                 >
-                  <View>
+                  <View style={styles.medicineListItemContent}>
                     <Text style={styles.medicineName}>{item.name}</Text>
                     <Text style={styles.medicineInfo}>
-                      Giá: {Number(item.price || 0).toLocaleString('vi-VN')}₫ |{' '}
-                      {item.unit || 'viên'}
-                      {!item.in_stock && ' | Hết hàng'}
+                      Giá:{' '}
+                      {Number(
+                        item.retail_price || item.price || 0,
+                      ).toLocaleString('vi-VN')}
+                      ₫ | {item.unit || 'viên'}
+                    </Text>
+                    <Text style={styles.medicineInfo}>
+                      Tồn kho: {item.total_quantity || 0} {item.unit || 'viên'}
+                      {item.batch_count ? ` (${item.batch_count} lô)` : ''}
+                      {(!item.total_quantity || item.total_quantity === 0) &&
+                        ' | Hết hàng'}
                     </Text>
                   </View>
                 </TouchableOpacity>
@@ -804,6 +746,9 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: '#EEE',
   },
+  medicineListItemContent: {
+    flex: 1,
+  },
   medicineListItemOutOfStock: {
     backgroundColor: '#F0F0F0',
     borderBottomWidth: 2,
@@ -840,6 +785,21 @@ const styles = StyleSheet.create({
   changeCustomerButtonText: {
     fontSize: 13,
     color: '#856404',
+    fontWeight: '600',
+  },
+  createCustomerButton: {
+    marginTop: 8,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    backgroundColor: '#E7F3FF',
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: '#0066CC',
+    alignItems: 'center',
+  },
+  createCustomerButtonText: {
+    fontSize: 13,
+    color: '#0066CC',
     fontWeight: '600',
   },
   emptyText: {

@@ -15,8 +15,9 @@ import { Invoice } from '../types';
 
 type TabType = 'branch' | 'me';
 
-const InvoiceListScreen: React.FC = () => {
+const InvoiceListScreen: React.FC = ({ route }: any) => {
   const navigation = useNavigation<any>();
+  const branchId = route?.params?.branchId;
   const [activeTab, setActiveTab] = useState<TabType>('branch');
   const [page, setPage] = useState(1);
   const limit = 20;
@@ -26,7 +27,7 @@ const InvoiceListScreen: React.FC = () => {
     data: branchInvoicesData,
     isLoading: isBranchLoading,
     refetch: refetchBranch,
-  } = useGetInvoicesByBranch({ page, limit });
+  } = useGetInvoicesByBranch({ page, limit, branch_id: branchId });
 
   const {
     data: meInvoicesData,

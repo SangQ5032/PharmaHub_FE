@@ -8,7 +8,7 @@ export type CreateInvoiceRequest = {
   items: SaleItem[];
   discount: number;
   tax_rate: number;
-  payment_method: 'cash' | 'card' | 'transfer';
+  payment_method: 'cash' | 'card' | 'bank';
   customer_id?: string; // Optional: nếu chọn từ database
   customer_name: string;
   customer_phone: string;

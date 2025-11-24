@@ -45,17 +45,33 @@ export const MedicineSearchModal: React.FC<MedicineSearchModalProps> = ({
     <TouchableOpacity
       style={styles.medicineItem}
       onPress={() => handleSelect(item)}
+      activeOpacity={0.7}
     >
       <View style={styles.medicineInfo}>
-        <Text style={styles.medicineName}>{item.name}</Text>
-        <Text style={styles.medicineCategory}>{item.category}</Text>
+        <Text style={styles.medicineName} numberOfLines={2}>
+          {item.name}
+        </Text>
+        <View style={styles.medicineDetails}>
+          <Text style={styles.medicineDetail}>
+            {item.generic_name && `${item.generic_name}`}
+          </Text>
+          {item.dosage_form && (
+            <Text style={styles.medicineDetail}>• {item.dosage_form}</Text>
+          )}
+          {item.strength && (
+            <Text style={styles.medicineDetail}>• {item.strength}</Text>
+          )}
+        </View>
+        {item.category_id && (
+          <Text style={styles.medicineCategory}>{item.category_id.name}</Text>
+        )}
       </View>
       <View style={styles.medicinePrice}>
         <Text style={styles.priceText}>
           {new Intl.NumberFormat('vi-VN', {
             style: 'currency',
             currency: 'VND',
-          }).format(item.price)}
+          }).format(item.retail_price)}
         </Text>
         <Text style={styles.unitText}>/{item.unit}</Text>
       </View>
@@ -177,12 +193,24 @@ const styles = StyleSheet.create({
     color: '#212121',
     marginBottom: 4,
   },
+  medicineDetails: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    marginBottom: 4,
+  },
+  medicineDetail: {
+    fontSize: 13,
+    color: '#9E9E9E',
+    marginRight: 4,
+  },
   medicineCategory: {
-    fontSize: 14,
-    color: '#757575',
+    fontSize: 13,
+    color: '#2196F3',
+    fontWeight: '500',
   },
   medicinePrice: {
     alignItems: 'flex-end',
+    marginLeft: 12,
   },
   priceText: {
     fontSize: 16,

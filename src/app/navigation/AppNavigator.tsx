@@ -4,6 +4,8 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import PhoneLoginScreen from '@features/auth/screens/PhoneLoginScreen';
 import CheckinCheckoutScreen from '@features/checkin-checkout/screens/CheckinCheckoutScreen';
 import ImportListScreen from '@features/warehouse/screens/ImportListScreen';
+import CreateImportScreen from '@features/warehouse/screens/CreateImportScreen';
+import ImportDetailScreen from '@features/warehouse/screens/ImportDetailScreen';
 import InventoryListScreen from '@features/warehouse/screens/InventoryListScreen';
 import InventoryDetailScreen from '@features/warehouse/screens/InventoryDetailScreen';
 import ReportSelectionScreen from '@features/warehouse/screens/ReportSelectionScreen';
@@ -17,6 +19,8 @@ import {
   EmployeeManagementScreen,
   AddEditEmployeeScreen,
 } from '@features/revenue-report';
+import { BranchListScreen, BranchFormScreen } from '@features/branches';
+import BranchDetailScreen from '@features/branches/screens/BranchDetailScreen';
 import { ROUTES } from '@shared/constants/routes';
 import { HomeNavigator, TabItem } from '@shared/components';
 import HomeScreen from '@shared/screens/HomeScreen';
@@ -25,6 +29,7 @@ import {
   MedicinesHubScreen,
   MedicineListScreen,
   AddMedicineScreen,
+  EmployeeMedicineListScreen,
 } from '@features/medicines';
 import MedicineDetailScreen from '@features/medicines/screens/MedicineDetailScreen';
 import { SuppliersScreen, AddSupplierScreen } from '@features/suppliers';
@@ -33,11 +38,16 @@ import {
   SalesHubScreen,
   InvoiceListScreen,
   InvoiceDetailScreen,
+  BranchInvoiceHistoryScreen,
+  MedicineDetailScreen as SalesMedicineDetailScreen,
+  CreateCustomerScreen,
+  PaymentQRScreen,
 } from '@features/sales';
 import {
   WorkScheduleListScreen,
   CreateWeekScheduleScreen,
   WorkScheduleMenuScreen,
+  MyWorkScheduleScreen,
 } from '@features/work-schdule';
 import {
   RootStackParamList,
@@ -118,6 +128,11 @@ const MainAppNavigator = () => {
         options={{ headerShown: true, title: 'Lịch làm việc' }}
       />
       <MainStack.Screen
+        name={ROUTES.MY_WORK_SCHEDULE}
+        component={MyWorkScheduleScreen}
+        options={{ headerShown: true, title: 'Lịch của tôi' }}
+      />
+      <MainStack.Screen
         name={ROUTES.CREATE_WEEK_SCHEDULE}
         component={CreateWeekScheduleScreen}
         options={{ headerShown: true, title: 'Tạo lịch tuần' }}
@@ -133,6 +148,10 @@ const MainAppNavigator = () => {
       <MainStack.Screen
         name={ROUTES.MEDICINES}
         component={MedicineListScreen}
+      />
+      <MainStack.Screen
+        name={ROUTES.EMPLOYEE_MEDICINES}
+        component={EmployeeMedicineListScreen}
       />
       <MainStack.Screen
         name={ROUTES.ADD_MEDICINE}
@@ -175,10 +194,37 @@ const MainAppNavigator = () => {
         component={AddEditEmployeeScreen}
       />
 
+      {/* Branch Management Routes */}
+      <MainStack.Screen
+        name={ROUTES.BRANCH_LIST}
+        component={BranchListScreen}
+        options={{ headerShown: true, title: 'Chi nhánh' }}
+      />
+      <MainStack.Screen
+        name={ROUTES.ADD_EDIT_BRANCH}
+        component={BranchFormScreen}
+        options={{ headerShown: true, title: 'Thêm / Sửa chi nhánh' }}
+      />
+      <MainStack.Screen
+        name={ROUTES.BRANCH_DETAIL}
+        component={BranchDetailScreen}
+        options={{ headerShown: false }}
+      />
+
       {/* Warehouse Routes */}
       <MainStack.Screen
         name={ROUTES.IMPORT_LIST}
         component={ImportListScreen}
+        options={{ headerShown: false }}
+      />
+      <MainStack.Screen
+        name={ROUTES.CREATE_IMPORT}
+        component={CreateImportScreen}
+        options={{ headerShown: false }}
+      />
+      <MainStack.Screen
+        name={ROUTES.IMPORT_DETAIL}
+        component={ImportDetailScreen}
         options={{ headerShown: false }}
       />
       <MainStack.Screen
@@ -221,6 +267,21 @@ const MainAppNavigator = () => {
         options={{ headerShown: true, title: 'Tạo Hóa Đơn' }}
       />
       <MainStack.Screen
+        name="SalesMedicineDetail"
+        component={SalesMedicineDetailScreen}
+        options={{ headerShown: true, title: 'Chi tiết thuốc' }}
+      />
+      <MainStack.Screen
+        name="CreateCustomer"
+        component={CreateCustomerScreen}
+        options={{ headerShown: true, title: 'Tạo khách hàng' }}
+      />
+      <MainStack.Screen
+        name="PaymentQR"
+        component={PaymentQRScreen}
+        options={{ headerShown: true, title: 'Thanh toán QR' }}
+      />
+      <MainStack.Screen
         name={ROUTES.INVOICE_LIST}
         component={InvoiceListScreen}
         options={{ headerShown: true, title: 'Danh sách hóa đơn' }}
@@ -229,6 +290,11 @@ const MainAppNavigator = () => {
         name={ROUTES.INVOICE_DETAIL}
         component={InvoiceDetailScreen}
         options={{ headerShown: true, title: 'Chi tiết hóa đơn' }}
+      />
+      <MainStack.Screen
+        name={ROUTES.BRANCH_INVOICE_HISTORY}
+        component={BranchInvoiceHistoryScreen}
+        options={{ headerShown: false }}
       />
     </MainStack.Navigator>
   );

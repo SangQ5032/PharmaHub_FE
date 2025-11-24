@@ -17,7 +17,7 @@ import { InventoryCard } from '@features/warehouse/components/InventoryCard';
 import { InventoryItem } from '@features/warehouse/types/inventory.types';
 import { ROUTES } from '@shared/constants/routes';
 
-export default function InventoryListScreen() {
+export default function InventoryListScreen({ route }: any) {
   const navigation = useNavigation();
 
   // State
@@ -26,8 +26,8 @@ export default function InventoryListScreen() {
     'all' | 'normal' | 'low' | 'out_of_stock'
   >('all');
 
-  // TODO: Get branchId from user's current branch
-  const branchId = '507f1f77bcf86cd799439011';
+  // Get branchId from params or fallback to TODO (user's branch)
+  const branchId = route?.params?.branchId ?? '507f1f77bcf86cd799439011';
 
   // Fetch inventory data
   const { data, isLoading, isError, error, refetch, isRefetching } =
