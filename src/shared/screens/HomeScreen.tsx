@@ -6,12 +6,14 @@ import {
   StyleSheet,
   FlatList,
   ScrollView,
+  Alert,
 } from 'react-native';
 import { Header } from '@shared/components/header/Header';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { useNavigation } from '@react-navigation/native';
 import { useAuthStore } from '@features/auth/stores/useAuthStore';
 import { useMyWorkSchedule } from '@features/work-schdule/hooks/useWorkSchedule';
+import { useMyAttendance } from '@features/checkin-checkout/hooks/useAttendance';
 import { getRoleConfig, RoleOption } from '@shared/config/roleConfig';
 import { ROUTES } from '@shared/constants/routes';
 
@@ -20,11 +22,27 @@ const HomeScreen = () => {
   const user = useAuthStore(state => state.user);
   const role = user?.role;
   const { data: mySchedules } = useMyWorkSchedule();
+  const { data: attendanceData } = useMyAttendance();
 
   // Lấy config theo role
   const roleConfig = React.useMemo(() => {
     return getRoleConfig(role);
   }, [role]);
+
+  // Kiểm tra xem nhân viên đã checkin hôm nay chưa
+  const hasCheckedInToday = React.useMemo(() => {
+    if (!attendanceData?.data) return false;
+
+    const attendances = Array.isArray(attendanceData.data)
+      ? attendanceData.data
+      : [attendanceData.data];
+
+    const today = new Date().toDateString();
+    return attendances.some(att => {
+      const attDate = new Date(att.checkin_time).toDateString();
+      return attDate === today && att.status === 'checked_in';
+    });
+  }, [attendanceData]);
 
   // Lấy lịch làm việc hôm nay
   const todaySchedules = React.useMemo(() => {
@@ -45,10 +63,43 @@ const HomeScreen = () => {
     return { morning, afternoon, total: morning + afternoon };
   }, [todaySchedules]);
 
+  /**
+   * Xử lý khi nhân viên bấm vào "Bán Hàng"
+   */
+  const handleSalesPress = (route: string) => {
+    // Chỉ kiểm tra cho role "employee"
+    if (role === 'employee' && !hasCheckedInToday) {
+      Alert.alert('Cần Checkin', 'Bạn cần checkin để thực hiện bán hàng', [
+        {
+          text: 'Huỷ',
+          onPress: () => {},
+          style: 'cancel',
+        },
+        {
+          text: 'Xác nhận',
+          onPress: () => {
+            navigation.navigate(ROUTES.CHECKIN_CHECKOUT as never);
+          },
+        },
+      ]);
+      return;
+    }
+
+    // Nếu đã checkin hoặc không phải employee, navigate bình thường
+    navigation.navigate(route as never);
+  };
+
   const renderFunctionCard = ({ item }: { item: RoleOption }) => (
     <TouchableOpacity
       style={styles.card}
-      onPress={() => navigation.navigate(item.route as never)}
+      onPress={() => {
+        // Kiểm tra nếu là "Bán Hàng" (staff-3)
+        if (item.id === 'staff-3') {
+          handleSalesPress(item.route);
+        } else {
+          navigation.navigate(item.route as never);
+        }
+      }}
     >
       <View style={styles.iconContainer}>
         <Icon name={item.icon} size={32} color="#4CAF50" />
