@@ -19,7 +19,11 @@ import {
   EmployeeManagementScreen,
   AddEditEmployeeScreen,
 } from '@features/revenue-report';
-import { BranchListScreen, BranchFormScreen } from '@features/branches';
+import {
+  BranchListScreen,
+  BranchFormScreen,
+  MapPickerScreen,
+} from '@features/branches';
 import BranchDetailScreen from '@features/branches/screens/BranchDetailScreen';
 import { ROUTES } from '@shared/constants/routes';
 import { HomeNavigator, TabItem } from '@shared/components';
@@ -204,6 +208,11 @@ const MainAppNavigator = () => {
         name={ROUTES.ADD_EDIT_BRANCH}
         component={BranchFormScreen}
         options={{ headerShown: true, title: 'Thêm / Sửa chi nhánh' }}
+      />
+      <MainStack.Screen
+        name="MapPicker"
+        component={MapPickerScreen}
+        options={{ headerShown: true, title: 'Chọn vị trí' }}
       />
       <MainStack.Screen
         name={ROUTES.BRANCH_DETAIL}

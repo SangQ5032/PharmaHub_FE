@@ -118,4 +118,7 @@ dependencies {
     } else {
         implementation jscFlavor
     }
+
+    // Google Maps SDK for Android
+    implementation 'com.google.android.gms:play-services-maps:18.2.0'
 }
