@@ -1,56 +1,42 @@
-/* eslint-disable react-native/no-inline-styles */
 import React from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  ScrollView,
-} from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { ROUTES } from '@shared/constants/routes';
+import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 
 const SalesHubScreen: React.FC = () => {
   const navigation = useNavigation<any>();
 
-  const navigateTo = (route: string) => {
-    navigation.navigate(route);
+  const handleCreateInvoice = () => {
+    navigation.navigate(ROUTES.CREATE_INVOICE);
   };
 
   return (
     <View style={styles.container}>
-      <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-        <View style={styles.header}>
-          <Text style={styles.title}>Quản lý bán hàng</Text>
-          <Text style={styles.subtitle}>Chọn chức năng bạn muốn thực hiện</Text>
-        </View>
+      {/* <View style={styles.header}>
+        <TouchableOpacity
+          style={styles.backBtn}
+          onPress={() => navigation.goBack()}
+        >
+          <Text style={styles.backText}>← Back</Text>
+        </TouchableOpacity>
+        <Text style={styles.title}>Bán Hàng</Text>
+      </View> */}
 
-        <View style={styles.menuGrid}>
-          {/* Create Invoice */}
-          <TouchableOpacity
-            style={styles.menuCard}
-            onPress={() => navigateTo(ROUTES.CREATE_INVOICE)}
-          >
-            <View style={[styles.cardIcon, { backgroundColor: '#E3F2FD' }]}>
-              <Text style={styles.cardIconText}>📝</Text>
-            </View>
-            <Text style={styles.cardTitle}>Tạo Hóa Đơn</Text>
-            <Text style={styles.cardDescription}>Tạo hóa đơn bán hàng mới</Text>
-          </TouchableOpacity>
-
-          {/* Invoice List */}
-          <TouchableOpacity
-            style={styles.menuCard}
-            onPress={() => navigateTo(ROUTES.INVOICE_LIST)}
-          >
-            <View style={[styles.cardIcon, { backgroundColor: '#F3E5F5' }]}>
-              <Text style={styles.cardIconText}>📋</Text>
-            </View>
-            <Text style={styles.cardTitle}>Danh sách hóa đơn</Text>
-            <Text style={styles.cardDescription}>Xem các hóa đơn đã tạo</Text>
-          </TouchableOpacity>
-        </View>
-      </ScrollView>
+      <View style={styles.content}>
+        {/* Create Invoice Card */}
+        <TouchableOpacity
+          style={styles.createCard}
+          onPress={handleCreateInvoice}
+          activeOpacity={0.8}
+        >
+          <View style={styles.cardIconContainer}>
+            <Icon name="plus-circle" size={60} color="#4CAF50" />
+          </View>
+          <Text style={styles.cardTitle}>Tạo Hóa Đơn</Text>
+          <Text style={styles.cardDescription}>Tạo hóa đơn bán hàng mới</Text>
+        </TouchableOpacity>
+      </View>
     </View>
   );
 };
@@ -60,56 +46,61 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#F5F5F5',
   },
-  content: {
-    padding: 16,
-  },
   header: {
-    marginBottom: 24,
+    height: 56,
+    backgroundColor: '#2EB872',
+    justifyContent: 'center',
+    alignItems: 'center',
+    flexDirection: 'row',
   },
   title: {
-    fontSize: 24,
+    color: '#fff',
+    fontSize: 20,
+    fontWeight: '700',
+  },
+  backBtn: {
+    position: 'absolute',
+    left: 12,
+    top: 18,
+  },
+  backText: {
+    color: '#fff',
+    fontWeight: '600',
+  },
+  content: {
+    flex: 1,
+    padding: 16,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  createCard: {
+    width: '100%',
+    maxWidth: 300,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    padding: 24,
+    alignItems: 'center',
+    elevation: 3,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.15,
+    shadowRadius: 6,
+  },
+  cardIconContainer: {
+    marginBottom: 16,
+  },
+  cardTitle: {
+    fontSize: 18,
     fontWeight: '700',
     color: '#333',
     marginBottom: 8,
-  },
-  subtitle: {
-    fontSize: 14,
-    color: '#999',
-  },
-  menuGrid: {
-    gap: 16,
-  },
-  menuCard: {
-    backgroundColor: '#FFF',
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 12,
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-  },
-  cardIcon: {
-    width: 60,
-    height: 60,
-    borderRadius: 12,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  cardIconText: {
-    fontSize: 32,
-  },
-  cardTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#333',
-    marginBottom: 4,
+    textAlign: 'center',
   },
   cardDescription: {
-    fontSize: 13,
+    fontSize: 14,
     color: '#999',
+    textAlign: 'center',
+    lineHeight: 20,
   },
 });
 

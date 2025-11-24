@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 import React, { useState, useEffect } from 'react';
 import {
   View,
@@ -7,7 +8,10 @@ import {
   ActivityIndicator,
   Alert,
   ScrollView,
+  PermissionsAndroid,
+  Platform,
 } from 'react-native';
+import Geolocation from '@react-native-community/geolocation';
 import { Header } from '@shared/components/header/Header';
 import {
   useCheckin,
@@ -15,16 +19,34 @@ import {
   useMyAttendance,
 } from '@features/checkin-checkout/hooks/useAttendance';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
-import { Attendance } from '@features/checkin-checkout/types/types';
+import {
+  Attendance,
+  CheckinBody,
+} from '@features/checkin-checkout/types/types';
 
 const CheckinCheckoutScreen = () => {
   const [todayAttendance, setTodayAttendance] = useState<Attendance | null>(
     null,
   );
-  const { data: attendanceData, refetch } = useMyAttendance();
+  const [locationPermission, setLocationPermission] = useState(false);
+  const [currentLocation, setCurrentLocation] = useState<{
+    latitude: number;
+    longitude: number;
+  } | null>(null);
+  const {
+    data: attendanceData,
+    refetch,
+    isLoading: isLoadingAttendance,
+  } = useMyAttendance();
   const checkinMutation = useCheckin();
   const checkoutMutation = useCheckout();
 
+  // Xin quyền truy cập vị trí khi component mount
+  useEffect(() => {
+    requestLocationPermission();
+  }, []);
+
+  // Cập nhật today's attendance khi data thay đổi
   useEffect(() => {
     if (attendanceData?.data) {
       const attendances = Array.isArray(attendanceData.data)
@@ -41,9 +63,92 @@ const CheckinCheckoutScreen = () => {
     }
   }, [attendanceData]);
 
+  /**
+   * Xin quyền truy cập vị trí
+   */
+  const requestLocationPermission = async () => {
+    try {
+      if (Platform.OS === 'ios') {
+        setLocationPermission(true);
+        getCurrentLocation();
+      } else if (Platform.OS === 'android') {
+        const granted = await PermissionsAndroid.request(
+          PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION,
+          {
+            title: 'Quyền truy cập vị trí',
+            message: 'Ứng dụng cần quyền truy cập vị trí để chấm công',
+            buttonNeutral: 'Hỏi lại sau',
+            buttonNegative: 'Từ chối',
+            buttonPositive: 'Đồng ý',
+          },
+        );
+        if (granted === PermissionsAndroid.RESULTS.GRANTED) {
+          setLocationPermission(true);
+          getCurrentLocation();
+        } else {
+          Alert.alert(
+            'Lỗi',
+            'Vui lòng cấp quyền truy cập vị trí để sử dụng chức năng chấm công',
+          );
+        }
+      }
+    } catch (err) {
+      console.warn('Error requesting location permission:', err);
+    }
+  };
+
+  /**
+   * Lấy vị trí hiện tại
+   */
+  const getCurrentLocation = () => {
+    Geolocation.getCurrentPosition(
+      position => {
+        const { latitude, longitude } = position.coords;
+        setCurrentLocation({ latitude, longitude });
+      },
+      error => {
+        console.error('Error getting location:', error);
+        Alert.alert(
+          'Lỗi',
+          'Không thể lấy vị trí hiện tại. Vui lòng kiểm tra cài đặt GPS.',
+        );
+      },
+      {
+        enableHighAccuracy: true,
+        timeout: 15000,
+        maximumAge: 10000,
+      },
+    );
+  };
+
+  /**
+   * Xử lý Checkin - Cần latitude và longitude
+   */
   const handleCheckin = async () => {
     try {
-      await checkinMutation.mutateAsync({});
+      // Kiểm tra quyền truy cập vị trí
+      if (!locationPermission) {
+        Alert.alert(
+          'Lỗi',
+          'Vui lòng cấp quyền truy cập vị trí để sử dụng chấm công',
+        );
+        return;
+      }
+
+      // Lấy vị trí hiện tại trước khi checkin
+      if (!currentLocation) {
+        Alert.alert('Lỗi', 'Đang xác định vị trí... Vui lòng chờ');
+        getCurrentLocation();
+        return;
+      }
+
+      // Gửi API checkin với lat/long
+      const checkinBody: CheckinBody = {
+        latitude: currentLocation.latitude,
+        longitude: currentLocation.longitude,
+      };
+
+      await checkinMutation.mutateAsync(checkinBody);
       Alert.alert('Thành công', 'Checkin thành công!', [
         {
           text: 'OK',
@@ -53,13 +158,15 @@ const CheckinCheckoutScreen = () => {
         },
       ]);
     } catch (error: any) {
-      Alert.alert(
-        'Lỗi',
-        error?.response?.data?.message || 'Có lỗi xảy ra khi checkin',
-      );
+      const errorMessage =
+        error?.response?.data?.message || error?.message || 'Có lỗi xảy ra';
+      Alert.alert('Lỗi Checkin', errorMessage);
     }
   };
 
+  /**
+   * Xử lý Checkout
+   */
   const handleCheckout = async () => {
     try {
       await checkoutMutation.mutateAsync({});
@@ -73,10 +180,9 @@ const CheckinCheckoutScreen = () => {
         },
       ]);
     } catch (error: any) {
-      Alert.alert(
-        'Lỗi',
-        error?.response?.data?.message || 'Có lỗi xảy ra khi checkout',
-      );
+      const errorMessage =
+        error?.response?.data?.message || error?.message || 'Có lỗi xảy ra';
+      Alert.alert('Lỗi Checkout', errorMessage);
     }
   };
 
@@ -110,7 +216,10 @@ const CheckinCheckoutScreen = () => {
   });
 
   const isCheckedIn = todayAttendance !== null;
-  const isLoading = checkinMutation.isPending || checkoutMutation.isPending;
+  const isLoading =
+    checkinMutation.isPending ||
+    checkoutMutation.isPending ||
+    isLoadingAttendance;
 
   return (
     <View style={styles.container}>
@@ -200,6 +309,34 @@ const CheckinCheckoutScreen = () => {
             </Text>
           </View>
         </View>
+
+        {/* Location Info Card */}
+        {!locationPermission && (
+          <View style={[styles.infoCard, { borderLeftColor: '#FF9800' }]}>
+            <View style={styles.infoRow}>
+              <Icon name="alert-circle-outline" size={20} color="#FF9800" />
+              <Text style={[styles.infoText, { color: '#E65100' }]}>
+                Vui lòng cấp quyền truy cập vị trí để sử dụng chấm công
+              </Text>
+            </View>
+          </View>
+        )}
+
+        {/* Current Location Display */}
+        {currentLocation && locationPermission && (
+          <View style={styles.locationCard}>
+            <View style={styles.locationRow}>
+              <Icon name="map-marker" size={18} color="#4CAF50" />
+              <View style={{ flex: 1 }}>
+                <Text style={styles.locationLabel}>Vị trí hiện tại:</Text>
+                <Text style={styles.locationValue}>
+                  {currentLocation.latitude.toFixed(6)},{' '}
+                  {currentLocation.longitude.toFixed(6)}
+                </Text>
+              </View>
+            </View>
+          </View>
+        )}
       </ScrollView>
     </View>
   );
@@ -337,6 +474,29 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#424242',
     lineHeight: 20,
+  },
+  locationCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 16,
+    borderLeftWidth: 4,
+    borderLeftColor: '#2196F3',
+  },
+  locationRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 12,
+  },
+  locationLabel: {
+    fontSize: 12,
+    color: '#757575',
+    marginBottom: 4,
+  },
+  locationValue: {
+    fontSize: 14,
+    color: '#2196F3',
+    fontWeight: '500',
   },
 });
 

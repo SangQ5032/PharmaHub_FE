@@ -6,7 +6,8 @@ import { name as appName } from './app.json'
 import AppNavigator from './src/app/navigation/AppNavigator'
 import { GestureHandlerRootView } from 'react-native-gesture-handler'
 import { SafeAreaProvider } from 'react-native-safe-area-context'
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { QueryClientProvider, QueryClient } from '@tanstack/react-query'
+import { AuthProvider } from './src/app/providers/AuthProvider'
 
 LogBox.ignoreLogs(['Setting a timer'])
 
@@ -17,8 +18,10 @@ const App = () => {
     <GestureHandlerRootView style={{ flex: 1 }}>
       <QueryClientProvider client={queryClient}>
         <SafeAreaProvider>
-          <StatusBar barStyle="light-content" />
-          <AppNavigator />
+          <AuthProvider>
+            <StatusBar barStyle="light-content" />
+            <AppNavigator />
+          </AuthProvider>
         </SafeAreaProvider>
       </QueryClientProvider>
     </GestureHandlerRootView>

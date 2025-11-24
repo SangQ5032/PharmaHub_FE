@@ -8,17 +8,18 @@ export interface Attendance {
   checkout_time: string | null;
   working_hours: number;
   status: 'checked_in' | 'checked_out';
+  note?: string;
   createdAt: string;
   updatedAt: string;
 }
 
 export interface CheckinBody {
-  branch_id?: string;
-  checkin_time?: string;
+  latitude: number;
+  longitude: number;
 }
 
 export interface CheckoutBody {
-  checkout_time?: string;
+  // Empty body for checkout
 }
 
 export interface AttendanceResponse {

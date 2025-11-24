@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   View,
   Text,
@@ -10,6 +10,7 @@ import {
 import { RouteProp, useNavigation, useRoute } from '@react-navigation/native';
 import { ROUTES } from '@shared/constants/routes';
 import { MainStackParamList } from '@shared/types/navigation';
+import { useAuth } from '@app/providers/AuthProvider';
 import { Medicine } from '../types';
 import { useMedicineDetail } from '../hooks/useMedicineDetail';
 import { useMedicineInventory } from '../hooks/useMedicineInventory';
@@ -59,6 +60,7 @@ const MedicineDetailScreen: React.FC = () => {
   const navigation = useNavigation<any>();
   const route =
     useRoute<RouteProp<MainStackParamList, typeof ROUTES.MEDICINE_DETAIL>>();
+  const { user } = useAuth();
 
   // Get item from route params (fallback for offline viewing)
   const itemFromParams: Medicine | any = (route.params as any)?.item ?? {};
@@ -81,6 +83,25 @@ const MedicineDetailScreen: React.FC = () => {
   } = useMedicineInventory(medicineId);
 
   const [activeTab, setActiveTab] = useState<'info' | 'inventory'>('info');
+
+  // Tính toán: tách chi nhánh của user hiện tại ra khỏi danh sách
+  const { currentBranchInventory, otherBranches } = useMemo(() => {
+    if (!inventory?.branches || !user?.branch_id) {
+      return {
+        currentBranchInventory: null,
+        otherBranches: inventory?.branches || [],
+      };
+    }
+
+    const current = inventory.branches.find(
+      b => b.branch_id === user.branch_id,
+    );
+    const others = inventory.branches.filter(
+      b => b.branch_id !== user.branch_id,
+    );
+
+    return { currentBranchInventory: current || null, otherBranches: others };
+  }, [inventory?.branches, user?.branch_id]);
 
   return (
     <View style={styles.container}>
@@ -349,17 +370,34 @@ const MedicineDetailScreen: React.FC = () => {
                   {/* Branches List */}
                   {inventory.branches && inventory.branches.length > 0 ? (
                     <View>
-                      <Text style={styles.branchesTitle}>
-                        Chi nhánh ({inventory.branches.length})
-                      </Text>
-                      <FlatList
-                        data={inventory.branches}
-                        keyExtractor={item => item.branch_id}
-                        renderItem={({ item: branch }) => (
-                          <InventoryBranchCard branch={branch} />
-                        )}
-                        scrollEnabled={false}
-                      />
+                      {/* Current Branch - "Chi nhánh của tôi" */}
+                      {currentBranchInventory && (
+                        <View style={styles.currentBranchSection}>
+                          <Text style={styles.currentBranchTitle}>
+                            Chi nhánh của tôi
+                          </Text>
+                          <InventoryBranchCard
+                            branch={currentBranchInventory}
+                          />
+                        </View>
+                      )}
+
+                      {/* Other Branches */}
+                      {otherBranches.length > 0 && (
+                        <View>
+                          <Text style={styles.branchesTitle}>
+                            Chi nhánh khác ({otherBranches.length})
+                          </Text>
+                          <FlatList
+                            data={otherBranches}
+                            keyExtractor={branchItem => branchItem.branch_id}
+                            renderItem={({ item: branchItem }) => (
+                              <InventoryBranchCard branch={branchItem} />
+                            )}
+                            scrollEnabled={false}
+                          />
+                        </View>
+                      )}
                     </View>
                   ) : (
                     <View style={styles.emptyInventory}>
@@ -531,6 +569,19 @@ const styles = StyleSheet.create({
     color: '#2EB872',
     marginBottom: 12,
     marginTop: 8,
+  },
+  currentBranchSection: {
+    marginBottom: 20,
+    paddingBottom: 16,
+    borderBottomWidth: 2,
+    borderBottomColor: '#E0E0E0',
+  },
+  currentBranchTitle: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#2EB872',
+    marginBottom: 12,
+    paddingHorizontal: 12,
   },
   emptyInventory: {
     backgroundColor: '#fff',
