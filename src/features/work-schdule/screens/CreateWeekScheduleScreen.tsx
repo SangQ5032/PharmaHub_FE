@@ -51,6 +51,13 @@ export default function CreateWeekScheduleScreen({ navigation }: any) {
     null,
   );
   const [tempDateForPicker, setTempDateForPicker] = useState(new Date());
+  const [defaultMorningEmployee, setDefaultMorningEmployee] =
+    useState<string>('');
+  const [defaultAfternoonEmployee, setDefaultAfternoonEmployee] =
+    useState<string>('');
+  const [selectingDefaultShift, setSelectingDefaultShift] = useState<
+    'morning' | 'afternoon' | null
+  >(null);
 
   // Get employees from users data
   const employees: Employee[] = useMemo(() => {
@@ -83,25 +90,34 @@ export default function CreateWeekScheduleScreen({ navigation }: any) {
   };
 
   const generateSchedulesForDateRange = () => {
-    const start = new Date(fromDate);
-    const end = new Date(toDate);
+    // Get date strings in YYYY-MM-DD format directly from local dates
+    const startDateString = fromDate.toLocaleDateString('en-CA'); // en-CA gives YYYY-MM-DD format
+    const endDateString = toDate.toLocaleDateString('en-CA');
 
-    if (start > end) {
+    if (startDateString > endDateString) {
       Alert.alert('Lỗi', 'Ngày bắt đầu phải trước ngày kết thúc');
       return;
     }
 
     const newSchedules: ScheduleInput[] = [];
     let keyCounter = 1;
-    const current = new Date(start);
+
+    // Parse dates properly without timezone issues
+    const [startYear, startMonth, startDay] = startDateString
+      .split('-')
+      .map(Number);
+    const [endYear, endMonth, endDay] = endDateString.split('-').map(Number);
+
+    const current = new Date(startYear, startMonth - 1, startDay);
+    const end = new Date(endYear, endMonth - 1, endDay);
 
     while (current <= end) {
-      const dateString = current.toISOString().split('T')[0];
+      const dateString = current.toLocaleDateString('en-CA');
 
       // Sáng
       newSchedules.push({
         key: keyCounter.toString(),
-        user_id: '',
+        user_id: defaultMorningEmployee,
         date: dateString,
         shift: 'morning',
         note: '',
@@ -111,7 +127,7 @@ export default function CreateWeekScheduleScreen({ navigation }: any) {
       // Chiều
       newSchedules.push({
         key: keyCounter.toString(),
-        user_id: '',
+        user_id: defaultAfternoonEmployee,
         date: dateString,
         shift: 'afternoon',
         note: '',
@@ -147,7 +163,16 @@ export default function CreateWeekScheduleScreen({ navigation }: any) {
   };
 
   const handleSelectEmployee = (employee: Employee) => {
-    if (selectedScheduleIndex !== null) {
+    if (selectingDefaultShift) {
+      if (selectingDefaultShift === 'morning') {
+        setDefaultMorningEmployee(employee._id);
+      } else {
+        setDefaultAfternoonEmployee(employee._id);
+      }
+      setSelectedEmployeeModal(false);
+      setSelectingDefaultShift(null);
+      setSearchQuery('');
+    } else if (selectedScheduleIndex !== null) {
       const newSchedules = [...schedules];
       newSchedules[selectedScheduleIndex].user_id = employee._id;
       setSchedules(newSchedules);
@@ -280,6 +305,61 @@ export default function CreateWeekScheduleScreen({ navigation }: any) {
           <Icon name="calendar-multiple" size={18} color="#fff" />
           <Text style={styles.generateButtonText}>Tạo lịch từng ngày</Text>
         </TouchableOpacity>
+      </View>
+
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>Nhân viên mặc định</Text>
+        <View style={styles.defaultEmployeeRow}>
+          <View style={styles.defaultEmployeeGroup}>
+            <Text style={styles.label}>Ca sáng</Text>
+            <TouchableOpacity
+              style={styles.defaultEmployeeButton}
+              onPress={() => {
+                setSelectingDefaultShift('morning');
+                setSelectedEmployeeModal(true);
+              }}
+            >
+              <Icon name="account" size={16} color="#007AFF" />
+              <Text
+                style={[
+                  styles.defaultEmployeeButtonText,
+                  !defaultMorningEmployee && styles.employeeInputPlaceholder,
+                ]}
+              >
+                {getEmployeeNameById(defaultMorningEmployee) ===
+                'Chọn nhân viên'
+                  ? 'Chọn NV'
+                  : getEmployeeNameById(defaultMorningEmployee)}
+              </Text>
+              <Icon name="chevron-down" size={16} color="#ccc" />
+            </TouchableOpacity>
+          </View>
+
+          <View style={styles.defaultEmployeeGroup}>
+            <Text style={styles.label}>Ca chiều</Text>
+            <TouchableOpacity
+              style={styles.defaultEmployeeButton}
+              onPress={() => {
+                setSelectingDefaultShift('afternoon');
+                setSelectedEmployeeModal(true);
+              }}
+            >
+              <Icon name="account" size={16} color="#007AFF" />
+              <Text
+                style={[
+                  styles.defaultEmployeeButtonText,
+                  !defaultAfternoonEmployee && styles.employeeInputPlaceholder,
+                ]}
+              >
+                {getEmployeeNameById(defaultAfternoonEmployee) ===
+                'Chọn nhân viên'
+                  ? 'Chọn NV'
+                  : getEmployeeNameById(defaultAfternoonEmployee)}
+              </Text>
+              <Icon name="chevron-down" size={16} color="#ccc" />
+            </TouchableOpacity>
+          </View>
+        </View>
       </View>
 
       <View style={styles.section}>
@@ -430,6 +510,8 @@ export default function CreateWeekScheduleScreen({ navigation }: any) {
         onRequestClose={() => {
           setSelectedEmployeeModal(false);
           setSearchQuery('');
+          setSelectingDefaultShift(null);
+          setSelectedScheduleIndex(null);
         }}
       >
         <View style={styles.modalContainer}>
@@ -440,6 +522,8 @@ export default function CreateWeekScheduleScreen({ navigation }: any) {
                 onPress={() => {
                   setSelectedEmployeeModal(false);
                   setSearchQuery('');
+                  setSelectingDefaultShift(null);
+                  setSelectedScheduleIndex(null);
                 }}
                 style={styles.closeButton}
               >
@@ -508,6 +592,29 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#666',
     marginBottom: 6,
+  },
+  defaultEmployeeRow: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  defaultEmployeeGroup: {
+    flex: 1,
+  },
+  defaultEmployeeButton: {
+    flexDirection: 'row',
+    borderWidth: 1,
+    borderColor: '#ddd',
+    borderRadius: 6,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    alignItems: 'center',
+    backgroundColor: '#fff',
+    gap: 8,
+  },
+  defaultEmployeeButtonText: {
+    flex: 1,
+    fontSize: 12,
+    color: '#000',
   },
   dateRange: {
     flexDirection: 'row',
