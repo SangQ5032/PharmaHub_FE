@@ -153,6 +153,13 @@ export const ROLE_CONFIG: Record<UserRole, RoleConfig> = {
         route: ROUTES.EMPLOYEE_MEDICINES,
         description: 'Xem danh sách thuốc và tồn kho',
       },
+      {
+        id: 'staff-5',
+        name: 'Lịch Sử Hóa Đơn',
+        icon: 'file-document-outline',
+        route: ROUTES.INVOICE_LIST,
+        description: 'Xem danh sách hóa đơn đã tạo',
+      },
     ],
     tabs: [
       {
