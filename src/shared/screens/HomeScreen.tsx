@@ -36,6 +36,15 @@ const HomeScreen = () => {
     );
   }, [mySchedules]);
 
+  // Tính số lịch theo ca
+  const scheduleStats = React.useMemo(() => {
+    const morning = todaySchedules.filter(s => s.shift === 'morning').length;
+    const afternoon = todaySchedules.filter(
+      s => s.shift === 'afternoon',
+    ).length;
+    return { morning, afternoon, total: morning + afternoon };
+  }, [todaySchedules]);
+
   const renderFunctionCard = ({ item }: { item: RoleOption }) => (
     <TouchableOpacity
       style={styles.card}
@@ -76,45 +85,53 @@ const HomeScreen = () => {
         avatarUrl="https://your-avatar-url.com"
       />
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-        {/* Work Schedule Section */}
-        <TouchableOpacity
-          style={styles.workScheduleSection}
-          onPress={() =>
-            navigation.navigate(ROUTES.WORK_SCHEDULE_MENU as never)
-          }
-          activeOpacity={0.8}
-        >
-          <View style={styles.workScheduleHeader}>
-            <View style={styles.workScheduleTitle}>
-              <Icon name="calendar-today" size={24} color="#fff" />
-              <Text style={styles.workScheduleHeaderText}>
-                Lịch Làm Việc Hôm Nay
-              </Text>
+        {/* Work Schedule Section - Only for employee role */}
+        {role === 'employee' && (
+          <TouchableOpacity
+            style={styles.workScheduleSection}
+            onPress={() =>
+              navigation.navigate(ROUTES.WORK_SCHEDULE_MENU as never)
+            }
+            activeOpacity={0.8}
+          >
+            <View style={styles.workScheduleHeader}>
+              <View style={styles.workScheduleTitle}>
+                <Icon name="calendar-today" size={24} color="#fff" />
+                <View style={styles.headerTextContainer}>
+                  <Text style={styles.workScheduleHeaderText}>
+                    Lịch Làm Việc Hôm Nay
+                  </Text>
+                  <Text style={styles.scheduleStatsText}>
+                    ☀️ Sáng: {scheduleStats.morning} | 🌙 Chiều:{' '}
+                    {scheduleStats.afternoon}
+                  </Text>
+                </View>
+              </View>
+              <Icon name="chevron-right" size={24} color="#fff" />
             </View>
-            <Icon name="chevron-right" size={24} color="#fff" />
-          </View>
 
-          {todaySchedules.length > 0 ? (
-            <FlatList
-              data={todaySchedules}
-              renderItem={renderScheduleItem}
-              keyExtractor={item => item._id}
-              scrollEnabled={false}
-              contentContainerStyle={styles.scheduleListContent}
-            />
-          ) : (
-            <View style={styles.emptySchedule}>
-              <Icon
-                name="calendar-blank"
-                size={32}
-                color="rgba(255,255,255,0.6)"
+            {todaySchedules.length > 0 ? (
+              <FlatList
+                data={todaySchedules}
+                renderItem={renderScheduleItem}
+                keyExtractor={item => item._id}
+                scrollEnabled={false}
+                contentContainerStyle={styles.scheduleListContent}
               />
-              <Text style={styles.emptyScheduleText}>
-                Không có lịch hôm nay
-              </Text>
-            </View>
-          )}
-        </TouchableOpacity>
+            ) : (
+              <View style={styles.emptySchedule}>
+                <Icon
+                  name="calendar-blank"
+                  size={32}
+                  color="rgba(255,255,255,0.6)"
+                />
+                <Text style={styles.emptyScheduleText}>
+                  Không có lịch hôm nay
+                </Text>
+              </View>
+            )}
+          </TouchableOpacity>
+        )}
 
         {/* Function Cards */}
         <Text style={styles.sectionLabel}>Chức Năng</Text>
@@ -183,6 +200,14 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
     color: '#fff',
+  },
+  headerTextContainer: {
+    flex: 1,
+  },
+  scheduleStatsText: {
+    fontSize: 12,
+    color: 'rgba(255,255,255,0.85)',
+    marginTop: 4,
   },
   scheduleListContent: {
     paddingHorizontal: 16,
