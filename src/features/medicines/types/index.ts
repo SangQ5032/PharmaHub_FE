@@ -45,3 +45,40 @@ export type MedicinesResponse = {
     totalPages: number;
   };
 };
+
+export type Batch = {
+  _id: string;
+  batch_number: string;
+  quantity: number;
+  expiry_date: string;
+  import_price: number;
+  supplier_id: string;
+};
+
+export type BranchInventory = {
+  branch_id: string;
+  branch_name: string;
+  branch_address: string;
+  branch_phone: string;
+  total_quantity: number;
+  in_stock: string;
+  batches: Batch[];
+};
+
+export type InventoryAllBranches = {
+  medicine_id: string;
+  medicine_name: string;
+  generic_name: string;
+  brand_name: string;
+  unit: string;
+  retail_price: number;
+  alert_threshold: number;
+  total_quantity: number;
+  branches: BranchInventory[];
+};
+
+export type InventoryResponse = {
+  success: boolean;
+  message: string;
+  data: InventoryAllBranches;
+};

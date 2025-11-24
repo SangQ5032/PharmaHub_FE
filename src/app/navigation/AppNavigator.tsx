@@ -29,6 +29,7 @@ import {
   MedicinesHubScreen,
   MedicineListScreen,
   AddMedicineScreen,
+  EmployeeMedicineListScreen,
 } from '@features/medicines';
 import MedicineDetailScreen from '@features/medicines/screens/MedicineDetailScreen';
 import { SuppliersScreen, AddSupplierScreen } from '@features/suppliers';
@@ -147,6 +148,10 @@ const MainAppNavigator = () => {
       <MainStack.Screen
         name={ROUTES.MEDICINES}
         component={MedicineListScreen}
+      />
+      <MainStack.Screen
+        name={ROUTES.EMPLOYEE_MEDICINES}
+        component={EmployeeMedicineListScreen}
       />
       <MainStack.Screen
         name={ROUTES.ADD_MEDICINE}

@@ -22,6 +22,7 @@ export type MainStackParamList = {
   [ROUTES.CHECKIN_CHECKOUT]: undefined;
   [ROUTES.MEDICINES_HUB]: undefined;
   [ROUTES.MEDICINES]: undefined;
+  [ROUTES.EMPLOYEE_MEDICINES]: undefined;
   [ROUTES.MEDICINE_DETAIL]: { item: any } | undefined;
   [ROUTES.ADD_MEDICINE]: { mode?: 'edit'; item?: any } | undefined;
   [ROUTES.SUPPLIERS]: undefined;
