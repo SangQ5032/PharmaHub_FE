@@ -97,13 +97,20 @@ export const ROLE_CONFIG: Record<UserRole, RoleConfig> = {
       },
       {
         id: 'manager-4',
+        name: 'Quản lý tồn kho',
+        icon: 'package-box-multiple',
+        route: ROUTES.BRANCH_INVENTORY_MANAGEMENT,
+        description: 'Quản lý tồn kho chi nhánh',
+      },
+      {
+        id: 'manager-5',
         name: 'Nhập Hàng',
         icon: 'truck-delivery',
         route: ROUTES.IMPORT_LIST,
         description: 'Quản lý đơn nhập hàng',
       },
       {
-        id: 'manager-5',
+        id: 'manager-6',
         name: 'Quản lý tồn kho',
         icon: 'warehouse',
         route: ROUTES.WAREHOUSE_HUB,

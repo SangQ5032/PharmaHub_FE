@@ -8,7 +8,11 @@ import CreateImportScreen from '@features/warehouse/screens/CreateImportScreen';
 import ImportDetailScreen from '@features/warehouse/screens/ImportDetailScreen';
 import InventoryListScreen from '@features/warehouse/screens/InventoryListScreen';
 import InventoryDetailScreen from '@features/warehouse/screens/InventoryDetailScreen';
+import InventoryDetailWithBatchesScreen from '@features/warehouse/screens/InventoryDetailWithBatchesScreen';
+import InventoryDetailExpandedScreen from '@features/warehouse/screens/InventoryDetailExpandedScreen';
+import BatchDetailExpandedScreen from '@features/warehouse/screens/BatchDetailExpandedScreen';
 import BatchDetailScreen from '@features/warehouse/screens/BatchDetailScreen';
+import BranchInventoryManagementScreen from '@features/warehouse/screens/BranchInventoryManagementScreen';
 import ReportSelectionScreen from '@features/warehouse/screens/ReportSelectionScreen';
 import ReportViewScreen from '@features/warehouse/screens/ReportViewScreen';
 import WarehouseHubScreen from '@features/warehouse/screens/WarehouseHubScreen';
@@ -249,9 +253,19 @@ const MainAppNavigator = () => {
         options={{ headerShown: false }}
       />
       <MainStack.Screen
+        name={ROUTES.INVENTORY_DETAIL_WITH_BATCHES}
+        component={InventoryDetailExpandedScreen}
+        options={{ headerShown: true, title: 'Chi tiết thuốc' }}
+      />
+      <MainStack.Screen
         name={ROUTES.BATCH_DETAIL}
-        component={BatchDetailScreen}
-        options={{ headerShown: false }}
+        component={BatchDetailExpandedScreen}
+        options={{ headerShown: true, title: 'Chi tiết lô hàng' }}
+      />
+      <MainStack.Screen
+        name={ROUTES.BRANCH_INVENTORY_MANAGEMENT}
+        component={BranchInventoryManagementScreen}
+        options={{ headerShown: true, title: 'Quản lý tồn kho' }}
       />
       <MainStack.Screen
         name={ROUTES.REPORT_SELECTION}

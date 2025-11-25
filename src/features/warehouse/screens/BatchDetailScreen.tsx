@@ -6,268 +6,331 @@ import {
   Text,
   StyleSheet,
   ScrollView,
+  SafeAreaView,
+  ActivityIndicator,
   TouchableOpacity,
 } from 'react-native';
-import { useNavigation, useRoute } from '@react-navigation/native';
-import { Batch } from '@features/warehouse/types/inventory.types';
-import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
+import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
+import { useRoute, useNavigation } from '@react-navigation/native';
+import { useGetBatchDetail } from '@features/warehouse/hooks/useBatches';
+
+interface RouteParams {
+  id: string;
+}
 
 export default function BatchDetailScreen() {
+  const route = useRoute();
   const navigation = useNavigation();
-  const route = useRoute<any>();
-  const batch = route.params?.batch as Batch | undefined;
+  const { id } = route.params as RouteParams;
 
-  if (!batch) {
+  const { data: response, isLoading, error } = useGetBatchDetail(id);
+  const batch = response?.data;
+
+  React.useLayoutEffect(() => {
+    navigation.setOptions({
+      title: batch?.batch_number || 'Chi tiết lô hàng',
+      headerBackTitle: 'Lô hàng',
+    });
+  }, [navigation, batch]);
+
+  if (isLoading) {
     return (
-      <View style={styles.container}>
-        <View style={styles.header}>
-          <TouchableOpacity onPress={() => navigation.goBack()}>
-            <Text style={styles.backButton}>← Quay lại</Text>
-          </TouchableOpacity>
-          <Text style={styles.headerTitle}>Chi tiết lô hàng</Text>
-          <View style={styles.headerSpacer} />
+      <SafeAreaView style={styles.container}>
+        <View style={styles.centerContainer}>
+          <ActivityIndicator size="large" color="#4CAF50" />
         </View>
-        <View style={styles.errorContainer}>
-          <Text style={styles.errorText}>Không có dữ liệu lô hàng</Text>
-        </View>
-      </View>
+      </SafeAreaView>
     );
   }
 
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('vi-VN', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-    });
-  };
+  if (error || !batch) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={styles.centerContainer}>
+          <MaterialCommunityIcons
+            name="alert-circle-outline"
+            size={48}
+            color="#F44336"
+          />
+          <Text style={styles.errorText}>Không thể tải dữ liệu</Text>
+          <TouchableOpacity
+            style={styles.retryButton}
+            onPress={() => navigation.goBack()}
+          >
+            <Text style={styles.retryButtonText}>Quay lại</Text>
+          </TouchableOpacity>
+        </View>
+      </SafeAreaView>
+    );
+  }
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('vi-VN', {
-      style: 'currency',
-      currency: 'VND',
-    }).format(amount);
-  };
+  const isExpired = new Date(batch.expiry_date) < new Date();
+  const daysToExpiry = Math.ceil(
+    (new Date(batch.expiry_date).getTime() - new Date().getTime()) /
+      (1000 * 60 * 60 * 24),
+  );
 
-  const getStatusColor = (status?: string) => {
+  const getStatusColor = (status: string) => {
     switch (status) {
       case 'active':
         return '#4CAF50';
-      case 'inactive':
+      case 'expired':
+        return '#F44336';
+      case 'discontinued':
         return '#9E9E9E';
+      case 'sold_out':
+        return '#FF9800';
       default:
-        return '#2196F3';
+        return '#4CAF50';
     }
   };
 
-  const getStatusLabel = (status?: string) => {
+  const getStatusLabel = (status: string) => {
     switch (status) {
       case 'active':
         return 'Hoạt động';
-      case 'inactive':
-        return 'Không hoạt động';
+      case 'expired':
+        return 'Hết hạn';
+      case 'discontinued':
+        return 'Ngừng bán';
+      case 'sold_out':
+        return 'Hết hàng';
       default:
-        return 'Chưa xác định';
+        return 'Không rõ';
     }
   };
 
-  const isExpired = new Date(batch.expiry_date) < new Date();
-  const isExpiringSoon =
-    !isExpired &&
-    new Date(batch.expiry_date) <
-      new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+  const statusColor = getStatusColor(batch.status);
+  const statusLabel = getStatusLabel(batch.status);
 
   return (
-    <View style={styles.container}>
-      {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Text style={styles.backButton}>← Quay lại</Text>
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Chi tiết lô hàng</Text>
-        <View style={styles.headerSpacer} />
-      </View>
+    <SafeAreaView style={styles.container}>
+      <ScrollView
+        style={styles.scrollView}
+        showsVerticalScrollIndicator={false}
+      >
+        {/* Status Card */}
+        <View style={[styles.statusCard, { backgroundColor: statusColor }]}>
+          <View style={[styles.statusBadge, { backgroundColor: statusColor }]}>
+            <Text style={styles.statusBadgeText}>{statusLabel}</Text>
+          </View>
+        </View>
 
-      <ScrollView style={styles.content}>
-        {/* Batch Info Card */}
-        <View style={styles.card}>
-          <View style={styles.cardHeader}>
-            <Text style={styles.cardTitle}>Thông tin lô hàng</Text>
-            <View
-              style={[
-                styles.statusBadge,
-                { backgroundColor: getStatusColor(batch.status) },
-              ]}
-            >
-              <Text style={styles.statusBadgeText}>
-                {getStatusLabel(batch.status)}
-              </Text>
-            </View>
+        {/* Batch Information */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Thông tin lô hàng</Text>
+
+          <View style={styles.infoRow}>
+            <Text style={styles.label}>Mã lô:</Text>
+            <Text style={styles.value}>{batch.batch_number}</Text>
           </View>
 
           <View style={styles.infoRow}>
-            <Text style={styles.label}>Lô hàng:</Text>
-            <Text style={[styles.value, styles.batchNumberValue]}>
-              {batch.batch_number}
+            <Text style={styles.label}>Thuốc:</Text>
+            <Text style={styles.value}>{batch.medicine?.name}</Text>
+          </View>
+
+          <View style={styles.infoRow}>
+            <Text style={styles.label}>Đơn vị:</Text>
+            <Text style={styles.value}>{batch.medicine?.unit}</Text>
+          </View>
+
+          <View style={styles.infoRow}>
+            <Text style={styles.label}>Nhà sản xuất:</Text>
+            <Text style={styles.value}>
+              {batch.medicine?.manufacturer || 'Không rõ'}
             </Text>
           </View>
+        </View>
+
+        {/* Quantity Information */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Thông tin số lượng</Text>
 
           <View style={styles.infoRow}>
-            <Text style={styles.label}>Hạn sử dụng:</Text>
-            <Text
-              style={[
-                styles.value,
-                isExpired && styles.expiredValue,
-                isExpiringSoon && !isExpired && styles.expiringSoonValue,
-              ]}
-            >
-              {formatDate(batch.expiry_date)}
-              {isExpired && ' (Hết hạn)'}
-              {isExpiringSoon && !isExpired && ' (Sắp hết)'}
-            </Text>
+            <Text style={styles.label}>Số lượng nhập:</Text>
+            <Text style={styles.value}>{batch.initial_quantity}</Text>
           </View>
 
           <View style={styles.infoRow}>
-            <Text style={styles.label}>Số lượng tồn:</Text>
-            <Text
-              style={[
-                styles.value,
-                styles.quantityValue,
-                batch.quantity === 0 && styles.quantityEmpty,
-                batch.quantity < 10 && batch.quantity > 0 && styles.quantityLow,
-              ]}
-            >
+            <Text style={styles.label}>Số lượng hiện tại:</Text>
+            <Text style={[styles.value, styles.currentQuantity]}>
               {batch.quantity}
             </Text>
           </View>
 
-          {batch.initial_quantity && (
-            <View style={styles.infoRow}>
-              <Text style={styles.label}>Số lượng nhập ban đầu:</Text>
-              <Text style={styles.value}>{batch.initial_quantity}</Text>
-            </View>
-          )}
-
           <View style={styles.infoRow}>
-            <Text style={styles.label}>Giá nhập:</Text>
-            <Text style={[styles.value, styles.priceValue]}>
-              {formatCurrency(batch.import_price)}
+            <Text style={styles.label}>Đã bán:</Text>
+            <Text style={styles.value}>
+              {batch.initial_quantity - batch.quantity}
             </Text>
           </View>
 
-          {batch.batch_value && (
+          <View style={styles.progressContainer}>
+            <View style={styles.progressBar}>
+              <View
+                style={[
+                  styles.progressFill,
+                  {
+                    width: `${
+                      ((batch.initial_quantity - batch.quantity) /
+                        batch.initial_quantity) *
+                      100
+                    }%`,
+                  },
+                ]}
+              />
+            </View>
+            <Text style={styles.progressText}>
+              {Math.round(
+                ((batch.initial_quantity - batch.quantity) /
+                  batch.initial_quantity) *
+                  100,
+              )}
+              % đã bán
+            </Text>
+          </View>
+        </View>
+
+        {/* Price Information */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Thông tin giá</Text>
+
+          <View style={styles.infoRow}>
+            <Text style={styles.label}>Giá nhập:</Text>
+            <Text style={styles.value}>
+              ₫{batch.import_price?.toLocaleString('vi-VN')}
+            </Text>
+          </View>
+
+          <View style={styles.infoRow}>
+            <Text style={styles.label}>Giá bán lẻ:</Text>
+            <Text style={styles.value}>
+              ₫{batch.medicine?.retail_price?.toLocaleString('vi-VN')}
+            </Text>
+          </View>
+
+          <View style={styles.infoRow}>
+            <Text style={styles.label}>Lợi nhuận / viên:</Text>
+            <Text style={styles.profitValue}>
+              ₫
+              {(
+                (batch.medicine?.retail_price || 0) - batch.import_price
+              ).toLocaleString('vi-VN')}
+            </Text>
+          </View>
+
+          <View style={styles.infoRow}>
+            <Text style={styles.label}>Tổng giá nhập:</Text>
+            <Text style={styles.value}>
+              ₫
+              {(batch.import_price * batch.initial_quantity).toLocaleString(
+                'vi-VN',
+              )}
+            </Text>
+          </View>
+        </View>
+
+        {/* Expiry Date Information */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Thông tin hạn sử dụng</Text>
+
+          <View style={styles.infoRow}>
+            <Text style={styles.label}>Hạn sử dụng:</Text>
+            <Text style={[styles.value, isExpired && styles.expiredText]}>
+              {new Date(batch.expiry_date).toLocaleDateString('vi-VN')}
+            </Text>
+          </View>
+
+          <View style={styles.infoRow}>
+            <Text style={styles.label}>Tình trạng:</Text>
+            <Text
+              style={[
+                styles.value,
+                isExpired && styles.expiredText,
+                !isExpired && daysToExpiry < 30 && styles.warningText,
+              ]}
+            >
+              {isExpired ? 'Đã hết hạn' : `Còn ${daysToExpiry} ngày`}
+            </Text>
+          </View>
+        </View>
+
+        {/* Supplier Information */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Thông tin nhà cung cấp</Text>
+
+          <View style={styles.infoRow}>
+            <Text style={styles.label}>Nhà cung cấp:</Text>
+            <Text style={styles.value}>{batch.supplier?.name}</Text>
+          </View>
+
+          {batch.supplier?.address && (
             <View style={styles.infoRow}>
-              <Text style={styles.label}>Giá trị lô:</Text>
-              <Text style={[styles.value, styles.priceValue]}>
-                {formatCurrency(batch.batch_value)}
-              </Text>
+              <Text style={styles.label}>Địa chỉ:</Text>
+              <Text style={styles.value}>{batch.supplier.address}</Text>
+            </View>
+          )}
+
+          {batch.supplier?.phone && (
+            <View style={styles.infoRow}>
+              <Text style={styles.label}>Điện thoại:</Text>
+              <Text style={styles.value}>{batch.supplier.phone}</Text>
             </View>
           )}
         </View>
 
-        {/* Supplier Info Card */}
-        {batch.supplier && (
-          <View style={styles.card}>
-            <Text style={styles.cardTitle}>Thông tin nhà cung cấp</Text>
+        {/* Branch Information */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Chi nhánh</Text>
 
-            <View style={styles.infoRow}>
-              <Text style={styles.label}>Tên nhà cung cấp:</Text>
-              <Text style={styles.value}>{batch.supplier.name}</Text>
-            </View>
-
-            {batch.supplier_id && typeof batch.supplier_id === 'string' && (
-              <View style={styles.infoRow}>
-                <Text style={styles.label}>Mã nhà cung cấp:</Text>
-                <Text style={styles.value}>{batch.supplier_id}</Text>
-              </View>
-            )}
+          <View style={styles.infoRow}>
+            <Text style={styles.label}>Tên chi nhánh:</Text>
+            <Text style={styles.value}>{batch.branch?.name}</Text>
           </View>
-        )}
 
-        {/* Timeline Card */}
-        <View style={styles.card}>
-          <Text style={styles.cardTitle}>Lịch sử</Text>
-
-          {batch.imported_at && (
-            <View style={styles.timelineItem}>
-              <View style={styles.timelineDot} />
-              <View style={styles.timelineContent}>
-                <Text style={styles.timelineLabel}>Ngày nhập hàng</Text>
-                <Text style={styles.timelineValue}>
-                  {formatDate(batch.imported_at)}
-                </Text>
-              </View>
-            </View>
-          )}
-
-          {batch.createdAt && (
-            <View style={styles.timelineItem}>
-              <View style={styles.timelineDot} />
-              <View style={styles.timelineContent}>
-                <Text style={styles.timelineLabel}>Ngày tạo bản ghi</Text>
-                <Text style={styles.timelineValue}>
-                  {formatDate(batch.createdAt)}
-                </Text>
-              </View>
+          {batch.branch?.address && (
+            <View style={styles.infoRow}>
+              <Text style={styles.label}>Địa chỉ:</Text>
+              <Text style={styles.value}>{batch.branch.address}</Text>
             </View>
           )}
         </View>
 
-        {/* Summary Card */}
-        <View style={styles.card}>
-          <Text style={styles.cardTitle}>Tóm tắt</Text>
+        {/* Dates */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Ngày tháng</Text>
 
-          <View style={styles.summaryRow}>
-            <View style={styles.summaryItem}>
-              <Icon name="package" size={24} color="#2196F3" />
-              <Text style={styles.summaryLabel}>Tổng giá trị</Text>
-              <Text style={styles.summaryValue}>
-                {formatCurrency(
-                  batch.batch_value || batch.quantity * batch.import_price,
-                )}
-              </Text>
-            </View>
-
-            <View style={styles.summaryItem}>
-              <Icon
-                name={batch.quantity > 0 ? 'check-circle' : 'alert-circle'}
-                size={24}
-                color={batch.quantity > 0 ? '#4CAF50' : '#F44336'}
-              />
-              <Text style={styles.summaryLabel}>Tình trạng</Text>
-              <Text
-                style={[
-                  styles.summaryValue,
-                  batch.quantity === 0 && styles.quantityEmptyText,
-                  batch.quantity > 0 && styles.quantityOkText,
-                ]}
-              >
-                {batch.quantity > 0 ? 'Còn hàng' : 'Hết'}
-              </Text>
-            </View>
-
-            <View style={styles.summaryItem}>
-              <Icon
-                name={isExpired ? 'alert-circle' : 'calendar-check'}
-                size={24}
-                color={isExpired ? '#F44336' : '#4CAF50'}
-              />
-              <Text style={styles.summaryLabel}>Hạn dùng</Text>
-              <Text
-                style={[
-                  styles.summaryValue,
-                  isExpired && styles.expiredText,
-                  !isExpired && styles.validText,
-                ]}
-              >
-                {isExpired ? 'Hết hạn' : 'Còn dùng'}
-              </Text>
-            </View>
+          <View style={styles.infoRow}>
+            <Text style={styles.label}>Ngày tạo:</Text>
+            <Text style={styles.value}>
+              {new Date(batch.createdAt).toLocaleDateString('vi-VN', {
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit',
+              })}
+            </Text>
           </View>
+
+          {batch.updatedAt && (
+            <View style={styles.infoRow}>
+              <Text style={styles.label}>Cập nhật:</Text>
+              <Text style={styles.value}>
+                {new Date(batch.updatedAt).toLocaleDateString('vi-VN', {
+                  year: 'numeric',
+                  month: '2-digit',
+                  day: '2-digit',
+                  hour: '2-digit',
+                  minute: '2-digit',
+                })}
+              </Text>
+            </View>
+          )}
         </View>
       </ScrollView>
-    </View>
+    </SafeAreaView>
   );
 }
 
@@ -276,169 +339,115 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#F5F5F5',
   },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    backgroundColor: '#FFFFFF',
-    paddingHorizontal: 16,
-    paddingVertical: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#E0E0E0',
-  },
-  headerSpacer: {
-    width: 80,
-  },
-  backButton: {
-    fontSize: 16,
-    color: '#2196F3',
-    fontWeight: '600',
-  },
-  headerTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#212121',
-  },
-  content: {
+  scrollView: {
     flex: 1,
   },
-  card: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 12,
-    padding: 16,
-    margin: 16,
-    marginBottom: 0,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  cardHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  cardTitle: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: '#212121',
-    marginBottom: 12,
-  },
-  statusBadge: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 12,
-  },
-  statusBadgeText: {
-    color: '#FFFFFF',
-    fontSize: 12,
-    fontWeight: '600',
-  },
-  infoRow: {
-    marginBottom: 12,
-  },
-  label: {
-    fontSize: 14,
-    color: '#757575',
-    marginBottom: 4,
-  },
-  value: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#212121',
-  },
-  batchNumberValue: {
-    fontSize: 18,
-    color: '#2196F3',
-  },
-  priceValue: {
-    color: '#4CAF50',
-  },
-  quantityValue: {
-    fontSize: 18,
-    fontWeight: '700',
-  },
-  quantityEmpty: {
-    color: '#F44336',
-  },
-  quantityLow: {
-    color: '#FF9800',
-  },
-  expiredValue: {
-    color: '#F44336',
-  },
-  expiringSoonValue: {
-    color: '#FF9800',
-  },
-  errorContainer: {
+  centerContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  errorText: {
-    fontSize: 16,
-    color: '#F44336',
-    textAlign: 'center',
-  },
-  timelineItem: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    marginBottom: 16,
-  },
-  timelineDot: {
-    width: 12,
-    height: 12,
-    borderRadius: 6,
-    backgroundColor: '#2196F3',
-    marginTop: 4,
-    marginRight: 12,
-  },
-  timelineContent: {
-    flex: 1,
-  },
-  timelineLabel: {
-    fontSize: 13,
-    color: '#757575',
-    marginBottom: 4,
-  },
-  timelineValue: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#212121',
-  },
-  summaryRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
+  statusCard: {
     paddingVertical: 16,
-  },
-  summaryItem: {
     alignItems: 'center',
-    flex: 1,
+    borderBottomWidth: 1,
+    borderBottomColor: '#E0E0E0',
+    backgroundColor: '#F5F5F5',
   },
-  summaryLabel: {
-    fontSize: 12,
-    color: '#757575',
-    marginTop: 8,
-    marginBottom: 4,
+  statusBadge: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
   },
-  summaryValue: {
+  statusBadgeText: {
+    color: '#FFFFFF',
+    fontWeight: '600',
+    fontSize: 14,
+  },
+  section: {
+    backgroundColor: '#FFFFFF',
+    marginHorizontal: 12,
+    marginVertical: 8,
+    borderRadius: 8,
+    padding: 16,
+  },
+  sectionTitle: {
     fontSize: 14,
     fontWeight: '700',
     color: '#212121',
-    textAlign: 'center',
+    marginBottom: 12,
   },
-  quantityEmptyText: {
-    color: '#F44336',
+  infoRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F0F0F0',
   },
-  quantityOkText: {
+  label: {
+    fontSize: 12,
+    color: '#757575',
+    fontWeight: '500',
+    flex: 1,
+  },
+  value: {
+    fontSize: 13,
+    color: '#212121',
+    fontWeight: '600',
+    flex: 1,
+    textAlign: 'right',
+  },
+  currentQuantity: {
     color: '#4CAF50',
+    fontSize: 14,
+  },
+  profitValue: {
+    fontSize: 13,
+    color: '#4CAF50',
+    fontWeight: '700',
+    textAlign: 'right',
+    flex: 1,
   },
   expiredText: {
     color: '#F44336',
   },
-  validText: {
-    color: '#4CAF50',
+  warningText: {
+    color: '#FF9800',
+  },
+  progressContainer: {
+    marginTop: 12,
+  },
+  progressBar: {
+    height: 8,
+    backgroundColor: '#E0E0E0',
+    borderRadius: 4,
+    overflow: 'hidden',
+    marginBottom: 6,
+  },
+  progressFill: {
+    height: '100%',
+    backgroundColor: '#4CAF50',
+  },
+  progressText: {
+    fontSize: 11,
+    color: '#9E9E9E',
+    textAlign: 'center',
+  },
+  errorText: {
+    marginTop: 12,
+    fontSize: 14,
+    color: '#F44336',
+  },
+  retryButton: {
+    marginTop: 16,
+    paddingHorizontal: 24,
+    paddingVertical: 10,
+    backgroundColor: '#4CAF50',
+    borderRadius: 6,
+  },
+  retryButtonText: {
+    color: '#FFFFFF',
+    fontWeight: '600',
   },
 });

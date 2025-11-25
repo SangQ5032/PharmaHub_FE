@@ -108,8 +108,23 @@ export function useGetBatchesForInvoice(branchId: string, medicineId: string) {
 }
 
 /**
- * Hook lấy chi tiết tồn kho bằng Inventory ID
- * API: GET /api/inventory/:inventoryId
+ * Hook để lấy tồn kho của 1 loại thuốc tại chi nhánh
+ */
+export function useGetInventoryByBranchAndMedicine(
+  branchId: string,
+  medicineId: string,
+) {
+  return useQuery({
+    queryKey: ['inventory', 'branch', branchId, 'medicine', medicineId],
+    queryFn: () =>
+      inventoryApi.getInventoryByBranchAndMedicine(branchId, medicineId),
+    enabled: !!branchId && !!medicineId,
+    staleTime: 1000 * 60 * 5, // Cache 5 phút
+  });
+}
+
+/**
+ * Hook để lấy chi tiết tồn kho bằng Inventory ID
  */
 export function useGetInventoryDetail(id: string) {
   return useQuery({
