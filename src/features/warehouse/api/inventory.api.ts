@@ -49,8 +49,30 @@ export const inventoryApi = {
   },
 
   /**
-   * Lấy chi tiết tồn kho của 1 thuốc tại 1 chi nhánh
-   * Endpoint: GET /api/inventory/:id
+   * Lấy tồn kho của 1 loại thuốc tại chi nhánh cụ thể
+   * Endpoint: GET /api/inventory/branch/:branchId/medicine/:medicineId
+   */
+  getInventoryByBranchAndMedicine: async (
+    branchId: string,
+    medicineId: string,
+  ): Promise<GetInventoryDetailResponse> => {
+    const res = await apiClient.get(
+      `/inventory/branch/${branchId}/medicine/${medicineId}`,
+    );
+
+    // Response format: { success: true, data: {...} }
+    if (res.data.success) {
+      return res.data;
+    }
+
+    throw new Error(
+      res.data.message || 'Không thể lấy tồn kho thuốc tại chi nhánh',
+    );
+  },
+
+  /**
+   * Lấy chi tiết tồn kho bằng Inventory ID
+   * Endpoint: GET /api/inventory/:inventoryId
    */
   getInventoryDetail: async (
     id: string,

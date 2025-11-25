@@ -7,14 +7,30 @@ export interface Medicine {
   _id: string;
   name: string;
   description?: string;
-  category: string;
+  category?: string;
   unit: string;
-  price: number;
-  expiry_date: string;
-  supplier_id: string;
-  warning_threshold: number;
-  created_at: string;
+  price?: number;
+  retail_price?: number;
+  expiry_date?: string;
+  supplier_id?: string;
+  warning_threshold?: number;
+  created_at?: string;
   updated_at?: string;
+  // Additional fields from API
+  generic_name?: string;
+  brand_name?: string;
+  dosage_form?: string;
+  strength?: string;
+  manufacturer?: string;
+  country_of_origin?: string;
+  indications?: string;
+  contraindications?: string;
+  side_effects?: string;
+  usage_instructions?: string;
+  storage_conditions?: string;
+  registration_number?: string;
+  barcode?: string;
+  status?: string;
 }
 
 /**
@@ -22,17 +38,22 @@ export interface Medicine {
  */
 export interface InventoryItem {
   _id: string;
-  branch_id: string;
+  branch_id?: string;
   branch?: {
     _id: string;
     name: string;
-    address: string;
+    address?: string;
+    phone?: string;
   }; // Populated data
-  medicine_id: string;
+  medicine_id?: string;
   medicine?: Medicine; // Populated data
-  quantity: number;
-  last_updated: string;
-  status?: 'normal' | 'low' | 'out_of_stock'; // Trạng thái tồn kho
+  quantity?: number;
+  total_quantity?: number;
+  warning_threshold?: number;
+  total_value?: number;
+  last_updated?: string;
+  status?: 'normal' | 'low' | 'low_stock' | 'out_of_stock' | 'sufficient'; // Trạng thái tồn kho
+  batches?: any[];
 }
 
 /**
