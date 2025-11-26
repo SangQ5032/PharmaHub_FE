@@ -17,13 +17,15 @@ import ReportSelectionScreen from '@features/warehouse/screens/ReportSelectionSc
 import ReportViewScreen from '@features/warehouse/screens/ReportViewScreen';
 import {
   BranchRevenueReportScreen,
-  BranchEmployeeListScreen,
   EmployeeWorkHistoryScreen,
   EmployeeRevenueScreen,
   MedicineManagementScreen,
-  EmployeeManagementScreen,
-  AddEditEmployeeScreen,
 } from '@features/revenue-report';
+import {
+  EmployeeManagementScreen,
+  BranchEmployeeListScreen,
+  CreateEmployeeScreen,
+} from '@features/employee-management/screens';
 import {
   BranchListScreen,
   BranchFormScreen,
@@ -181,10 +183,6 @@ const MainAppNavigator = () => {
         component={BranchRevenueReportScreen}
       />
       <MainStack.Screen
-        name={ROUTES.BRANCH_EMPLOYEE_LIST}
-        component={BranchEmployeeListScreen}
-      />
-      <MainStack.Screen
         name={ROUTES.EMPLOYEE_WORK_HISTORY}
         component={EmployeeWorkHistoryScreen}
       />
@@ -197,10 +195,17 @@ const MainAppNavigator = () => {
       <MainStack.Screen
         name={ROUTES.EMPLOYEE_MANAGEMENT}
         component={EmployeeManagementScreen}
+        options={{ headerShown: true, title: 'Quản lý nhân viên' }}
       />
       <MainStack.Screen
-        name={ROUTES.ADD_EDIT_EMPLOYEE}
-        component={AddEditEmployeeScreen}
+        name={ROUTES.BRANCH_EMPLOYEE_LIST}
+        component={BranchEmployeeListScreen}
+        options={{ headerShown: true, title: 'Danh sách nhân viên' }}
+      />
+      <MainStack.Screen
+        name="CREATE_EMPLOYEE"
+        component={CreateEmployeeScreen}
+        options={{ headerShown: false }}
       />
 
       {/* Branch Management Routes */}
