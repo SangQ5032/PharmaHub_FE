@@ -46,4 +46,7 @@ export const ROUTES = {
   INVOICE_DETAIL: 'InvoiceDetail',
   INVOICE_LIST: 'InvoiceList',
   BRANCH_INVOICE_HISTORY: 'BranchInvoiceHistory',
+  // Categories routes
+  CATEGORIES: 'Categories',
+  ADD_CATEGORY: 'AddCategory',
 };
