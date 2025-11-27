@@ -47,7 +47,8 @@ export interface BranchEmployeeStats {
   inactive: number;
 }
 
-export type SortBy = 'revenue' | 'invoiceCount' | 'paymentRate' | 'name';
+// Updated SortBy to match API response fields
+export type SortBy = 'revenue' | 'invoiceCount' | 'name' | 'quantity';
 export type SortOrder = 'asc' | 'desc';
 
 // Types cho màn hình lịch sử làm việc nhân viên

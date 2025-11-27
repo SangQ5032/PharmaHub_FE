@@ -33,6 +33,7 @@ const CheckinCheckoutScreen = () => {
     latitude: number;
     longitude: number;
   } | null>(null);
+  const [isLoadingLocation, setIsLoadingLocation] = useState(false);
   const {
     data: attendanceData,
     refetch,
@@ -101,13 +102,16 @@ const CheckinCheckoutScreen = () => {
    * Lấy vị trí hiện tại
    */
   const getCurrentLocation = () => {
+    setIsLoadingLocation(true);
     Geolocation.getCurrentPosition(
       position => {
         const { latitude, longitude } = position.coords;
         setCurrentLocation({ latitude, longitude });
+        setIsLoadingLocation(false);
       },
       error => {
         console.error('Error getting location:', error);
+        setIsLoadingLocation(false);
         Alert.alert(
           'Lỗi',
           'Không thể lấy vị trí hiện tại. Vui lòng kiểm tra cài đặt GPS.',
@@ -335,6 +339,22 @@ const CheckinCheckoutScreen = () => {
                 </Text>
               </View>
             </View>
+            <TouchableOpacity
+              style={styles.refreshLocationButton}
+              onPress={getCurrentLocation}
+              disabled={isLoadingLocation || isLoading}
+            >
+              {isLoadingLocation ? (
+                <ActivityIndicator color="#2196F3" size="small" />
+              ) : (
+                <>
+                  <Icon name="refresh" size={16} color="#2196F3" />
+                  <Text style={styles.refreshLocationButtonText}>
+                    Lấy lại vị trí
+                  </Text>
+                </>
+              )}
+            </TouchableOpacity>
           </View>
         )}
       </ScrollView>
@@ -495,6 +515,22 @@ const styles = StyleSheet.create({
   },
   locationValue: {
     fontSize: 14,
+    color: '#2196F3',
+    fontWeight: '500',
+  },
+  refreshLocationButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 12,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    backgroundColor: '#E3F2FD',
+    borderRadius: 8,
+    gap: 6,
+  },
+  refreshLocationButtonText: {
+    fontSize: 13,
     color: '#2196F3',
     fontWeight: '500',
   },
