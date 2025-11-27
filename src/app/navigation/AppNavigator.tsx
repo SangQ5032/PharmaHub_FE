@@ -8,17 +8,24 @@ import CreateImportScreen from '@features/warehouse/screens/CreateImportScreen';
 import ImportDetailScreen from '@features/warehouse/screens/ImportDetailScreen';
 import InventoryListScreen from '@features/warehouse/screens/InventoryListScreen';
 import InventoryDetailScreen from '@features/warehouse/screens/InventoryDetailScreen';
+import InventoryDetailWithBatchesScreen from '@features/warehouse/screens/InventoryDetailWithBatchesScreen';
+import InventoryDetailExpandedScreen from '@features/warehouse/screens/InventoryDetailExpandedScreen';
+import BatchDetailExpandedScreen from '@features/warehouse/screens/BatchDetailExpandedScreen';
+import BatchDetailScreen from '@features/warehouse/screens/BatchDetailScreen';
+import BranchInventoryManagementScreen from '@features/warehouse/screens/BranchInventoryManagementScreen';
 import ReportSelectionScreen from '@features/warehouse/screens/ReportSelectionScreen';
 import ReportViewScreen from '@features/warehouse/screens/ReportViewScreen';
 import {
   BranchRevenueReportScreen,
-  BranchEmployeeListScreen,
   EmployeeWorkHistoryScreen,
   EmployeeRevenueScreen,
   MedicineManagementScreen,
-  EmployeeManagementScreen,
-  AddEditEmployeeScreen,
 } from '@features/revenue-report';
+import {
+  EmployeeManagementScreen,
+  BranchEmployeeListScreen,
+  CreateEmployeeScreen,
+} from '@features/employee-management/screens';
 import {
   BranchListScreen,
   BranchFormScreen,
@@ -37,6 +44,7 @@ import {
 } from '@features/medicines';
 import MedicineDetailScreen from '@features/medicines/screens/MedicineDetailScreen';
 import { SuppliersScreen, AddSupplierScreen } from '@features/suppliers';
+import { CategoriesScreen, AddCategoryScreen } from '@features/categories';
 import {
   CreateInvoiceScreen,
   SalesHubScreen,
@@ -176,10 +184,6 @@ const MainAppNavigator = () => {
         component={BranchRevenueReportScreen}
       />
       <MainStack.Screen
-        name={ROUTES.BRANCH_EMPLOYEE_LIST}
-        component={BranchEmployeeListScreen}
-      />
-      <MainStack.Screen
         name={ROUTES.EMPLOYEE_WORK_HISTORY}
         component={EmployeeWorkHistoryScreen}
       />
@@ -192,10 +196,17 @@ const MainAppNavigator = () => {
       <MainStack.Screen
         name={ROUTES.EMPLOYEE_MANAGEMENT}
         component={EmployeeManagementScreen}
+        options={{ headerShown: true, title: 'Quản lý nhân viên' }}
       />
       <MainStack.Screen
-        name={ROUTES.ADD_EDIT_EMPLOYEE}
-        component={AddEditEmployeeScreen}
+        name={ROUTES.BRANCH_EMPLOYEE_LIST}
+        component={BranchEmployeeListScreen}
+        options={{ headerShown: true, title: 'Danh sách nhân viên' }}
+      />
+      <MainStack.Screen
+        name="CREATE_EMPLOYEE"
+        component={CreateEmployeeScreen}
+        options={{ headerShown: false }}
       />
 
       {/* Branch Management Routes */}
@@ -247,6 +258,21 @@ const MainAppNavigator = () => {
         options={{ headerShown: false }}
       />
       <MainStack.Screen
+        name={ROUTES.INVENTORY_DETAIL_WITH_BATCHES}
+        component={InventoryDetailExpandedScreen}
+        options={{ headerShown: true, title: 'Chi tiết thuốc' }}
+      />
+      <MainStack.Screen
+        name={ROUTES.BATCH_DETAIL}
+        component={BatchDetailExpandedScreen}
+        options={{ headerShown: true, title: 'Chi tiết lô hàng' }}
+      />
+      <MainStack.Screen
+        name={ROUTES.BRANCH_INVENTORY_MANAGEMENT}
+        component={BranchInventoryManagementScreen}
+        options={{ headerShown: true, title: 'Quản lý tồn kho' }}
+      />
+      <MainStack.Screen
         name={ROUTES.REPORT_SELECTION}
         component={ReportSelectionScreen}
         options={{ headerShown: false }}
@@ -255,6 +281,18 @@ const MainAppNavigator = () => {
         name={ROUTES.REPORT_VIEW}
         component={ReportViewScreen}
         options={{ headerShown: false }}
+      />
+
+      {/* Categories Routes */}
+      <MainStack.Screen
+        name={ROUTES.CATEGORIES}
+        component={CategoriesScreen}
+        options={{ headerShown: true, title: 'Danh mục' }}
+      />
+      <MainStack.Screen
+        name={ROUTES.ADD_CATEGORY}
+        component={AddCategoryScreen}
+        options={{ headerShown: true, title: 'Thêm / Sửa danh mục' }}
       />
 
       {/* Suppliers Routes */}

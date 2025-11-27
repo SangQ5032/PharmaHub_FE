@@ -21,6 +21,10 @@ export const ROUTES = {
   IMPORT_DETAIL: 'ImportDetail',
   INVENTORY_LIST: 'InventoryList',
   INVENTORY_DETAIL: 'InventoryDetail',
+  INVENTORY_DETAIL_WITH_BATCHES: 'InventoryDetailWithBatches',
+  BATCH_DETAIL: 'BatchDetail',
+  BATCH_LIST: 'BatchList',
+  BRANCH_INVENTORY_MANAGEMENT: 'BranchInventoryManagement',
   REPORT_SELECTION: 'ReportSelection',
   REPORT_VIEW: 'ReportView',
   // Revenue Report routes
@@ -42,4 +46,7 @@ export const ROUTES = {
   INVOICE_DETAIL: 'InvoiceDetail',
   INVOICE_LIST: 'InvoiceList',
   BRANCH_INVOICE_HISTORY: 'BranchInvoiceHistory',
+  // Categories routes
+  CATEGORIES: 'Categories',
+  ADD_CATEGORY: 'AddCategory',
 };
