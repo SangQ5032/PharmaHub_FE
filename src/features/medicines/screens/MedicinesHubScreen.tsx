@@ -32,6 +32,11 @@ const MedicinesHubScreen: React.FC = () => {
           onPress={() => navigation.navigate(ROUTES.MEDICINES)}
         />
         <CardButton
+          label="Quản lý danh mục"
+          color="#388E3C"
+          onPress={() => navigation.navigate(ROUTES.CATEGORIES)}
+        />
+        <CardButton
           label="Quản lý nhà cung cấp"
           color="#1B5E20"
           onPress={() => navigation.navigate(ROUTES.SUPPLIERS)}

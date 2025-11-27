@@ -45,6 +45,7 @@ import {
 } from '@features/medicines';
 import MedicineDetailScreen from '@features/medicines/screens/MedicineDetailScreen';
 import { SuppliersScreen, AddSupplierScreen } from '@features/suppliers';
+import { CategoriesScreen, AddCategoryScreen } from '@features/categories';
 import {
   CreateInvoiceScreen,
   SalesHubScreen,
@@ -286,6 +287,18 @@ const MainAppNavigator = () => {
         name={ROUTES.WAREHOUSE_HUB}
         component={WarehouseHubScreen}
         options={{ headerShown: true, title: 'Quản Lý Tồn Kho' }}
+      />
+
+      {/* Categories Routes */}
+      <MainStack.Screen
+        name={ROUTES.CATEGORIES}
+        component={CategoriesScreen}
+        options={{ headerShown: true, title: 'Danh mục' }}
+      />
+      <MainStack.Screen
+        name={ROUTES.ADD_CATEGORY}
+        component={AddCategoryScreen}
+        options={{ headerShown: true, title: 'Thêm / Sửa danh mục' }}
       />
 
       {/* Suppliers Routes */}
