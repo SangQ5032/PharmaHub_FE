@@ -125,7 +125,7 @@ const BranchFormScreen: React.FC = () => {
   };
 
   const openMapPicker = () => {
-    if (location.latitude && location.longitude) {
+    if (location.latitude !== 0 || location.longitude !== 0) {
       navigation.navigate('MapPicker', {
         initialLocation: location,
       });
