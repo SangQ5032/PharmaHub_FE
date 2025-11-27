@@ -43,7 +43,8 @@ const MapPickerScreen: React.FC = () => {
     };
 
     // Truyền lại location cho BranchFormScreen
-    navigation.navigate('BranchForm', { selectedLocation: newLocation });
+    // navigation.navigate('AddEditBranch', { selectedLocation: newLocation });
+    navigation.goBack({ selectedLocation: newLocation });
   };
 
   const handleCancel = () => {
