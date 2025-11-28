@@ -5,13 +5,13 @@ export type SaleItem = {
 };
 
 export type CreateInvoiceRequest = {
+  branch_id: string; // Chi nhánh bắt buộc
+  customer_name: string; // Tên khách hàng
   items: SaleItem[];
-  discount: number;
-  tax_rate: number;
-  payment_method: 'cash' | 'card' | 'bank';
-  customer_id?: string; // Optional: nếu chọn từ database
-  customer_name: string;
-  customer_phone: string;
+  payment_method?: 'cash' | 'card' | 'bank' | 'e-wallet';
+  discount?: number;
+  tax_rate?: number;
+  customer_phone?: string;
   note?: string;
 };
 
@@ -22,9 +22,17 @@ export type MedicineInfo = {
   price?: number;
 };
 
+export type BatchInfo = {
+  _id: string;
+  batch_number: string;
+  expiry_date: string;
+};
+
 export type InvoiceItem = {
   medicine_id: MedicineInfo;
+  batch_id: BatchInfo;
   name: string;
+  batch_number: string;
   quantity: number;
   unit_price: number;
   line_total: number;
@@ -47,27 +55,27 @@ export type CustomerInfo = {
   _id: string;
   name: string;
   phone: string;
+  address?: string;
   total_spent: number;
 };
-
 export type Invoice = {
   _id: string;
   invoice_code: string;
   branch_id: BranchInfo;
   employee_id: EmployeeInfo;
-  customer_id: CustomerInfo;
-  customer_name: string;
-  customer_phone: string;
-  payment_method: 'cash' | 'card' | 'transfer';
+  customer_id?: CustomerInfo;
+  customer_name?: string;
+  customer_phone?: string;
+  payment_method: 'cash' | 'card' | 'transfer' | 'e-wallet';
   items: InvoiceItem[];
   subtotal: number;
-  discount: number;
-  tax_rate: number;
-  tax_amount: number;
+  discount?: number;
+  tax_rate?: number;
+  tax_amount?: number;
   total_amount: number;
   note?: string;
   status: 'completed' | 'pending' | 'cancelled';
-  exported: boolean;
+  exported?: boolean;
   createdAt: string;
   updatedAt: string;
 };

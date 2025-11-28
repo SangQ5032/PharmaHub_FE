@@ -6,11 +6,15 @@ import { View, Text, StyleSheet } from 'react-native';
 type StatusType =
   | 'normal'
   | 'low'
+  | 'low_stock'
   | 'out_of_stock'
+  | 'sufficient'
   | 'warning'
   | 'success'
   | 'error'
-  | 'info';
+  | 'info'
+  | 'active'
+  | 'inactive';
 
 interface StatusBadgeProps {
   status: StatusType;
@@ -29,9 +33,17 @@ export const StatusBadge: React.FC<StatusBadgeProps> = ({
       backgroundColor: '#4CAF50',
       label: label || 'Bình thường',
     },
+    sufficient: {
+      backgroundColor: '#4CAF50',
+      label: label || 'Đủ hàng',
+    },
     low: {
       backgroundColor: '#FF9800',
       label: label || 'Sắp hết',
+    },
+    low_stock: {
+      backgroundColor: '#FF9800',
+      label: label || 'Tồn kho thấp',
     },
     out_of_stock: {
       backgroundColor: '#F44336',
@@ -52,6 +64,14 @@ export const StatusBadge: React.FC<StatusBadgeProps> = ({
     info: {
       backgroundColor: '#2196F3',
       label: label || 'Thông tin',
+    },
+    active: {
+      backgroundColor: '#4CAF50',
+      label: label || 'Hoạt động',
+    },
+    inactive: {
+      backgroundColor: '#9E9E9E',
+      label: label || 'Không hoạt động',
     },
   };
 

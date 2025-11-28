@@ -8,6 +8,7 @@ export { default as InventoryListScreen } from './screens/InventoryListScreen';
 export { default as InventoryDetailScreen } from './screens/InventoryDetailScreen';
 export { default as ReportSelectionScreen } from './screens/ReportSelectionScreen';
 export { default as ReportViewScreen } from './screens/ReportViewScreen';
+export { default as WarehouseHubScreen } from './screens/WarehouseHubScreen';
 
 // Components
 export { ImportCard } from './components/ImportCard';

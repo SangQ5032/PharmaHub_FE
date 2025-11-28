@@ -152,6 +152,12 @@ Tổng cộng: ${invoice.total_amount?.toLocaleString('vi-VN')}₫
             <Text style={styles.label}>Số điện thoại:</Text>
             <Text style={styles.value}>{invoice.customer_phone}</Text>
           </View>
+          {invoice.customer_id?.address && (
+            <View style={styles.infoRow}>
+              <Text style={styles.label}>Địa chỉ:</Text>
+              <Text style={styles.value}>{invoice.customer_id.address}</Text>
+            </View>
+          )}
           <View style={styles.infoRow}>
             <Text style={styles.label}>Tổng chi tiêu:</Text>
             <Text style={styles.value}>
@@ -181,6 +187,18 @@ Tổng cộng: ${invoice.total_amount?.toLocaleString('vi-VN')}₫
               <View style={styles.itemHeader}>
                 <Text style={styles.itemName}>{item.name}</Text>
                 <Text style={styles.itemUnit}>{item.medicine_id?.unit}</Text>
+              </View>
+              <View style={styles.itemRow}>
+                <Text style={styles.itemLabel}>Lô hàng:</Text>
+                <Text style={styles.itemValue}>{item.batch_number}</Text>
+              </View>
+              <View style={styles.itemRow}>
+                <Text style={styles.itemLabel}>Ngày hết hạn:</Text>
+                <Text style={styles.itemValue}>
+                  {new Date(item.batch_id?.expiry_date).toLocaleDateString(
+                    'vi-VN',
+                  )}
+                </Text>
               </View>
               <View style={styles.itemRow}>
                 <Text style={styles.itemLabel}>Số lượng:</Text>
@@ -252,6 +270,23 @@ Tổng cộng: ${invoice.total_amount?.toLocaleString('vi-VN')}₫
             <Text style={styles.noteText}>{invoice.note}</Text>
           </View>
         )}
+
+        {/* Timestamps */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Thời gian</Text>
+          <View style={styles.infoRow}>
+            <Text style={styles.label}>Tạo lúc:</Text>
+            <Text style={styles.value}>
+              {new Date(invoice.createdAt).toLocaleString('vi-VN')}
+            </Text>
+          </View>
+          <View style={styles.infoRow}>
+            <Text style={styles.label}>Cập nhật lúc:</Text>
+            <Text style={styles.value}>
+              {new Date(invoice.updatedAt).toLocaleString('vi-VN')}
+            </Text>
+          </View>
+        </View>
       </ScrollView>
 
       {/* Action Buttons */}

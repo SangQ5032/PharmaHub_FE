@@ -16,11 +16,13 @@ export const ROUTES = {
   SUPPLIERS: 'Suppliers',
   ADD_SUPPLIER: 'AddSupplier',
   // Warehouse routes
+  WAREHOUSE_HUB: 'WarehouseHub',
   IMPORT_LIST: 'ImportList',
   CREATE_IMPORT: 'CreateImport',
   IMPORT_DETAIL: 'ImportDetail',
   INVENTORY_LIST: 'InventoryList',
   INVENTORY_DETAIL: 'InventoryDetail',
+  BATCH_DETAIL: 'BatchDetail',
   REPORT_SELECTION: 'ReportSelection',
   REPORT_VIEW: 'ReportView',
   // Revenue Report routes

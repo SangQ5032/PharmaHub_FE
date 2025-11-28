@@ -10,31 +10,38 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
-import { useGetInventoryDetail } from '@features/warehouse/hooks/useInventory';
+import { useGetInventoryMedicineDetail } from '@features/warehouse/hooks/useInventory';
 import { StatusBadge } from '@features/warehouse/components/StatusBadge';
 
 export default function InventoryDetailScreen() {
   const navigation = useNavigation();
   const route = useRoute();
-  const { id } = route.params as { id: string };
+  const { medicineId, branchId } = route.params as {
+    medicineId: string;
+    branchId: string;
+  };
 
-  // Fetch inventory detail
+  // Fetch inventory detail cho loại thuốc cụ thể tại chi nhánh
   const { data, isLoading, isError, error, refetch } =
-    useGetInventoryDetail(id);
+    useGetInventoryMedicineDetail(branchId, medicineId);
 
   // Get status based on quantity and warning threshold
-  const getStatus = (): 'normal' | 'low' | 'out_of_stock' => {
-    if (!data?.data) return 'normal';
+  const getStatus = (): 'sufficient' | 'low' | 'low_stock' | 'out_of_stock' => {
+    if (!data?.data) return 'sufficient';
     const item = data.data;
 
-    if (item.quantity === 0) return 'out_of_stock';
+    if (item.status) {
+      return item.status as 'sufficient' | 'low' | 'low_stock' | 'out_of_stock';
+    }
+
+    if (item.total_quantity === 0) return 'out_of_stock';
     if (
-      item.medicine?.warning_threshold &&
-      item.quantity <= item.medicine.warning_threshold
+      item.warning_threshold &&
+      item.total_quantity <= item.warning_threshold
     ) {
       return 'low';
     }
-    return 'normal';
+    return 'sufficient';
   };
 
   // Format date
@@ -64,7 +71,7 @@ export default function InventoryDetailScreen() {
             <Text style={styles.backButton}>← Quay lại</Text>
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Chi tiết tồn kho</Text>
-          <View style={{ width: 80 }} />
+          <View style={styles.headerSpacer} />
         </View>
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color="#4CAF50" />
@@ -83,7 +90,7 @@ export default function InventoryDetailScreen() {
             <Text style={styles.backButton}>← Quay lại</Text>
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Chi tiết tồn kho</Text>
-          <View style={{ width: 80 }} />
+          <View style={styles.headerSpacer} />
         </View>
         <View style={styles.errorContainer}>
           <Text style={styles.errorText}>
@@ -111,7 +118,7 @@ export default function InventoryDetailScreen() {
           <Text style={styles.backButton}>← Quay lại</Text>
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Chi tiết tồn kho</Text>
-        <View style={{ width: 80 }} />
+        <View style={styles.headerSpacer} />
       </View>
 
       <ScrollView style={styles.content}>
@@ -127,15 +134,17 @@ export default function InventoryDetailScreen() {
             <Text style={styles.value}>{item.medicine?.name || 'N/A'}</Text>
           </View>
 
-          <View style={styles.infoRow}>
-            <Text style={styles.label}>Danh mục:</Text>
-            <Text style={styles.value}>{item.medicine?.category || 'N/A'}</Text>
-          </View>
-
-          {item.medicine?.description && (
+          {item.medicine?.generic_name && (
             <View style={styles.infoRow}>
-              <Text style={styles.label}>Mô tả:</Text>
-              <Text style={styles.value}>{item.medicine.description}</Text>
+              <Text style={styles.label}>Hoạt chất:</Text>
+              <Text style={styles.value}>{item.medicine.generic_name}</Text>
+            </View>
+          )}
+
+          {item.medicine?.brand_name && (
+            <View style={styles.infoRow}>
+              <Text style={styles.label}>Tên thương hiệu:</Text>
+              <Text style={styles.value}>{item.medicine.brand_name}</Text>
             </View>
           )}
 
@@ -144,24 +153,113 @@ export default function InventoryDetailScreen() {
             <Text style={styles.value}>{item.medicine?.unit || 'N/A'}</Text>
           </View>
 
+          {item.medicine?.dosage_form && (
+            <View style={styles.infoRow}>
+              <Text style={styles.label}>Dạng bào chế:</Text>
+              <Text style={styles.value}>{item.medicine.dosage_form}</Text>
+            </View>
+          )}
+
+          {item.medicine?.strength && (
+            <View style={styles.infoRow}>
+              <Text style={styles.label}>Hàm lượng:</Text>
+              <Text style={styles.value}>{item.medicine.strength}</Text>
+            </View>
+          )}
+
           <View style={styles.infoRow}>
-            <Text style={styles.label}>Giá:</Text>
+            <Text style={styles.label}>Giá bán lẻ:</Text>
             <Text style={[styles.value, styles.priceValue]}>
-              {item.medicine?.price
-                ? formatCurrency(item.medicine.price)
+              {item.medicine?.retail_price
+                ? formatCurrency(item.medicine.retail_price)
                 : 'N/A'}
             </Text>
           </View>
 
-          <View style={styles.infoRow}>
-            <Text style={styles.label}>Hạn sử dụng:</Text>
-            <Text style={styles.value}>
-              {item.medicine?.expiry_date
-                ? formatDate(item.medicine.expiry_date)
-                : 'N/A'}
-            </Text>
-          </View>
+          {item.medicine?.manufacturer && (
+            <View style={styles.infoRow}>
+              <Text style={styles.label}>Nhà sản xuất:</Text>
+              <Text style={styles.value}>{item.medicine.manufacturer}</Text>
+            </View>
+          )}
+
+          {item.medicine?.country_of_origin && (
+            <View style={styles.infoRow}>
+              <Text style={styles.label}>Xuất xứ:</Text>
+              <Text style={styles.value}>
+                {item.medicine.country_of_origin}
+              </Text>
+            </View>
+          )}
+
+          {item.medicine?.registration_number && (
+            <View style={styles.infoRow}>
+              <Text style={styles.label}>Số đăng ký:</Text>
+              <Text style={styles.value}>
+                {item.medicine.registration_number}
+              </Text>
+            </View>
+          )}
+
+          {item.medicine?.barcode && (
+            <View style={styles.infoRow}>
+              <Text style={styles.label}>Mã vạch:</Text>
+              <Text style={styles.value}>{item.medicine.barcode}</Text>
+            </View>
+          )}
         </View>
+
+        {/* Medical Details Card */}
+        {(item.medicine?.indications ||
+          item.medicine?.contraindications ||
+          item.medicine?.side_effects ||
+          item.medicine?.usage_instructions ||
+          item.medicine?.storage_conditions) && (
+          <View style={styles.card}>
+            <Text style={styles.cardTitle}>Thông tin y học</Text>
+
+            {item.medicine?.indications && (
+              <View style={styles.infoRow}>
+                <Text style={styles.label}>Chỉ định:</Text>
+                <Text style={styles.value}>{item.medicine.indications}</Text>
+              </View>
+            )}
+
+            {item.medicine?.contraindications && (
+              <View style={styles.infoRow}>
+                <Text style={styles.label}>Chống chỉ định:</Text>
+                <Text style={styles.value}>
+                  {item.medicine.contraindications}
+                </Text>
+              </View>
+            )}
+
+            {item.medicine?.side_effects && (
+              <View style={styles.infoRow}>
+                <Text style={styles.label}>Tác dụng phụ:</Text>
+                <Text style={styles.value}>{item.medicine.side_effects}</Text>
+              </View>
+            )}
+
+            {item.medicine?.usage_instructions && (
+              <View style={styles.infoRow}>
+                <Text style={styles.label}>Cách sử dụng:</Text>
+                <Text style={styles.value}>
+                  {item.medicine.usage_instructions}
+                </Text>
+              </View>
+            )}
+
+            {item.medicine?.storage_conditions && (
+              <View style={styles.infoRow}>
+                <Text style={styles.label}>Điều kiện bảo quản:</Text>
+                <Text style={styles.value}>
+                  {item.medicine.storage_conditions}
+                </Text>
+              </View>
+            )}
+          </View>
+        )}
 
         {/* Inventory Info Card */}
         <View style={styles.card}>
@@ -179,54 +277,122 @@ export default function InventoryDetailScreen() {
             </View>
           )}
 
+          {item.branch?.phone && (
+            <View style={styles.infoRow}>
+              <Text style={styles.label}>Điện thoại:</Text>
+              <Text style={styles.value}>{item.branch.phone}</Text>
+            </View>
+          )}
+
           <View style={styles.infoRow}>
-            <Text style={styles.label}>Số lượng tồn:</Text>
+            <Text style={styles.label}>Tổng số lượng tồn:</Text>
             <Text
               style={[
                 styles.value,
                 styles.quantityValue,
                 status === 'out_of_stock' && styles.errorValue,
-                status === 'low' && styles.warningValue,
-                status === 'normal' && styles.successValue,
+                (status === 'low' || status === 'low_stock') &&
+                  styles.warningValue,
+                status === 'sufficient' && styles.successValue,
               ]}
             >
-              {item.quantity} {item.medicine?.unit || ''}
+              {item.total_quantity} {item.medicine?.unit || ''}
             </Text>
           </View>
 
-          {item.medicine?.warning_threshold && (
+          {item.warning_threshold && (
             <View style={styles.infoRow}>
               <Text style={styles.label}>Ngưỡng cảnh báo:</Text>
               <Text style={styles.value}>
-                {item.medicine.warning_threshold} {item.medicine.unit}
+                {item.warning_threshold} {item.medicine?.unit}
               </Text>
             </View>
           )}
 
-          <View style={styles.infoRow}>
-            <Text style={styles.label}>Cập nhật lần cuối:</Text>
-            <Text style={styles.value}>{formatDate(item.last_updated)}</Text>
-          </View>
+          {item.total_value !== undefined && (
+            <View style={styles.infoRow}>
+              <Text style={styles.label}>Tổng giá trị:</Text>
+              <Text style={[styles.value, styles.priceValue]}>
+                {formatCurrency(item.total_value)}
+              </Text>
+            </View>
+          )}
+
+          {item.last_updated && (
+            <View style={styles.infoRow}>
+              <Text style={styles.label}>Cập nhật lần cuối:</Text>
+              <Text style={styles.value}>{formatDate(item.last_updated)}</Text>
+            </View>
+          )}
         </View>
 
-        {/* Total Value Card */}
-        <View style={styles.card}>
-          <Text style={styles.cardTitle}>Giá trị tồn kho</Text>
-
-          <View style={styles.totalValueContainer}>
-            <Text style={styles.totalValueLabel}>Tổng giá trị:</Text>
-            <Text style={styles.totalValueAmount}>
-              {item.medicine?.price
-                ? formatCurrency(item.quantity * item.medicine.price)
-                : 'N/A'}
+        {/* Batches Info Card */}
+        {item.batches && item.batches.length > 0 && (
+          <View style={styles.card}>
+            <Text style={styles.cardTitle}>
+              Danh sách lô hàng ({item.batches.length})
             </Text>
-          </View>
 
-          <Text style={styles.totalValueNote}>
-            = {item.quantity} {item.medicine?.unit} ×{' '}
-            {item.medicine?.price ? formatCurrency(item.medicine.price) : 'N/A'}
-          </Text>
-        </View>
+            {item.batches.map((batch, idx) => (
+              <View key={batch._id} style={styles.batchCard}>
+                <View style={styles.batchCardHeader}>
+                  <Text style={styles.batchNumber}>Lô {idx + 1}</Text>
+                  <Text style={styles.batchNumberValue}>
+                    {batch.batch_number}
+                  </Text>
+                </View>
+
+                <View style={styles.batchDetails}>
+                  <View style={styles.batchDetailRow}>
+                    <Text style={styles.batchLabel}>Hạn sử dụng:</Text>
+                    <Text style={styles.batchValue}>
+                      {formatDate(batch.expiry_date)}
+                    </Text>
+                  </View>
+
+                  <View style={styles.batchDetailRow}>
+                    <Text style={styles.batchLabel}>Số lượng:</Text>
+                    <Text style={styles.batchValue}>{batch.quantity}</Text>
+                  </View>
+
+                  <View style={styles.batchDetailRow}>
+                    <Text style={styles.batchLabel}>Giá nhập:</Text>
+                    <Text style={styles.batchValue}>
+                      {formatCurrency(batch.import_price)}
+                    </Text>
+                  </View>
+
+                  <View style={styles.batchDetailRow}>
+                    <Text style={styles.batchLabel}>Nhà cung cấp:</Text>
+                    <Text style={styles.batchValue}>
+                      {batch.supplier?.name || batch.supplier_name || 'N/A'}
+                    </Text>
+                  </View>
+
+                  {batch.imported_at && (
+                    <View style={styles.batchDetailRow}>
+                      <Text style={styles.batchLabel}>Ngày nhập:</Text>
+                      <Text style={styles.batchValue}>
+                        {formatDate(batch.imported_at)}
+                      </Text>
+                    </View>
+                  )}
+
+                  {batch.batch_value && (
+                    <View style={styles.batchDetailRow}>
+                      <Text style={styles.batchLabel}>Giá trị lô:</Text>
+                      <Text
+                        style={[styles.batchValue, styles.batchValueAmount]}
+                      >
+                        {formatCurrency(batch.batch_value)}
+                      </Text>
+                    </View>
+                  )}
+                </View>
+              </View>
+            ))}
+          </View>
+        )}
       </ScrollView>
     </View>
   );
@@ -236,6 +402,9 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#F5F5F5',
+  },
+  headerSpacer: {
+    width: 80,
   },
   header: {
     flexDirection: 'row',
@@ -335,6 +504,54 @@ const styles = StyleSheet.create({
     color: '#757575',
     textAlign: 'right',
     marginTop: 4,
+  },
+  batchCard: {
+    backgroundColor: '#F9F9F9',
+    borderRadius: 8,
+    padding: 12,
+    marginBottom: 12,
+    borderLeftWidth: 4,
+    borderLeftColor: '#2196F3',
+  },
+  batchCardHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
+    paddingBottom: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: '#E0E0E0',
+  },
+  batchNumber: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#757575',
+  },
+  batchNumberValue: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#2196F3',
+  },
+  batchDetails: {
+    gap: 8,
+  },
+  batchDetailRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 4,
+  },
+  batchLabel: {
+    fontSize: 13,
+    color: '#757575',
+  },
+  batchValue: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#212121',
+  },
+  batchValueAmount: {
+    color: '#4CAF50',
   },
   loadingContainer: {
     flex: 1,

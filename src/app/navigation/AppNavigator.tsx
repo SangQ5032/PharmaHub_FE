@@ -8,8 +8,10 @@ import CreateImportScreen from '@features/warehouse/screens/CreateImportScreen';
 import ImportDetailScreen from '@features/warehouse/screens/ImportDetailScreen';
 import InventoryListScreen from '@features/warehouse/screens/InventoryListScreen';
 import InventoryDetailScreen from '@features/warehouse/screens/InventoryDetailScreen';
+import BatchDetailScreen from '@features/warehouse/screens/BatchDetailScreen';
 import ReportSelectionScreen from '@features/warehouse/screens/ReportSelectionScreen';
 import ReportViewScreen from '@features/warehouse/screens/ReportViewScreen';
+import WarehouseHubScreen from '@features/warehouse/screens/WarehouseHubScreen';
 import {
   BranchRevenueReportScreen,
   BranchEmployeeListScreen,
@@ -247,6 +249,11 @@ const MainAppNavigator = () => {
         options={{ headerShown: false }}
       />
       <MainStack.Screen
+        name={ROUTES.BATCH_DETAIL}
+        component={BatchDetailScreen}
+        options={{ headerShown: false }}
+      />
+      <MainStack.Screen
         name={ROUTES.REPORT_SELECTION}
         component={ReportSelectionScreen}
         options={{ headerShown: false }}
@@ -255,6 +262,11 @@ const MainAppNavigator = () => {
         name={ROUTES.REPORT_VIEW}
         component={ReportViewScreen}
         options={{ headerShown: false }}
+      />
+      <MainStack.Screen
+        name={ROUTES.WAREHOUSE_HUB}
+        component={WarehouseHubScreen}
+        options={{ headerShown: true, title: 'Quản Lý Tồn Kho' }}
       />
 
       {/* Suppliers Routes */}

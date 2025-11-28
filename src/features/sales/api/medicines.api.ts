@@ -154,3 +154,19 @@ export const getMedicineById = async (id: string): Promise<any> => {
   const response = await api.get(`${MEDICINES_ENDPOINT}/${id}`);
   return response.data;
 };
+
+/**
+ * Lấy danh sách batch còn hàng của một thuốc tại chi nhánh
+ * API: GET /api/inventory/branch/:branchId/medicine/:medicineId/batches
+ */
+export const getBatchesByMedicineAndBranch = async (
+  branchId: string,
+  medicineId: string,
+): Promise<Batch[]> => {
+  const response = await api.get<{
+    success: boolean;
+    message: string;
+    data: Batch[];
+  }>(`/inventory/branch/${branchId}/medicine/${medicineId}/batches`);
+  return response.data.data;
+};
