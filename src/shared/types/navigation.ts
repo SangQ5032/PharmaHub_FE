@@ -61,4 +61,5 @@ export type MainStackParamList = {
   [ROUTES.BRANCH_DETAIL]: { branchId: string; branchName?: string } | undefined;
   [ROUTES.CATEGORIES]: undefined;
   [ROUTES.ADD_CATEGORY]: { mode?: 'edit'; item?: any } | undefined;
+  [ROUTES.CATEGORY_DETAIL]: { categoryId: string } | undefined;
 };
