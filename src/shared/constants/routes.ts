@@ -50,4 +50,5 @@ export const ROUTES = {
   // Categories routes
   CATEGORIES: 'Categories',
   ADD_CATEGORY: 'AddCategory',
+  CATEGORY_DETAIL: 'CategoryDetail',
 };

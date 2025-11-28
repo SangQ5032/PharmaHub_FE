@@ -82,9 +82,20 @@ const CategoriesList: React.FC = () => {
   const renderItem = ({ item }: any) => (
     <View style={styles.itemRow}>
       <View style={[styles.cell, { flex: 40 }]}>
-        <Text style={styles.cellText} numberOfLines={1}>
-          {item?.name || '-'}
-        </Text>
+        <TouchableOpacity
+          onPress={() =>
+            navigation.navigate(ROUTES.CATEGORY_DETAIL as any, {
+              categoryId: String(item._id),
+            })
+          }
+        >
+          <Text
+            style={[styles.cellText, { color: '#1B5E20', fontWeight: '700' }]}
+            numberOfLines={1}
+          >
+            {item?.name || '-'}
+          </Text>
+        </TouchableOpacity>
       </View>
       <View style={[styles.cell, { flex: 35 }]}>
         <Text style={[styles.cellText]} numberOfLines={1}>
