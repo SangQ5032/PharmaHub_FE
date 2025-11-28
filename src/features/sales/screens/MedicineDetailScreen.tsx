@@ -7,15 +7,31 @@ import {
   TouchableOpacity,
   Alert,
   ActivityIndicator,
+  Modal,
+  FlatList,
+  TextInput,
 } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
+import { useGetBatches } from '../hooks/useMedicines';
+import { useAuthStore } from '../../auth/stores/useAuthStore';
 
 const MedicineDetailScreen: React.FC = () => {
   const navigation = useNavigation<any>();
   const route = useRoute<any>();
+  const { user } = useAuthStore();
   const { medicine, onAddMedicine } = route.params || {};
 
   const [quantity, setQuantity] = useState('1');
+  const [selectedBatch, setSelectedBatch] = useState<any>(null);
+  const [showBatchModal, setShowBatchModal] = useState(false);
+  const [batchSearchQuery, setBatchSearchQuery] = useState('');
+
+  const branchId = user?.branch_id || '';
+  const { data: batches = [], isLoading: batchesLoading } = useGetBatches(
+    branchId,
+    medicine?._id,
+  );
+
   const price = String(medicine?.retail_price || medicine?.price || 0);
 
   const handleAddMedicine = () => {
@@ -24,10 +40,15 @@ const MedicineDetailScreen: React.FC = () => {
       return;
     }
 
-    if (medicine.total_quantity && Number(quantity) > medicine.total_quantity) {
+    if (!selectedBatch) {
+      Alert.alert('Lỗi', 'Vui lòng chọn lô (batch)');
+      return;
+    }
+
+    if (Number(quantity) > selectedBatch.quantity) {
       Alert.alert(
         'Lỗi',
-        `Số lượng vượt quá tồn kho. Tồn kho: ${medicine.total_quantity}`,
+        `Lô này chỉ còn ${selectedBatch.quantity}, không đủ ${quantity}`,
       );
       return;
     }
@@ -38,7 +59,12 @@ const MedicineDetailScreen: React.FC = () => {
     }
 
     if (onAddMedicine) {
-      onAddMedicine(medicine, Number(quantity), Number(price));
+      onAddMedicine(
+        medicine,
+        Number(quantity),
+        Number(price),
+        selectedBatch._id,
+      );
     }
 
     Alert.alert('Thành công', 'Đã thêm thuốc vào đơn hàng', [
@@ -316,6 +342,40 @@ const MedicineDetailScreen: React.FC = () => {
       <View style={styles.addSection}>
         <Text style={styles.addSectionTitle}>Thêm vào đơn hàng</Text>
 
+        {/* Batch Selection */}
+        <View style={styles.batchSelectionContainer}>
+          <Text style={styles.label}>Lô (Batch) *</Text>
+          {batchesLoading ? (
+            <ActivityIndicator size="small" color="#0066CC" />
+          ) : (
+            <TouchableOpacity
+              style={[
+                styles.batchSelectButton,
+                !selectedBatch && styles.batchSelectButtonEmpty,
+              ]}
+              onPress={() => setShowBatchModal(true)}
+              disabled={batches.length === 0}
+            >
+              <Text
+                style={[
+                  styles.batchSelectButtonText,
+                  !selectedBatch && styles.batchSelectButtonEmptyText,
+                ]}
+              >
+                {selectedBatch
+                  ? `${selectedBatch.batch_number} (HSD: ${new Date(
+                      selectedBatch.expiry_date,
+                    ).toLocaleDateString('vi-VN')}, Còn: ${
+                      selectedBatch.quantity
+                    })`
+                  : batches.length === 0
+                  ? 'Không có lô nào'
+                  : 'Chọn lô hàng...'}
+              </Text>
+            </TouchableOpacity>
+          )}
+        </View>
+
         <View style={styles.quantityPriceRow}>
           <View style={[styles.inputContainer, styles.quantityInputContainer]}>
             <Text style={styles.label}>Số lượng</Text>
@@ -340,9 +400,11 @@ const MedicineDetailScreen: React.FC = () => {
                 <Text style={styles.quantityButtonText}>+</Text>
               </TouchableOpacity>
             </View>
-            <Text style={styles.quantityNote}>
-              Tồn kho: {medicine.total_quantity || 0}
-            </Text>
+            {selectedBatch && (
+              <Text style={styles.quantityNote}>
+                Lô còn: {selectedBatch.quantity}
+              </Text>
+            )}
           </View>
 
           <View style={[styles.inputContainer, styles.priceInputContainer]}>
@@ -361,16 +423,80 @@ const MedicineDetailScreen: React.FC = () => {
         </View>
 
         <TouchableOpacity
-          style={[
-            styles.addButton,
-            medicine.total_quantity === 0 && styles.addButtonDisabled,
-          ]}
+          style={[styles.addButton, !selectedBatch && styles.addButtonDisabled]}
           onPress={handleAddMedicine}
-          disabled={medicine.total_quantity === 0}
+          disabled={!selectedBatch || batches.length === 0}
         >
           <Text style={styles.addButtonText}>Thêm vào đơn hàng</Text>
         </TouchableOpacity>
       </View>
+
+      {/* Batch Selection Modal */}
+      <Modal
+        visible={showBatchModal}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setShowBatchModal(false)}
+      >
+        <View style={styles.modalContainer}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Chọn lô hàng</Text>
+              <TouchableOpacity onPress={() => setShowBatchModal(false)}>
+                <Text style={styles.closeButton}>Đóng</Text>
+              </TouchableOpacity>
+            </View>
+
+            <TextInput
+              style={styles.searchInput}
+              placeholder="Tìm kiếm lô (mã lô, HSD)..."
+              value={batchSearchQuery}
+              onChangeText={setBatchSearchQuery}
+            />
+
+            <FlatList
+              data={batches.filter((batch: any) =>
+                batch.batch_number
+                  .toLowerCase()
+                  .includes(batchSearchQuery.toLowerCase()),
+              )}
+              keyExtractor={item => item._id}
+              renderItem={({ item }) => (
+                <TouchableOpacity
+                  style={[
+                    styles.batchListItem,
+                    selectedBatch?._id === item._id &&
+                      styles.batchListItemSelected,
+                  ]}
+                  onPress={() => {
+                    setSelectedBatch(item);
+                    setShowBatchModal(false);
+                    setBatchSearchQuery('');
+                  }}
+                >
+                  <View>
+                    <Text style={styles.batchListBatchNumber}>
+                      Lô: {item.batch_number}
+                    </Text>
+                    <Text style={styles.batchListInfo}>
+                      HSD:{' '}
+                      {new Date(item.expiry_date).toLocaleDateString('vi-VN')} |
+                      Còn: {item.quantity}
+                    </Text>
+                    <Text style={styles.batchListInfo}>
+                      Giá nhập:{' '}
+                      {Number(item.import_price).toLocaleString('vi-VN')}₫
+                    </Text>
+                  </View>
+                </TouchableOpacity>
+              )}
+              ListEmptyComponent={
+                <Text style={styles.emptyText}>Không tìm thấy lô nào</Text>
+              }
+            />
+          </View>
+        </View>
+      </Modal>
 
       <View style={styles.spacer} />
     </ScrollView>
@@ -618,6 +744,95 @@ const styles = StyleSheet.create({
     color: '#FFF',
     fontSize: 15,
     fontWeight: '700',
+  },
+  batchSelectionContainer: {
+    marginBottom: 16,
+  },
+  batchSelectButton: {
+    borderWidth: 1,
+    borderColor: '#0066CC',
+    borderRadius: 6,
+    padding: 12,
+    backgroundColor: '#F0F8FF',
+  },
+  batchSelectButtonEmpty: {
+    borderColor: '#DDD',
+    backgroundColor: '#F9F9F9',
+  },
+  batchSelectButtonText: {
+    fontSize: 13,
+    color: '#0066CC',
+    fontWeight: '500',
+  },
+  batchSelectButtonEmptyText: {
+    color: '#999',
+  },
+  modalContainer: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'flex-end',
+  },
+  modalContent: {
+    backgroundColor: '#FFF',
+    borderTopLeftRadius: 16,
+    borderTopRightRadius: 16,
+    maxHeight: '80%',
+    paddingBottom: 20,
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#EEE',
+  },
+  modalTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#333',
+  },
+  closeButton: {
+    color: '#0066CC',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  searchInput: {
+    borderWidth: 1,
+    borderColor: '#DDD',
+    borderRadius: 6,
+    padding: 10,
+    margin: 12,
+    fontSize: 14,
+    color: '#333',
+  },
+  batchListItem: {
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#EEE',
+  },
+  batchListItemSelected: {
+    backgroundColor: '#F0F8FF',
+    borderLeftWidth: 4,
+    borderLeftColor: '#0066CC',
+  },
+  batchListBatchNumber: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#333',
+    marginBottom: 4,
+  },
+  batchListInfo: {
+    fontSize: 12,
+    color: '#666',
+    marginBottom: 2,
+  },
+  emptyText: {
+    fontSize: 14,
+    color: '#999',
+    textAlign: 'center',
+    marginTop: 20,
   },
   spacer: {
     height: 20,

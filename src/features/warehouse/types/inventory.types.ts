@@ -1,72 +1,37 @@
-// src/features/warehouse/types/inventory.types.ts
-
-/**
- * Thông tin thuốc trong kho
- */
-export interface Medicine {
-  _id: string;
-  name: string;
-  description?: string;
-  category?: string;
-  unit: string;
-  price?: number;
-  retail_price?: number;
-  expiry_date?: string;
-  supplier_id?: string;
-  warning_threshold?: number;
-  created_at?: string;
-  updated_at?: string;
-  // Additional fields from API
-  generic_name?: string;
-  brand_name?: string;
-  dosage_form?: string;
-  strength?: string;
-  manufacturer?: string;
-  country_of_origin?: string;
-  indications?: string;
-  contraindications?: string;
-  side_effects?: string;
-  usage_instructions?: string;
-  storage_conditions?: string;
-  registration_number?: string;
-  barcode?: string;
-  status?: string;
+export interface GetMedicinesWithBatchesResponse {
+  success: boolean;
+  message: string;
+  data: MedicineWithBatches[];
+  pagination?: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+  };
 }
 
 /**
- * Thông tin tồn kho của 1 thuốc tại 1 chi nhánh
+ * Response từ API GET /api/batches/branch/:branchId
  */
-export interface InventoryItem {
-  _id: string;
-  branch_id?: string;
-  branch?: {
-    _id: string;
-    name: string;
-    address?: string;
-    phone?: string;
-  }; // Populated data
-  medicine_id?: string;
-  medicine?: Medicine; // Populated data
-  quantity?: number;
-  total_quantity?: number;
-  warning_threshold?: number;
-  total_value?: number;
-  last_updated?: string;
-  status?: 'normal' | 'low' | 'low_stock' | 'out_of_stock' | 'sufficient'; // Trạng thái tồn kho
-  batches?: any[];
+export interface GetBatchesResponse {
+  success: boolean;
+  message: string;
+  data: Batch[];
+  pagination?: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+  };
 }
 
 /**
- * Query params để lấy danh sách tồn kho
+ * Response từ API GET /api/batches/:id
  */
-export interface GetInventoryQuery {
-  branch_id?: string;
-  medicine_id?: string;
-  category?: string;
-  status?: 'normal' | 'low' | 'out_of_stock';
-  search?: string;
-  page?: number;
-  limit?: number;
+export interface GetBatchDetailResponse {
+  success: boolean;
+  message: string;
+  data: Batch & { medicine_id?: MedicineDetail; branch_id?: Branch };
 }
 
 /**
@@ -74,7 +39,8 @@ export interface GetInventoryQuery {
  */
 export interface GetInventoryResponse {
   success: boolean;
-  data: InventoryItem[];
+  message: string;
+  data: InventoryDetail[];
   pagination?: {
     page: number;
     limit: number;
@@ -88,7 +54,26 @@ export interface GetInventoryResponse {
  */
 export interface GetInventoryDetailResponse {
   success: boolean;
-  data: InventoryItem;
+  message: string;
+  data: InventoryDetail;
+}
+
+/**
+ * Response từ API GET /api/inventory/branch/:branchId/medicine/:medicineId
+ */
+export interface GetInventoryMedicineDetailResponse {
+  success: boolean;
+  message: string;
+  data: InventoryDetail;
+}
+
+/**
+ * Response từ API GET /api/inventory/branch/:branchId/medicine/:medicineId/batches
+ */
+export interface GetBatchesForInvoiceResponse {
+  success: boolean;
+  message: string;
+  data: Batch[];
 }
 
 /**

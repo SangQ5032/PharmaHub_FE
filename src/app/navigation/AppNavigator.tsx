@@ -15,6 +15,7 @@ import BatchDetailScreen from '@features/warehouse/screens/BatchDetailScreen';
 import BranchInventoryManagementScreen from '@features/warehouse/screens/BranchInventoryManagementScreen';
 import ReportSelectionScreen from '@features/warehouse/screens/ReportSelectionScreen';
 import ReportViewScreen from '@features/warehouse/screens/ReportViewScreen';
+import WarehouseHubScreen from '@features/warehouse/screens/WarehouseHubScreen';
 import {
   BranchRevenueReportScreen,
   EmployeeWorkHistoryScreen,
@@ -285,6 +286,28 @@ const MainAppNavigator = () => {
         name={ROUTES.REPORT_VIEW}
         component={ReportViewScreen}
         options={{ headerShown: false }}
+      />
+      <MainStack.Screen
+        name={ROUTES.WAREHOUSE_HUB}
+        component={WarehouseHubScreen}
+        options={{ headerShown: true, title: 'Quản Lý Tồn Kho' }}
+      />
+
+      {/* Categories Routes */}
+      <MainStack.Screen
+        name={ROUTES.CATEGORIES}
+        component={CategoriesScreen}
+        options={{ headerShown: true, title: 'Danh mục' }}
+      />
+      <MainStack.Screen
+        name={ROUTES.ADD_CATEGORY}
+        component={AddCategoryScreen}
+        options={{ headerShown: true, title: 'Thêm / Sửa danh mục' }}
+      />
+      <MainStack.Screen
+        name={ROUTES.CATEGORY_DETAIL}
+        component={CategoryDetailScreen}
+        options={{ headerShown: true, title: 'Chi tiết danh mục' }}
       />
 
       {/* Categories Routes */}

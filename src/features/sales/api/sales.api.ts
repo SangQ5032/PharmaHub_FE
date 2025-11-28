@@ -4,6 +4,10 @@ import { CreateInvoiceRequest, CreateInvoiceResponse } from '../types';
 const SALES_ENDPOINT = '/sales';
 const INVOICES_ENDPOINT = '/sales/invoices';
 
+/**
+ * Tạo hoá đơn bán hàng mới
+ * API: POST /api/sales
+ */
 export const createInvoice = async (
   data: CreateInvoiceRequest,
 ): Promise<CreateInvoiceResponse> => {

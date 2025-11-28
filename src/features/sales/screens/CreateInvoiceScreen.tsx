@@ -92,9 +92,11 @@ const CreateInvoiceScreen: React.FC = () => {
         selectedMedicine: any,
         quantity: number,
         price: number,
+        batchId: string,
       ) => {
         const newItem: SaleItem = {
           medicine_id: selectedMedicine._id,
+          batch_id: batchId,
           quantity,
           unit_price: price,
         };
@@ -135,13 +137,20 @@ const CreateInvoiceScreen: React.FC = () => {
       return;
     }
 
+    // Kiểm tra tất cả item có batch_id không
+    const itemsWithoutBatch = items.filter(item => !item.batch_id);
+    if (itemsWithoutBatch.length > 0) {
+      Alert.alert('Lỗi', 'Vui lòng chọn lô (batch) cho tất cả sản phẩm');
+      return;
+    }
+
     const invoiceData: CreateInvoiceRequest = {
+      branch_id: branchId,
       items,
       discount: 0,
       tax_rate: 0,
       payment_method: paymentMethod,
       customer_id: customerId || undefined,
-      customer_name: customerName.trim(),
       customer_phone: customerPhone.trim(),
       note: note.trim() || undefined,
     };
@@ -285,6 +294,9 @@ const CreateInvoiceScreen: React.FC = () => {
                   </TouchableOpacity>
                 </View>
                 <View style={styles.itemDetails}>
+                  {item.batch_id && (
+                    <Text style={styles.itemDetail}>Lô: {item.batch_id}</Text>
+                  )}
                   <Text style={styles.itemDetail}>
                     Số lượng: {item.quantity}{' '}
                     {getMedicineUnit(item.medicine_id)}

@@ -110,6 +110,20 @@ export const ROLE_CONFIG: Record<UserRole, RoleConfig> = {
         description: 'Quản lý đơn nhập hàng',
       },
       {
+        id: 'manager-5',
+        name: 'Quản lý tồn kho',
+        icon: 'warehouse',
+        route: ROUTES.WAREHOUSE_HUB,
+        description: 'Quản lý tồn kho thuốc',
+      },
+      {
+        id: 'manager-6',
+        name: 'Quản lý tồn kho',
+        icon: 'warehouse',
+        route: ROUTES.WAREHOUSE_HUB,
+        description: 'Quản lý tồn kho thuốc',
+      },
+      {
         id: 'manager-6',
         name: 'Lịch sử hoá đơn',
         icon: 'file-document-outline',

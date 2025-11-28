@@ -13,6 +13,7 @@ export { default as BatchDetailExpandedScreen } from './screens/BatchDetailExpan
 export { default as BranchInventoryManagementScreen } from './screens/BranchInventoryManagementScreen';
 export { default as ReportSelectionScreen } from './screens/ReportSelectionScreen';
 export { default as ReportViewScreen } from './screens/ReportViewScreen';
+export { default as WarehouseHubScreen } from './screens/WarehouseHubScreen';
 
 // Components
 export { ImportCard } from './components/ImportCard';

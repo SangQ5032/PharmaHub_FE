@@ -6,13 +6,84 @@ import {
   GetInventoryResponse,
   GetInventoryDetailResponse,
   GetInventoryStatsResponse,
+  GetMedicinesWithBatchesResponse,
+  GetBatchesResponse,
+  GetBatchDetailResponse,
+  GetInventoryMedicineDetailResponse,
+  GetBatchesForInvoiceResponse,
+  GetBatchesQuery,
 } from '@features/warehouse/types/inventory.types';
 
 export const inventoryApi = {
   /**
-   * Lấy danh sách tồn kho theo chi nhánh
-   * Endpoint: GET /api/branches/:branchId/inventory
-   * Query params: category, status, search, page, limit
+   * API 1: Lấy danh sách thuốc + lô hàng chi tiết (tổng hợp)
+   * GET /api/batches/medicines-with-batches/by-branch/:branchId
+   */
+  getMedicinesWithBatches: async (
+    branchId: string,
+    query?: GetBatchesQuery,
+  ): Promise<GetMedicinesWithBatchesResponse> => {
+    const res = await apiClient.get(
+      `/batches/medicines-with-batches/by-branch/${branchId}`,
+      { params: query },
+    );
+    if (res.data.success) {
+      return res.data;
+    }
+    throw new Error(
+      res.data.message || 'Không thể lấy danh sách thuốc và lô hàng',
+    );
+  },
+
+  /**
+   * API 2: Lấy tất cả lô hàng của chi nhánh
+   * GET /api/batches/branch/:branchId
+   */
+  getAllBatches: async (
+    branchId: string,
+    query?: GetBatchesQuery,
+  ): Promise<GetBatchesResponse> => {
+    const res = await apiClient.get(`/batches/branch/${branchId}`, {
+      params: query,
+    });
+    if (res.data.success) {
+      return res.data;
+    }
+    throw new Error(res.data.message || 'Không thể lấy danh sách lô hàng');
+  },
+
+  /**
+   * API 3: Lấy lô hàng của thuốc tại chi nhánh
+   * GET /api/batches/branch/:branchId/medicine/:medicineId
+   */
+  getBatchesByMedicine: async (
+    branchId: string,
+    medicineId: string,
+  ): Promise<GetBatchesResponse> => {
+    const res = await apiClient.get(
+      `/batches/branch/${branchId}/medicine/${medicineId}`,
+    );
+    if (res.data.success) {
+      return res.data;
+    }
+    throw new Error(res.data.message || 'Không thể lấy danh sách lô hàng');
+  },
+
+  /**
+   * API 4: Lấy chi tiết 1 lô hàng
+   * GET /api/batches/:id
+   */
+  getBatchDetail: async (id: string): Promise<GetBatchDetailResponse> => {
+    const res = await apiClient.get(`/batches/${id}`);
+    if (res.data.success) {
+      return res.data;
+    }
+    throw new Error(res.data.message || 'Không thể lấy chi tiết lô hàng');
+  },
+
+  /**
+   * API 5: Lấy tồn kho theo chi nhánh
+   * GET /api/branches/:id/inventory
    */
   getInventoryByBranch: async (
     branchId: string,
@@ -21,31 +92,44 @@ export const inventoryApi = {
     const res = await apiClient.get(`/branches/${branchId}/inventory`, {
       params: query,
     });
-
-    // Response format: { success: true, data: [...], pagination: {...} }
     if (res.data.success) {
       return res.data;
     }
-
     throw new Error(res.data.message || 'Không thể lấy danh sách tồn kho');
   },
 
   /**
-   * Lấy tồn kho toàn hệ thống (admin only)
-   * Endpoint: GET /api/inventory
-   * Query params: branch_id, medicine_id, category, status, search, page, limit
+   * API 6: Lấy tồn kho của 1 loại thuốc tại chi nhánh (chi tiết)
+   * GET /api/inventory/branch/:branchId/medicine/:medicineId
    */
-  getAllInventory: async (
-    query?: GetInventoryQuery,
-  ): Promise<GetInventoryResponse> => {
-    const res = await apiClient.get('/inventory', { params: query });
-
-    // Response format: { success: true, data: [...], pagination: {...} }
+  getInventoryMedicineDetail: async (
+    branchId: string,
+    medicineId: string,
+  ): Promise<GetInventoryMedicineDetailResponse> => {
+    const res = await apiClient.get(
+      `/inventory/branch/${branchId}/medicine/${medicineId}`,
+    );
     if (res.data.success) {
       return res.data;
     }
+    throw new Error(res.data.message || 'Không thể lấy chi tiết tồn kho');
+  },
 
-    throw new Error(res.data.message || 'Không thể lấy danh sách tồn kho');
+  /**
+   * API 7: Lấy danh sách batch cho hóa đơn
+   * GET /api/inventory/branch/:branchId/medicine/:medicineId/batches
+   */
+  getBatchesForInvoice: async (
+    branchId: string,
+    medicineId: string,
+  ): Promise<GetBatchesForInvoiceResponse> => {
+    const res = await apiClient.get(
+      `/inventory/branch/${branchId}/medicine/${medicineId}/batches`,
+    );
+    if (res.data.success) {
+      return res.data;
+    }
+    throw new Error(res.data.message || 'Không thể lấy danh sách lô hàng');
   },
 
   /**
@@ -78,29 +162,37 @@ export const inventoryApi = {
     id: string,
   ): Promise<GetInventoryDetailResponse> => {
     const res = await apiClient.get(`/inventory/${id}`);
-
-    // Response format: { success: true, data: {...} }
     if (res.data.success) {
       return res.data;
     }
-
     throw new Error(res.data.message || 'Không thể lấy chi tiết tồn kho');
   },
 
   /**
+   * Lấy tồn kho toàn hệ thống (admin only)
+   * GET /api/inventory
+   */
+  getAllInventory: async (
+    query?: GetInventoryQuery,
+  ): Promise<GetInventoryResponse> => {
+    const res = await apiClient.get('/inventory', { params: query });
+    if (res.data.success) {
+      return res.data;
+    }
+    throw new Error(res.data.message || 'Không thể lấy danh sách tồn kho');
+  },
+
+  /**
    * Lấy thống kê tồn kho theo chi nhánh
-   * Endpoint: GET /api/branches/:branchId/inventory/stats
+   * GET /api/branches/:branchId/inventory/stats
    */
   getInventoryStats: async (
     branchId: string,
   ): Promise<GetInventoryStatsResponse> => {
     const res = await apiClient.get(`/branches/${branchId}/inventory/stats`);
-
-    // Response format: { success: true, data: {...} }
     if (res.data.success) {
       return res.data;
     }
-
     throw new Error(res.data.message || 'Không thể lấy thống kê tồn kho');
   },
 };

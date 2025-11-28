@@ -16,6 +16,7 @@ export const ROUTES = {
   SUPPLIERS: 'Suppliers',
   ADD_SUPPLIER: 'AddSupplier',
   // Warehouse routes
+  WAREHOUSE_HUB: 'WarehouseHub',
   IMPORT_LIST: 'ImportList',
   CREATE_IMPORT: 'CreateImport',
   IMPORT_DETAIL: 'ImportDetail',
