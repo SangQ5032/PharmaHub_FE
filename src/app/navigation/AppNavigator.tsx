@@ -310,6 +310,23 @@ const MainAppNavigator = () => {
         options={{ headerShown: true, title: 'Chi tiết danh mục' }}
       />
 
+      {/* Categories Routes */}
+      <MainStack.Screen
+        name={ROUTES.CATEGORIES}
+        component={CategoriesScreen}
+        options={{ headerShown: true, title: 'Danh mục' }}
+      />
+      <MainStack.Screen
+        name={ROUTES.ADD_CATEGORY}
+        component={AddCategoryScreen}
+        options={{ headerShown: true, title: 'Thêm / Sửa danh mục' }}
+      />
+      <MainStack.Screen
+        name={ROUTES.CATEGORY_DETAIL}
+        component={CategoryDetailScreen}
+        options={{ headerShown: true, title: 'Chi tiết danh mục' }}
+      />
+
       {/* Suppliers Routes */}
       <MainStack.Screen name={ROUTES.SUPPLIERS} component={SuppliersScreen} />
       <MainStack.Screen
