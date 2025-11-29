@@ -69,16 +69,17 @@ export const EmployeeWorkHistoryScreen: React.FC = () => {
     });
   };
 
-  const formatDateTime = (dateString: string): string => {
-    const date = new Date(dateString);
-    return date.toLocaleString('vi-VN', {
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-      hour: '2-digit',
-      minute: '2-digit',
-    });
-  };
+  // Unused: formatDateTime - can be removed or used in future
+  // const formatDateTime = (dateString: string): string => {
+  //   const date = new Date(dateString);
+  //   return date.toLocaleString('vi-VN', {
+  //     year: 'numeric',
+  //     month: '2-digit',
+  //     day: '2-digit',
+  //     hour: '2-digit',
+  //     minute: '2-digit',
+  //   });
+  // };
 
   const formatDate = (dateString: string): string => {
     const date = new Date(dateString);
