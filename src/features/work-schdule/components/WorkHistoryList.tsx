@@ -5,9 +5,16 @@ import {
   Text,
   StyleSheet,
   ActivityIndicator,
+  TouchableOpacity,
 } from 'react-native';
+import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import { WorkScheduleHistoryRecord } from '@features/work-schdule/types/workScheduleHistory.types';
 import { useTheme } from '@react-navigation/native';
+import { useNavigation } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { ROUTES } from '@shared/constants/routes';
+
+type NavigationProp = NativeStackNavigationProp<any>;
 
 interface WorkHistoryListProps {
   data: WorkScheduleHistoryRecord[] | undefined;
@@ -27,6 +34,7 @@ export const WorkHistoryList: React.FC<WorkHistoryListProps> = ({
   isFetchingNextPage,
 }) => {
   const { colors } = useTheme();
+  const navigation = useNavigation<NavigationProp>();
 
   const formatDate = (dateString: string): string => {
     const date = new Date(dateString);
@@ -45,72 +53,91 @@ export const WorkHistoryList: React.FC<WorkHistoryListProps> = ({
     return shift === 'morning' ? '#FF9500' : '#5856D6';
   };
 
+  const handleRowPress = (record: WorkScheduleHistoryRecord) => {
+    navigation.navigate(ROUTES.EMPLOYEE_WORK_HISTORY_DETAIL, {
+      recordId: record._id,
+    });
+  };
+
   const renderItem = ({ item }: { item: WorkScheduleHistoryRecord }) => (
-    <View
-      style={[
-        styles.card,
-        { backgroundColor: colors.card, borderColor: colors.border },
-      ]}
-    >
-      <View style={styles.cardHeader}>
-        <Text
-          style={[styles.employeeName, { color: colors.text }]}
-          numberOfLines={1}
-        >
-          {item.user_id.name}
-        </Text>
-        <View
-          style={[
-            styles.shiftBadge,
-            { backgroundColor: getShiftColor(item.shift) },
-          ]}
-        >
-          <Text style={styles.shiftBadgeText}>{getShiftLabel(item.shift)}</Text>
-        </View>
-      </View>
-
-      <View style={styles.cardContent}>
-        <View style={styles.row}>
-          <Text style={[styles.label, { color: colors.text }]}>Ngày:</Text>
-          <Text style={[styles.value, { color: colors.text }]}>
-            {formatDate(item.date)}
-          </Text>
-        </View>
-
-        <View style={styles.row}>
-          <Text style={[styles.label, { color: colors.text }]}>Chi nhánh:</Text>
-          <Text
-            style={[styles.value, { color: colors.text }]}
-            numberOfLines={1}
-          >
-            {item.branch_id.name}
-          </Text>
-        </View>
-
-        {item.note && (
-          <View style={styles.row}>
-            <Text style={[styles.label, { color: colors.text }]}>Ghi chú:</Text>
-            <Text style={[styles.value, { color: colors.text }]}>
-              {item.note}
+    <TouchableOpacity onPress={() => handleRowPress(item)} activeOpacity={0.7}>
+      <View
+        style={[
+          styles.card,
+          { backgroundColor: colors.card, borderColor: colors.border },
+        ]}
+      >
+        <View style={styles.cardHeader}>
+          <View style={styles.headerLeft}>
+            <Text
+              style={[styles.employeeName, { color: colors.text }]}
+              numberOfLines={1}
+            >
+              {item.user_id?.name || 'N/A'}
             </Text>
           </View>
-        )}
-
-        <View style={styles.row}>
-          <Text style={[styles.label, { color: colors.text }]}>Người tạo:</Text>
-          <Text style={[styles.value, { color: colors.text }]}>
-            {item.created_by.name}
-          </Text>
+          <View style={styles.headerRight}>
+            <View
+              style={[
+                styles.shiftBadge,
+                { backgroundColor: getShiftColor(item.shift) },
+              ]}
+            >
+              <Text style={styles.shiftBadgeText}>
+                {getShiftLabel(item.shift)}
+              </Text>
+            </View>
+            <MaterialCommunityIcons
+              name="chevron-right"
+              size={24}
+              color={colors.primary}
+              style={{ marginLeft: 8 }}
+            />
+          </View>
         </View>
 
-        <View style={styles.row}>
-          <Text style={[styles.label, { color: colors.text }]}>Ngày tạo:</Text>
-          <Text style={[styles.value, { color: colors.text }]}>
-            {formatDate(item.createdAt)}
-          </Text>
+        <View style={styles.cardContent}>
+          <View style={styles.row}>
+            <Text style={[styles.label, { color: colors.text }]}>Ngày:</Text>
+            <Text style={[styles.value, { color: colors.text }]}>
+              {formatDate(item.date)}
+            </Text>
+          </View>
+
+          <View style={styles.row}>
+            <Text style={[styles.label, { color: colors.text }]}>
+              Chi nhánh:
+            </Text>
+            <Text
+              style={[styles.value, { color: colors.text }]}
+              numberOfLines={1}
+            >
+              {item.branch_id?.name || 'N/A'}
+            </Text>
+          </View>
+
+          {item.note && (
+            <View style={styles.row}>
+              <Text style={[styles.label, { color: colors.text }]}>
+                Ghi chú:
+              </Text>
+              <Text style={[styles.value, { color: colors.text }]}>
+                {item.note}
+              </Text>
+            </View>
+          )}
+
+          <View style={styles.row}>
+            <Text style={[styles.label, { color: colors.text }]}>
+              Ngày tạo:
+            </Text>
+            <Text style={[styles.value, { color: colors.text }]}>
+              {formatDate(item.createdAt)}
+            </Text>
+          </View>
         </View>
       </View>
-    </View>
+    </TouchableOpacity>
   );
 
   const renderEmpty = () => (
@@ -180,16 +207,22 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: 'rgba(0, 0, 0, 0.05)',
   },
+  headerLeft: {
+    flex: 1,
+  },
+  headerRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginLeft: 8,
+  },
   employeeName: {
     fontSize: 16,
     fontWeight: '600',
-    flex: 1,
   },
   shiftBadge: {
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 16,
-    marginLeft: 8,
   },
   shiftBadgeText: {
     color: '#fff',
