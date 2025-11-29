@@ -18,7 +18,7 @@ import ReportViewScreen from '@features/warehouse/screens/ReportViewScreen';
 import WarehouseHubScreen from '@features/warehouse/screens/WarehouseHubScreen';
 import {
   BranchRevenueReportScreen,
-  EmployeeWorkHistoryScreen,
+  // EmployeeWorkHistoryScreen, // ⚠️ DEPRECATED: Moved to work-schdule feature
   EmployeeRevenueScreen,
   MedicineManagementScreen,
 } from '@features/revenue-report';
@@ -65,6 +65,10 @@ import {
   CreateWeekScheduleScreen,
   WorkScheduleMenuScreen,
   MyWorkScheduleScreen,
+  EmployeeWorkHistoryScreen,
+  BranchWorkHistoryScreen,
+  AdminWorkHistoryScreen,
+  EmployeeWorkHistoryDetailScreen,
 } from '@features/work-schdule';
 import {
   RootStackParamList,
@@ -155,6 +159,28 @@ const MainAppNavigator = () => {
         options={{ headerShown: true, title: 'Tạo lịch tuần' }}
       />
 
+      {/* Work Schedule History Routes */}
+      <MainStack.Screen
+        name={ROUTES.EMPLOYEE_WORK_HISTORY}
+        component={EmployeeWorkHistoryScreen}
+        options={{ headerShown: true, title: 'Lịch Sử Làm Việc' }}
+      />
+      <MainStack.Screen
+        name={ROUTES.EMPLOYEE_WORK_HISTORY_DETAIL}
+        component={EmployeeWorkHistoryDetailScreen}
+        options={{ headerShown: false }}
+      />
+      <MainStack.Screen
+        name={ROUTES.BRANCH_WORK_HISTORY}
+        component={BranchWorkHistoryScreen}
+        options={{ headerShown: true, title: 'Lịch Sử Làm Việc' }}
+      />
+      <MainStack.Screen
+        name={ROUTES.ADMIN_WORK_HISTORY}
+        component={AdminWorkHistoryScreen}
+        options={{ headerShown: true, title: 'Lịch Sử Làm Việc' }}
+      />
+
       {/* Checkin/Checkout */}
       <MainStack.Screen
         name={ROUTES.CHECKIN_CHECKOUT}
@@ -188,10 +214,12 @@ const MainAppNavigator = () => {
         name={ROUTES.BRANCH_REVENUE_REPORT}
         component={BranchRevenueReportScreen}
       />
+      {/* ⚠️ DEPRECATED: Use ROUTES.EMPLOYEE_WORK_HISTORY from work-schdule instead
       <MainStack.Screen
         name={ROUTES.EMPLOYEE_WORK_HISTORY}
         component={EmployeeWorkHistoryScreen}
       />
+      */}
       <MainStack.Screen
         name={ROUTES.EMPLOYEE_REVENUE}
         component={EmployeeRevenueScreen}
@@ -291,23 +319,6 @@ const MainAppNavigator = () => {
         name={ROUTES.WAREHOUSE_HUB}
         component={WarehouseHubScreen}
         options={{ headerShown: true, title: 'Quản Lý Tồn Kho' }}
-      />
-
-      {/* Categories Routes */}
-      <MainStack.Screen
-        name={ROUTES.CATEGORIES}
-        component={CategoriesScreen}
-        options={{ headerShown: true, title: 'Danh mục' }}
-      />
-      <MainStack.Screen
-        name={ROUTES.ADD_CATEGORY}
-        component={AddCategoryScreen}
-        options={{ headerShown: true, title: 'Thêm / Sửa danh mục' }}
-      />
-      <MainStack.Screen
-        name={ROUTES.CATEGORY_DETAIL}
-        component={CategoryDetailScreen}
-        options={{ headerShown: true, title: 'Chi tiết danh mục' }}
       />
 
       {/* Categories Routes */}

@@ -8,7 +8,7 @@ import {
 } from 'react-native';
 import { Header } from '@shared/components/header/Header';
 import { BranchEmployeeStats } from '../types';
-import { FAKE_EMPLOYEES } from '../mockdata';
+// import { FAKE_EMPLOYEES } from '../mockdata'; // ⚠️ DEPRECATED: Mock data removed
 import { employeeManagementStyles as styles } from '../styles';
 import { SearchBar, FilterChips, StatCard, EmployeeCard } from '../components';
 import { getEmployeeStatusColor, getEmployeeStatusText } from '../utils';
@@ -23,7 +23,8 @@ export default function EmployeeManagementScreen({ navigation }: any) {
   >('all');
 
   // Apply search and filters
-  const filteredEmployees = FAKE_EMPLOYEES.filter(emp => {
+  const employees: any[] = []; // TODO: Replace with actual employee API
+  const filteredEmployees = employees.filter(emp => {
     const matchesSearch =
       emp.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       emp.phone.includes(searchQuery) ||
@@ -41,9 +42,9 @@ export default function EmployeeManagementScreen({ navigation }: any) {
 
   // Calculate stats
   const stats: BranchEmployeeStats = {
-    total: FAKE_EMPLOYEES.length,
-    active: FAKE_EMPLOYEES.filter(e => e.status === 'active').length,
-    inactive: FAKE_EMPLOYEES.filter(e => e.status === 'inactive').length,
+    total: employees.length,
+    active: employees.filter(e => e.status === 'active').length,
+    inactive: employees.filter(e => e.status === 'inactive').length,
   };
 
   const statusFilters = [

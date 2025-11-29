@@ -53,6 +53,13 @@ export const ROLE_CONFIG: Record<UserRole, RoleConfig> = {
         route: ROUTES.BRANCH_LIST,
         description: 'Quản lý thông tin chi nhánh',
       },
+      {
+        id: 'admin-5',
+        name: 'Lịch sử làm việc',
+        icon: 'history',
+        route: ROUTES.ADMIN_WORK_HISTORY,
+        description: 'Xem lịch sử làm việc toàn hệ thống',
+      },
     ],
     tabs: [
       {
@@ -85,7 +92,7 @@ export const ROLE_CONFIG: Record<UserRole, RoleConfig> = {
         id: 'manager-2',
         name: 'Lịch sử làm việc',
         icon: 'history',
-        route: ROUTES.EMPLOYEE_WORK_HISTORY,
+        route: ROUTES.BRANCH_WORK_HISTORY,
         description: 'Xem lịch sử làm việc',
       },
       {
@@ -155,27 +162,34 @@ export const ROLE_CONFIG: Record<UserRole, RoleConfig> = {
       },
       {
         id: 'staff-2',
+        name: 'Lịch Sử Làm Việc',
+        icon: 'history',
+        route: ROUTES.EMPLOYEE_WORK_HISTORY,
+        description: 'Xem lịch sử làm việc chi tiết',
+      },
+      {
+        id: 'staff-3',
         name: 'Checkin / Checkout',
         icon: 'login',
         route: ROUTES.CHECKIN_CHECKOUT,
         description: 'Checkin và checkout',
       },
       {
-        id: 'staff-3',
+        id: 'staff-4',
         name: 'Bán Hàng',
         icon: 'cash-register',
         route: ROUTES.SALES,
         description: 'Quản lý bán hàng',
       },
       {
-        id: 'staff-4',
+        id: 'staff-5',
         name: 'Danh Sách Thuốc',
         icon: 'pill',
         route: ROUTES.EMPLOYEE_MEDICINES,
         description: 'Xem danh sách thuốc và tồn kho',
       },
       {
-        id: 'staff-5',
+        id: 'staff-6',
         name: 'Lịch Sử Hóa Đơn',
         icon: 'file-document-outline',
         route: ROUTES.INVOICE_LIST,

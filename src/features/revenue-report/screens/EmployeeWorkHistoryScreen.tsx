@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, ScrollView, SafeAreaView } from 'react-native';
 import { Header } from '@shared/components/header/Header';
-import { FAKE_WORK_HISTORY, FAKE_WORK_SUMMARY } from '../mockdata';
+// import { FAKE_WORK_HISTORY, FAKE_WORK_SUMMARY } from '../mockdata'; // ⚠️ DEPRECATED: Mock data removed
 import { workHistoryStyles as styles } from '../styles';
 import { SearchBar, FilterChips, StatusBadge } from '../components';
 import { getWorkStatusColor, getWorkStatusText, getShiftText } from '../utils';
@@ -12,7 +12,8 @@ export default function EmployeeWorkHistoryScreen({ route }: any) {
   const [selectedStatus, setSelectedStatus] = useState<string>('all');
 
   // Filter work history
-  const filteredHistory = FAKE_WORK_HISTORY.filter(item => {
+  const workHistory: any[] = []; // TODO: Replace with actual work history API
+  const filteredHistory = workHistory.filter(item => {
     const matchesSearch =
       item.date.toLowerCase().includes(searchQuery.toLowerCase()) ||
       item.location.toLowerCase().includes(searchQuery.toLowerCase());
@@ -41,26 +42,24 @@ export default function EmployeeWorkHistoryScreen({ route }: any) {
           <Text style={styles.summaryTitle}>Tổng quan tháng này</Text>
           <View style={styles.summaryGrid}>
             <View style={styles.summaryItem}>
-              <Text style={styles.summaryValue}>
-                {FAKE_WORK_SUMMARY.totalDays}
-              </Text>
+              <Text style={styles.summaryValue}>{0}</Text>
               <Text style={styles.summaryLabel}>Tổng ngày</Text>
             </View>
             <View style={styles.summaryItem}>
               <Text style={[styles.summaryValue, styles.summaryValueSuccess]}>
-                {FAKE_WORK_SUMMARY.onTimeDays}
+                {0}
               </Text>
               <Text style={styles.summaryLabel}>Đúng giờ</Text>
             </View>
             <View style={styles.summaryItem}>
               <Text style={[styles.summaryValue, styles.summaryValueWarning]}>
-                {FAKE_WORK_SUMMARY.lateDays}
+                {0}
               </Text>
               <Text style={styles.summaryLabel}>Trễ</Text>
             </View>
             <View style={styles.summaryItem}>
               <Text style={[styles.summaryValue, styles.summaryValueError]}>
-                {FAKE_WORK_SUMMARY.absentDays}
+                {0}
               </Text>
               <Text style={styles.summaryLabel}>Vắng</Text>
             </View>
@@ -69,15 +68,11 @@ export default function EmployeeWorkHistoryScreen({ route }: any) {
           <View style={styles.summaryRow}>
             <View style={styles.summaryInfoItem}>
               <Text style={styles.summaryInfoLabel}>Tổng giờ làm:</Text>
-              <Text style={styles.summaryInfoValue}>
-                {FAKE_WORK_SUMMARY.totalHours}h
-              </Text>
+              <Text style={styles.summaryInfoValue}>{0}h</Text>
             </View>
             <View style={styles.summaryInfoItem}>
               <Text style={styles.summaryInfoLabel}>Trung bình/ngày:</Text>
-              <Text style={styles.summaryInfoValue}>
-                {FAKE_WORK_SUMMARY.averageHours}h
-              </Text>
+              <Text style={styles.summaryInfoValue}>{0}h</Text>
             </View>
           </View>
         </View>
