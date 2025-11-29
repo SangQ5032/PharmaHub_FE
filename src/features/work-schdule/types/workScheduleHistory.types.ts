@@ -25,6 +25,7 @@ export interface BranchInfo {
 }
 
 export interface WorkScheduleHistoryRecord {
+  note: any;
   _id: string;
   user_id: UserInfo;
   branch_id: BranchInfo;

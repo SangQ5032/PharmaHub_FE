@@ -6,6 +6,8 @@ import {
   TouchableOpacity,
   Modal,
   ScrollView,
+  FlatList,
+  ActivityIndicator,
 } from 'react-native';
 import { useTheme } from '@react-navigation/native';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
@@ -13,6 +15,7 @@ import {
   WorkHistoryFilters,
   Shift,
 } from '@features/work-schdule/types/workScheduleHistory.types';
+import { useAllEmployees, Employee } from '@features/employee-management';
 
 interface WorkHistoryFilterProps {
   filters: WorkHistoryFilters;
@@ -30,10 +33,21 @@ export const WorkHistoryFilter: React.FC<WorkHistoryFilterProps> = ({
   const { colors } = useTheme();
   const [modalVisible, setModalVisible] = useState(false);
 
+  // Lấy danh sách nhân viên nếu cần filter theo user
+  const { employees, isLoading: isLoadingEmployees } = useAllEmployees();
+
   const handleShiftChange = (shift: Shift | undefined) => {
     onFiltersChange({
       ...filters,
       shift,
+      page: 1,
+    });
+  };
+
+  const handleUserChange = (userId: string | undefined) => {
+    onFiltersChange({
+      ...filters,
+      userId,
       page: 1,
     });
   };
@@ -202,6 +216,79 @@ export const WorkHistoryFilter: React.FC<WorkHistoryFilterProps> = ({
               </View>
             </View>
 
+            {/* User Filter */}
+            {showUserFilter && (
+              <View style={styles.filterSection}>
+                <Text style={[styles.filterLabel, { color: colors.text }]}>
+                  Nhân viên
+                </Text>
+                {isLoadingEmployees ? (
+                  <View style={styles.loadingContainer}>
+                    <ActivityIndicator size="small" color={colors.primary} />
+                  </View>
+                ) : (
+                  <>
+                    <TouchableOpacity
+                      onPress={() => handleUserChange(undefined)}
+                      style={[
+                        styles.userButton,
+                        {
+                          backgroundColor: !filters.userId
+                            ? colors.primary
+                            : colors.card,
+                          borderColor: colors.border,
+                        },
+                      ]}
+                    >
+                      <Text
+                        style={[
+                          styles.userButtonText,
+                          { color: !filters.userId ? '#fff' : colors.text },
+                        ]}
+                      >
+                        Tất cả nhân viên
+                      </Text>
+                    </TouchableOpacity>
+
+                    <FlatList<Employee>
+                      data={employees as Employee[]}
+                      renderItem={({ item }: { item: Employee }) => (
+                        <TouchableOpacity
+                          onPress={() => handleUserChange(item._id)}
+                          style={[
+                            styles.userButton,
+                            {
+                              backgroundColor:
+                                filters.userId === item._id
+                                  ? colors.primary
+                                  : colors.card,
+                              borderColor: colors.border,
+                            },
+                          ]}
+                        >
+                          <Text
+                            style={[
+                              styles.userButtonText,
+                              {
+                                color:
+                                  filters.userId === item._id
+                                    ? '#fff'
+                                    : colors.text,
+                              },
+                            ]}
+                          >
+                            {item.name}
+                          </Text>
+                        </TouchableOpacity>
+                      )}
+                      keyExtractor={item => item._id}
+                      scrollEnabled={false}
+                    />
+                  </>
+                )}
+              </View>
+            )}
+
             {/* Date Range Info */}
             <View style={styles.filterSection}>
               <Text style={[styles.filterLabel, { color: colors.text }]}>
@@ -323,6 +410,22 @@ const styles = StyleSheet.create({
   shiftButtonText: {
     fontSize: 12,
     fontWeight: '500',
+  },
+  userButton: {
+    paddingVertical: 12,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+    borderWidth: 1,
+    marginBottom: 8,
+    alignItems: 'center',
+  },
+  userButtonText: {
+    fontSize: 13,
+    fontWeight: '500',
+  },
+  loadingContainer: {
+    paddingVertical: 20,
+    alignItems: 'center',
   },
   dateInfo: {
     fontSize: 13,
