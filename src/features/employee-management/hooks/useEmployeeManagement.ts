@@ -14,8 +14,8 @@ export const useEmployeeManagement = (branchId?: string) => {
   );
   const { user } = useAuthStore();
 
-  // Nếu không truyền branchId nhưng user là system_admin, lấy tất cả nhân viên
-  const shouldFetchAll = user?.role === 'system_admin' && !branchId;
+  // Nếu không truyền branchId nhưng user là system-admin, lấy tất cả nhân viên
+  const shouldFetchAll = user?.role === 'system-admin' && !branchId;
   const queryBranchId = shouldFetchAll ? undefined : branchId;
 
   // Fetch employees by branch

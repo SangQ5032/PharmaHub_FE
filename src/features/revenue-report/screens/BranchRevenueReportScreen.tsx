@@ -7,27 +7,37 @@ import {
   SafeAreaView,
   ActivityIndicator,
   Alert,
+  Platform,
+  Modal,
 } from 'react-native';
+import DateTimePicker from '@react-native-community/datetimepicker';
 import { SortBy, SortOrder } from '../types';
 import { branchRevenueStyles as styles } from '../styles';
 import { SearchBar } from '../components';
 import { formatCurrency } from '../utils';
 import { useBranchStats } from '../hooks/useStatistics';
+import { useAuth } from '@app/providers/AuthProvider';
 
 export default function BranchRevenueReportScreen({ navigation }: any) {
+  const { user } = useAuth();
   const [searchQuery, setSearchQuery] = useState('');
-  const [startDate] = useState<string>('2024-01-01');
-  const [endDate] = useState<string>('2024-12-31');
+  const [startDate, setStartDate] = useState<string>('2025-01-01');
+  const [endDate, setEndDate] = useState<string>('2025-12-31');
   const [sortBy, setSortBy] = useState<SortBy>('revenue');
   const [sortOrder, setSortOrder] = useState<SortOrder>('desc');
 
-  // Fetch branch statistics from API
+  // Date picker states
+  const [showStartDatePicker, setShowStartDatePicker] = useState(false);
+  const [showEndDatePicker, setShowEndDatePicker] = useState(false);
+  const [tempStartDate, setTempStartDate] = useState(new Date('2025-01-01'));
+  const [tempEndDate, setTempEndDate] = useState(new Date('2025-12-31'));
+
   const { data, isLoading, isError, error } = useBranchStats({
     startDate,
     endDate,
+    branchId: user?.branch_id,
   });
 
-  // Calculate overview stats from branch data
   const overviewStats = useMemo(() => {
     if (!data?.data) {
       return {
@@ -114,6 +124,41 @@ export default function BranchRevenueReportScreen({ navigation }: any) {
     }
   };
 
+  // Handle date picker changes
+  const handleStartDateChange = (event: any, selectedDate?: Date) => {
+    if (Platform.OS === 'android') {
+      setShowStartDatePicker(false);
+    }
+    if (event.type === 'set' && selectedDate) {
+      setTempStartDate(selectedDate);
+      if (Platform.OS === 'android') {
+        setStartDate(selectedDate.toISOString().split('T')[0]);
+      }
+    }
+  };
+
+  const handleEndDateChange = (event: any, selectedDate?: Date) => {
+    if (Platform.OS === 'android') {
+      setShowEndDatePicker(false);
+    }
+    if (event.type === 'set' && selectedDate) {
+      setTempEndDate(selectedDate);
+      if (Platform.OS === 'android') {
+        setEndDate(selectedDate.toISOString().split('T')[0]);
+      }
+    }
+  };
+
+  const confirmStartDate = () => {
+    setStartDate(tempStartDate.toISOString().split('T')[0]);
+    setShowStartDatePicker(false);
+  };
+
+  const confirmEndDate = () => {
+    setEndDate(tempEndDate.toISOString().split('T')[0]);
+    setShowEndDatePicker(false);
+  };
+
   // Show loading state
   if (isLoading) {
     return (
@@ -126,22 +171,6 @@ export default function BranchRevenueReportScreen({ navigation }: any) {
     );
   }
 
-  // Show error state
-  if (isError) {
-    return (
-      <SafeAreaView style={styles.container}>
-        <View style={styles.errorContainer}>
-          <Text style={styles.errorText}>
-            Không thể tải dữ liệu thống kê chi nhánh
-          </Text>
-          <Text style={styles.errorSubtext}>
-            Vui lòng kiểm tra kết nối hoặc quyền truy cập
-          </Text>
-        </View>
-      </SafeAreaView>
-    );
-  }
-
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView showsVerticalScrollIndicator={false}>
@@ -149,7 +178,9 @@ export default function BranchRevenueReportScreen({ navigation }: any) {
         <View style={styles.header}>
           <Text style={styles.headerTitle}>Báo cáo doanh thu chi nhánh</Text>
           <Text style={styles.headerSubtitle}>
-            Tổng quan hiệu quả kinh doanh
+            {user?.role === 'system_admin'
+              ? 'Tổng quan hiệu quả kinh doanh toàn hệ thống'
+              : 'Tổng quan hiệu quả kinh doanh chi nhánh'}
           </Text>
         </View>
 
@@ -183,26 +214,37 @@ export default function BranchRevenueReportScreen({ navigation }: any) {
           </View>
         </View>
 
-        {/* Search Bar */}
-        <View style={styles.searchSection}>
-          <SearchBar
-            value={searchQuery}
-            onChangeText={setSearchQuery}
-            placeholder="Tìm theo tên chi nhánh..."
-          />
-        </View>
+        {/* Search Bar - Only for system_admin */}
+        {user?.role === 'system_admin' && (
+          <View style={styles.searchSection}>
+            <SearchBar
+              value={searchQuery}
+              onChangeText={setSearchQuery}
+              placeholder="Tìm theo tên chi nhánh..."
+            />
+          </View>
+        )}
 
         {/* Date Filter */}
         <View style={styles.filterSection}>
           <View style={styles.dateInfo}>
             <Text style={styles.dateInfoLabel}>📅 Thời gian</Text>
-            <Text style={styles.dateInfoValue}>
-              {startDate} → {endDate}
-            </Text>
+            <View style={styles.dateButtonsRow}>
+              <TouchableOpacity
+                style={styles.dateButton}
+                onPress={() => setShowStartDatePicker(true)}
+              >
+                <Text style={styles.dateButtonText}>{startDate}</Text>
+              </TouchableOpacity>
+              <Text style={styles.dateInfoValue}>→</Text>
+              <TouchableOpacity
+                style={styles.dateButton}
+                onPress={() => setShowEndDatePicker(true)}
+              >
+                <Text style={styles.dateButtonText}>{endDate}</Text>
+              </TouchableOpacity>
+            </View>
           </View>
-          <TouchableOpacity style={styles.filterButton}>
-            <Text style={styles.filterButtonText}>⚙️ Lọc</Text>
-          </TouchableOpacity>
         </View>
 
         {/* Branch List Header */}
@@ -215,67 +257,70 @@ export default function BranchRevenueReportScreen({ navigation }: any) {
           </View>
         </View>
 
-        {/* Sort Buttons */}
-        <View style={styles.sortSection}>
-          <Text style={styles.sortLabel}>Sắp xếp:</Text>
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            style={styles.sortScrollView}
-          >
-            <TouchableOpacity
-              style={[
-                styles.sortChip,
-                sortBy === 'revenue' && styles.sortChipActive,
-              ]}
-              onPress={() => toggleSort('revenue')}
+        {/* Sort Buttons - Only for system_admin */}
+        {user?.role === 'system_admin' && (
+          <View style={styles.sortSection}>
+            <Text style={styles.sortLabel}>Sắp xếp:</Text>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              style={styles.sortScrollView}
             >
-              <Text
+              <TouchableOpacity
                 style={[
-                  styles.sortChipText,
-                  sortBy === 'revenue' && styles.sortChipTextActive,
+                  styles.sortChip,
+                  sortBy === 'revenue' && styles.sortChipActive,
                 ]}
+                onPress={() => toggleSort('revenue')}
               >
-                💰 Doanh thu{' '}
-                {sortBy === 'revenue' && (sortOrder === 'desc' ? '↓' : '↑')}
-              </Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[
-                styles.sortChip,
-                sortBy === 'invoiceCount' && styles.sortChipActive,
-              ]}
-              onPress={() => toggleSort('invoiceCount')}
-            >
-              <Text
+                <Text
+                  style={[
+                    styles.sortChipText,
+                    sortBy === 'revenue' && styles.sortChipTextActive,
+                  ]}
+                >
+                  💰 Doanh thu{' '}
+                  {sortBy === 'revenue' && (sortOrder === 'desc' ? '↓' : '↑')}
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
                 style={[
-                  styles.sortChipText,
-                  sortBy === 'invoiceCount' && styles.sortChipTextActive,
+                  styles.sortChip,
+                  sortBy === 'invoiceCount' && styles.sortChipActive,
                 ]}
+                onPress={() => toggleSort('invoiceCount')}
               >
-                📋 Hóa đơn{' '}
-                {sortBy === 'invoiceCount' &&
-                  (sortOrder === 'desc' ? '↓' : '↑')}
-              </Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[
-                styles.sortChip,
-                sortBy === 'name' && styles.sortChipActive,
-              ]}
-              onPress={() => toggleSort('name')}
-            >
-              <Text
+                <Text
+                  style={[
+                    styles.sortChipText,
+                    sortBy === 'invoiceCount' && styles.sortChipTextActive,
+                  ]}
+                >
+                  📋 Hóa đơn{' '}
+                  {sortBy === 'invoiceCount' &&
+                    (sortOrder === 'desc' ? '↓' : '↑')}
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
                 style={[
-                  styles.sortChipText,
-                  sortBy === 'name' && styles.sortChipTextActive,
+                  styles.sortChip,
+                  sortBy === 'name' && styles.sortChipActive,
                 ]}
+                onPress={() => toggleSort('name')}
               >
-                🏢 Tên {sortBy === 'name' && (sortOrder === 'desc' ? '↓' : '↑')}
-              </Text>
-            </TouchableOpacity>
-          </ScrollView>
-        </View>
+                <Text
+                  style={[
+                    styles.sortChipText,
+                    sortBy === 'name' && styles.sortChipTextActive,
+                  ]}
+                >
+                  🏢 Tên{' '}
+                  {sortBy === 'name' && (sortOrder === 'desc' ? '↓' : '↑')}
+                </Text>
+              </TouchableOpacity>
+            </ScrollView>
+          </View>
+        )}
 
         {/* Branch List */}
         <View style={styles.branchListContainer}>
@@ -355,16 +400,30 @@ export default function BranchRevenueReportScreen({ navigation }: any) {
 
                 {/* Action Buttons */}
                 <View style={styles.branchActions}>
+                  {user?.role === 'system-admin' && (
+                    <TouchableOpacity
+                      style={styles.actionButton}
+                      onPress={() =>
+                        navigateToEmployeeList(branch._id, branch.branchName)
+                      }
+                    >
+                      <Text style={styles.actionButtonText}>👥 Nhân viên</Text>
+                    </TouchableOpacity>
+                  )}
                   <TouchableOpacity
-                    style={styles.actionButton}
-                    onPress={() =>
-                      navigateToEmployeeList(branch._id, branch.branchName)
+                    style={
+                      user?.role === 'system-admin'
+                        ? styles.actionButtonSecondary
+                        : styles.actionButton
                     }
                   >
-                    <Text style={styles.actionButtonText}>👥 Nhân viên</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity style={styles.actionButtonSecondary}>
-                    <Text style={styles.actionButtonSecondaryText}>
+                    <Text
+                      style={
+                        user?.role === 'system-admin'
+                          ? styles.actionButtonSecondaryText
+                          : styles.actionButtonText
+                      }
+                    >
                       📊 Chi tiết
                     </Text>
                   </TouchableOpacity>
@@ -377,6 +436,94 @@ export default function BranchRevenueReportScreen({ navigation }: any) {
         {/* Bottom Spacing */}
         <View style={styles.bottomSpacing} />
       </ScrollView>
+
+      {/* Date Pickers */}
+      {Platform.OS === 'ios' ? (
+        <>
+          <Modal
+            visible={showStartDatePicker}
+            transparent={true}
+            animationType="slide"
+          >
+            <View style={styles.modalOverlay}>
+              <View style={styles.datePickerContainer}>
+                <View style={styles.datePickerHeader}>
+                  <Text style={styles.datePickerTitle}>Chọn ngày bắt đầu</Text>
+                  <TouchableOpacity
+                    onPress={() => setShowStartDatePicker(false)}
+                  >
+                    <Text style={styles.datePickerCancel}>Hủy</Text>
+                  </TouchableOpacity>
+                </View>
+                <DateTimePicker
+                  value={tempStartDate}
+                  mode="date"
+                  display="spinner"
+                  onChange={handleStartDateChange}
+                  maximumDate={new Date(endDate)}
+                />
+                <TouchableOpacity
+                  style={styles.datePickerConfirmButton}
+                  onPress={confirmStartDate}
+                >
+                  <Text style={styles.datePickerConfirmText}>Xác nhận</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </Modal>
+
+          <Modal
+            visible={showEndDatePicker}
+            transparent={true}
+            animationType="slide"
+          >
+            <View style={styles.modalOverlay}>
+              <View style={styles.datePickerContainer}>
+                <View style={styles.datePickerHeader}>
+                  <Text style={styles.datePickerTitle}>Chọn ngày kết thúc</Text>
+                  <TouchableOpacity onPress={() => setShowEndDatePicker(false)}>
+                    <Text style={styles.datePickerCancel}>Hủy</Text>
+                  </TouchableOpacity>
+                </View>
+                <DateTimePicker
+                  value={tempEndDate}
+                  mode="date"
+                  display="spinner"
+                  onChange={handleEndDateChange}
+                  minimumDate={new Date(startDate)}
+                />
+                <TouchableOpacity
+                  style={styles.datePickerConfirmButton}
+                  onPress={confirmEndDate}
+                >
+                  <Text style={styles.datePickerConfirmText}>Xác nhận</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </Modal>
+        </>
+      ) : (
+        <>
+          {showStartDatePicker && (
+            <DateTimePicker
+              value={tempStartDate}
+              mode="date"
+              display="default"
+              onChange={handleStartDateChange}
+              maximumDate={new Date(endDate)}
+            />
+          )}
+          {showEndDatePicker && (
+            <DateTimePicker
+              value={tempEndDate}
+              mode="date"
+              display="default"
+              onChange={handleEndDateChange}
+              minimumDate={new Date(startDate)}
+            />
+          )}
+        </>
+      )}
     </SafeAreaView>
   );
 }
