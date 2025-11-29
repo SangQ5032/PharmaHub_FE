@@ -109,6 +109,7 @@ export interface PeriodStatsResponse {
 export interface BranchStatsParams {
   startDate?: string;
   endDate?: string;
+  branchId?: string; // Optional: for branch_manager to filter by their branch
 }
 
 export interface BranchStatsItem {

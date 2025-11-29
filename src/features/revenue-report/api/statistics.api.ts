@@ -1,5 +1,6 @@
 // src/features/revenue-report/api/statistics.api.ts
 import apiClient from '@shared/services/api';
+import branchApi from '@features/branches/api/branch.api';
 import {
   OverallStatsParams,
   OverallStatsResponse,
@@ -66,8 +67,86 @@ export const statisticsApi = {
   getBranchStats: async (
     params?: BranchStatsParams,
   ): Promise<BranchStatsResponse> => {
-    const res = await apiClient.get(`${BASE_PATH}/by-branch`, { params });
-    return res.data;
+    const res = await apiClient.get(`${BASE_PATH}/by-branch`, {
+      params,
+    });
+
+    if (res.data.success) {
+      return res.data;
+    }
+
+    throw new Error(res.data.message || 'Không thể lấy thống kê chi nhánh');
+  },
+
+  /**
+   * Get overall statistics for branch managers (filtered by their branch)
+   * This returns data in a format similar to getBranchStats but for a single branch
+   */
+  getOverallStatsByBranch: async (
+    params?: OverallStatsParams,
+  ): Promise<BranchStatsResponse> => {
+    console.log(
+      '[statisticsApi] getOverallStatsByBranch called with params:',
+      params,
+    );
+    const res = await apiClient.get(`${BASE_PATH}/overall`, {
+      params,
+      headers: {
+        'Cache-Control': 'no-cache',
+        Pragma: 'no-cache',
+      },
+    });
+    const data = res.data;
+
+    console.log('[statisticsApi] getOverallStatsByBranch raw response:', data);
+
+    // Transform overall stats response to match branch stats format
+    // This allows branch managers to see their branch stats in the same UI
+    if (data.success && data.data) {
+      // Try to fetch branch info if branchId is provided
+      let branchInfo = {
+        name: 'Chi nhánh của bạn',
+        address: '',
+      };
+
+      if (params?.branchId) {
+        try {
+          const branchRes = await branchApi.getBranchById(params.branchId);
+          if (branchRes.success && branchRes.data) {
+            branchInfo = {
+              name: branchRes.data.name || 'Chi nhánh của bạn',
+              address: branchRes.data.address || '',
+            };
+          }
+        } catch (error) {
+          console.log('Failed to fetch branch info:', error);
+          // Continue with default values
+        }
+      }
+
+      return {
+        success: true,
+        message: data.message,
+        total: 1,
+        data: [
+          {
+            _id: params?.branchId || '',
+            branchName: branchInfo.name,
+            branchAddress: branchInfo.address,
+            totalQuantity: data.data.totalQuantity || 0,
+            totalRevenue: data.data.totalRevenue || 0,
+            totalInvoices: data.data.totalInvoices || 0,
+          },
+        ],
+      };
+    }
+
+    return {
+      success: false,
+      message: 'Không thể lấy thống kê',
+      total: 0,
+      data: [],
+    };
   },
 
   /**
