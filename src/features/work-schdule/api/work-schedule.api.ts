@@ -8,6 +8,11 @@ import {
   GetWeekScheduleParams,
   GetDayScheduleParams,
 } from '@features/work-schdule/types/types';
+import {
+  WorkScheduleHistoryResponse,
+  WorkScheduleHistoryRecord,
+  WorkScheduleHistoryParams,
+} from '@features/work-schdule/types/workScheduleHistory.types';
 
 export const workScheduleApi = {
   /**
@@ -108,6 +113,63 @@ export const workScheduleApi = {
     params: GetDayScheduleParams,
   ): Promise<WorkScheduleResponse> => {
     const res = await apiClient.get('/work-schedules/day', { params });
+    return res.data;
+  },
+
+  /**
+   * ==================== WORK SCHEDULE HISTORY APIs ====================
+   */
+
+  /**
+   * Employee - Lấy lịch sử làm việc của chính mình
+   * Endpoint: GET /api/work-schedules/history/me
+   * Authorization: employee
+   */
+  getMyWorkHistory: async (
+    params?: WorkScheduleHistoryParams,
+  ): Promise<WorkScheduleHistoryResponse<WorkScheduleHistoryRecord[]>> => {
+    const res = await apiClient.get('/work-schedules/history/me', { params });
+    return res.data;
+  },
+
+  /**
+   * Branch Manager - Lấy lịch sử làm việc các nhân viên trong chi nhánh
+   * Endpoint: GET /api/work-schedules/history/branch-employees
+   * Authorization: branch-manager
+   */
+  getBranchEmployeesWorkHistory: async (
+    params?: WorkScheduleHistoryParams,
+  ): Promise<WorkScheduleHistoryResponse<WorkScheduleHistoryRecord[]>> => {
+    const res = await apiClient.get(
+      '/work-schedules/history/branch-employees',
+      {
+        params,
+      },
+    );
+    return res.data;
+  },
+
+  /**
+   * System Admin - Lấy lịch sử làm việc tất cả các chi nhánh
+   * Endpoint: GET /api/work-schedules/history/all
+   * Authorization: system-admin
+   */
+  getAllWorkHistory: async (
+    params?: WorkScheduleHistoryParams,
+  ): Promise<WorkScheduleHistoryResponse<WorkScheduleHistoryRecord[]>> => {
+    const res = await apiClient.get('/work-schedules/history/all', { params });
+    return res.data;
+  },
+
+  /**
+   * Lấy chi tiết một bản ghi lịch sử làm việc kèm danh sách hoá đơn
+   * Endpoint: GET /api/work-schedules/history/:attendanceId
+   * Authorization: All authenticated users
+   */
+  getWorkHistoryDetail: async (
+    attendanceId: string,
+  ): Promise<WorkScheduleHistoryResponse<WorkScheduleHistoryRecord>> => {
+    const res = await apiClient.get(`/work-schedules/history/${attendanceId}`);
     return res.data;
   },
 };

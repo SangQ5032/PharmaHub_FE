@@ -32,6 +32,9 @@ export const ROUTES = {
   BRANCH_REVENUE_REPORT: 'BranchRevenueReport',
   BRANCH_EMPLOYEE_LIST: 'BranchEmployeeList',
   EMPLOYEE_WORK_HISTORY: 'EmployeeWorkHistory',
+  EMPLOYEE_WORK_HISTORY_DETAIL: 'EmployeeWorkHistoryDetail',
+  BRANCH_WORK_HISTORY: 'BranchWorkHistory',
+  ADMIN_WORK_HISTORY: 'AdminWorkHistory',
   EMPLOYEE_REVENUE: 'EmployeeRevenue',
   MEDICINE_MANAGEMENT: 'MedicineManagement',
   // Employee Management routes

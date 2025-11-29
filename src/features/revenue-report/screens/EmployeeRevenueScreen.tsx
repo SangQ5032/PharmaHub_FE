@@ -1,15 +1,16 @@
 import React from 'react';
 import { View, Text, ScrollView, SafeAreaView } from 'react-native';
 import { Header } from '@shared/components/header/Header';
-import { getEmployeeRevenueById } from '../mockdata';
+// import { getEmployeeRevenueById } from '../mockdata'; // ⚠️ DEPRECATED: Mock data removed
 import { employeeRevenueStyles as styles } from '../styles';
 import { formatCurrencyShort, formatFullCurrency, getInitials } from '../utils';
 
 export default function EmployeeRevenueScreen({ route }: any) {
-  const { employeeId } = route?.params || {};
+  // const { employeeId } = route?.params || {};
 
   // Get employee data by ID
-  const employee = getEmployeeRevenueById(employeeId);
+  const employee = null; // TODO: Replace with actual employee API
+  // const employee = getEmployeeRevenueById(employeeId);
 
   // If employee not found, show error
   if (!employee) {

@@ -9,7 +9,7 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { BranchEmployeeStats } from '../types';
-import { FAKE_EMPLOYEES } from '../mockdata';
+// import { FAKE_EMPLOYEES } from '../mockdata'; // ⚠️ DEPRECATED: Mock data removed
 import { branchEmployeeStyles as styles } from '../styles';
 import { SearchBar, FilterChips, StatCard, EmployeeCard } from '../components';
 import { getEmployeeStatusColor, getEmployeeStatusText } from '../utils';
@@ -42,7 +42,7 @@ export default function BranchEmployeeListScreen({ route, navigation }: any) {
           role: user.role === 'admin' ? 'manager' : 'staff',
           status: 'active',
         }))
-      : FAKE_EMPLOYEES.filter(emp => emp.branchId === branchId);
+      : [];
 
   // Apply search and filters
   const filteredEmployees = branchEmployees.filter(emp => {
