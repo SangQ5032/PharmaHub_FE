@@ -12,10 +12,13 @@ import {
   Text,
   ActivityIndicator,
   RefreshControl,
+  TextInput,
+  Platform,
 } from 'react-native';
 import { useTheme } from '@react-navigation/native';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
+import DateTimePicker from '@react-native-community/datetimepicker';
 import { useMyWorkHistory } from '@features/work-schdule/hooks/useWorkScheduleHistory';
 import { WorkScheduleHistoryRecord } from '@features/work-schdule/types/workScheduleHistory.types';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -29,11 +32,27 @@ export const EmployeeWorkHistoryScreen: React.FC = () => {
   const [page, setPage] = useState(1);
   const [shift, setShift] = useState<'morning' | 'afternoon' | undefined>();
   const [refreshing, setRefreshing] = useState(false);
+  const [searchText, setSearchText] = useState('');
+  const [fromDate, setFromDate] = useState<Date | undefined>();
+  const [toDate, setToDate] = useState<Date | undefined>();
+  const [showFromDatePicker, setShowFromDatePicker] = useState(false);
+  const [showToDatePicker, setShowToDatePicker] = useState(false);
+
+  const formatDateToString = (date?: Date): string | undefined => {
+    if (!date) return undefined;
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
 
   const { data, isLoading, isError, refetch } = useMyWorkHistory({
     page,
     limit: 15,
     shift,
+    search: searchText || undefined,
+    fromDate: formatDateToString(fromDate),
+    toDate: formatDateToString(toDate),
   });
 
   useFocusEffect(
@@ -62,6 +81,35 @@ export const EmployeeWorkHistoryScreen: React.FC = () => {
     setPage(1);
   };
 
+  const handleSearch = () => {
+    setPage(1);
+    refetch();
+  };
+
+  const handleClearFilters = () => {
+    setSearchText('');
+    setFromDate(undefined);
+    setToDate(undefined);
+    setShift(undefined);
+    setPage(1);
+  };
+
+  const onFromDateChange = (event: any, selectedDate?: Date) => {
+    setShowFromDatePicker(Platform.OS === 'ios');
+    if (selectedDate) {
+      setFromDate(selectedDate);
+      setPage(1);
+    }
+  };
+
+  const onToDateChange = (event: any, selectedDate?: Date) => {
+    setShowToDatePicker(Platform.OS === 'ios');
+    if (selectedDate) {
+      setToDate(selectedDate);
+      setPage(1);
+    }
+  };
+
   const handleViewDetail = (record: WorkScheduleHistoryRecord) => {
     // Truyền recordId để detail screen gọi API lấy dữ liệu chi tiết + hoá đơn
     navigation.navigate(ROUTES.EMPLOYEE_WORK_HISTORY_DETAIL, {
@@ -82,12 +130,26 @@ export const EmployeeWorkHistoryScreen: React.FC = () => {
   // };
 
   const formatDate = (dateString: string): string => {
-    const date = new Date(dateString);
+    if (!dateString) return '';
+
+    const cleanDateString = dateString.replace(' GM', ' GMT');
+
+    // 2. Tạo đối tượng Date
+    const date = new Date(cleanDateString);
+
+    if (isNaN(date.getTime())) {
+      return dateString;
+    }
+
+    // 4. Format sang tiếng Việt
     return date.toLocaleDateString('vi-VN', {
-      weekday: 'short',
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
+      weekday: 'long', // Thứ Tư
+      year: 'numeric', // 2025
+      month: 'long', // tháng 10
+      day: 'numeric', // 8
+      // Nếu muốn hiện thêm giờ:
+      // hour: '2-digit',
+      // minute: '2-digit'
     });
   };
 
@@ -160,6 +222,87 @@ export const EmployeeWorkHistoryScreen: React.FC = () => {
       <Text style={[styles.headerTitle, { color: colors.text }]}>
         Lịch Sử Làm Việc
       </Text>
+
+      {/* Search Bar */}
+      <View style={styles.searchContainer}>
+        <MaterialCommunityIcons
+          name="magnify"
+          size={20}
+          color={colors.text}
+          style={styles.searchIcon}
+        />
+        <TextInput
+          style={[
+            styles.searchInput,
+            { backgroundColor: colors.background, color: colors.text },
+          ]}
+          placeholder="Tìm theo ngày (YYYY-MM-DD)"
+          placeholderTextColor={colors.text}
+          value={searchText}
+          onChangeText={setSearchText}
+          onSubmitEditing={handleSearch}
+        />
+        {searchText ? (
+          <TouchableOpacity onPress={() => setSearchText('')}>
+            <MaterialCommunityIcons
+              name="close-circle"
+              size={20}
+              color={colors.text}
+            />
+          </TouchableOpacity>
+        ) : null}
+      </View>
+
+      {/* Date Range Filter */}
+      <View style={styles.dateRangeContainer}>
+        <TouchableOpacity
+          style={[
+            styles.dateButton,
+            { backgroundColor: colors.background, borderColor: colors.border },
+          ]}
+          onPress={() => setShowFromDatePicker(true)}
+        >
+          <MaterialCommunityIcons
+            name="calendar-start"
+            size={16}
+            color={colors.primary}
+          />
+          <Text style={[styles.dateButtonText, { color: colors.text }]}>
+            {fromDate ? formatDateToString(fromDate) : 'Từ ngày'}
+          </Text>
+        </TouchableOpacity>
+
+        <Text style={[styles.dateSeparator, { color: colors.text }]}>→</Text>
+
+        <TouchableOpacity
+          style={[
+            styles.dateButton,
+            { backgroundColor: colors.background, borderColor: colors.border },
+          ]}
+          onPress={() => setShowToDatePicker(true)}
+        >
+          <MaterialCommunityIcons
+            name="calendar-end"
+            size={16}
+            color={colors.primary}
+          />
+          <Text style={[styles.dateButtonText, { color: colors.text }]}>
+            {toDate ? formatDateToString(toDate) : 'Đến ngày'}
+          </Text>
+        </TouchableOpacity>
+
+        {(fromDate || toDate || searchText) && (
+          <TouchableOpacity
+            style={[
+              styles.clearButton,
+              { backgroundColor: colors.notification },
+            ]}
+            onPress={handleClearFilters}
+          >
+            <MaterialCommunityIcons name="close" size={16} color="#fff" />
+          </TouchableOpacity>
+        )}
+      </View>
 
       {/* Shift Filter Buttons */}
       <View style={styles.filterContainer}>
@@ -251,7 +394,7 @@ export const EmployeeWorkHistoryScreen: React.FC = () => {
             <Text style={[styles.dateText, { color: colors.text }]}>
               {formatDate(item.date)}
             </Text>
-            <Text style={[styles.timeText, { color: colors.gray }]}>
+            <Text style={[styles.timeText, { color: colors.text }]}>
               {formatTime(item.checkin_time)}
             </Text>
           </View>
@@ -355,7 +498,7 @@ export const EmployeeWorkHistoryScreen: React.FC = () => {
       <Text style={[styles.emptyText, { color: colors.text }]}>
         Không có lịch sử làm việc
       </Text>
-      <Text style={[styles.emptySubText, { color: colors.gray }]}>
+      <Text style={[styles.emptySubText, { color: colors.text }]}>
         Lịch sử làm việc của bạn sẽ hiển thị ở đây
       </Text>
     </View>
@@ -430,6 +573,24 @@ export const EmployeeWorkHistoryScreen: React.FC = () => {
           <ActivityIndicator size="large" color={colors.primary} />
         </View>
       )}
+
+      {/* Date Pickers */}
+      {showFromDatePicker && (
+        <DateTimePicker
+          value={fromDate || new Date()}
+          mode="date"
+          display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+          onChange={onFromDateChange}
+        />
+      )}
+      {showToDatePicker && (
+        <DateTimePicker
+          value={toDate || new Date()}
+          mode="date"
+          display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+          onChange={onToDateChange}
+        />
+      )}
     </SafeAreaView>
   );
 };
@@ -440,159 +601,238 @@ const styles = StyleSheet.create({
   },
   header: {
     paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingVertical: 16,
     borderBottomWidth: 1,
   },
   headerTitle: {
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: '700',
-    marginBottom: 12,
+    marginBottom: 16,
+    letterSpacing: 0.3,
+  },
+  searchContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderRadius: 10,
+    marginBottom: 14,
+    borderWidth: 1,
+    borderColor: '#E0E0E0',
+  },
+  searchIcon: {
+    marginRight: 10,
+  },
+  searchInput: {
+    flex: 1,
+    fontSize: 14,
+    paddingVertical: 6,
+    paddingHorizontal: 4,
+  },
+  dateRangeContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 14,
+    gap: 10,
+  },
+  dateButton: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 10,
+    paddingHorizontal: 10,
+    borderRadius: 10,
+    borderWidth: 1,
+    gap: 8,
+  },
+  dateButtonText: {
+    fontSize: 12,
+    fontWeight: '600',
+    flex: 1,
+  },
+  dateSeparator: {
+    fontSize: 16,
+    fontWeight: '700',
+    marginHorizontal: 2,
+  },
+  clearButton: {
+    padding: 10,
+    borderRadius: 24,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   filterContainer: {
     flexDirection: 'row',
-    gap: 8,
-    marginBottom: 12,
+    gap: 10,
+    marginBottom: 14,
   },
   filterButton: {
     flex: 1,
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    borderRadius: 8,
+    paddingVertical: 10,
+    paddingHorizontal: 10,
+    borderRadius: 10,
     borderWidth: 1,
     alignItems: 'center',
+    justifyContent: 'center',
   },
   filterButtonText: {
-    fontSize: 12,
-    fontWeight: '600',
+    fontSize: 13,
+    fontWeight: '700',
   },
   statsContainer: {
-    paddingTop: 8,
+    paddingTop: 10,
+    paddingBottom: 4,
   },
   statsText: {
-    fontSize: 12,
-    fontWeight: '500',
+    fontSize: 13,
+    fontWeight: '600',
+    opacity: 0.7,
   },
   card: {
-    marginHorizontal: 12,
-    marginVertical: 8,
-    borderRadius: 12,
+    marginHorizontal: 14,
+    marginVertical: 10,
+    borderRadius: 14,
     borderWidth: 1,
     overflow: 'hidden',
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 4,
   },
   cardContent: {
-    paddingHorizontal: 12,
-    paddingVertical: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 16,
   },
   cardTop: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 10,
+    alignItems: 'flex-start',
+    marginBottom: 14,
   },
   dateText: {
-    fontSize: 14,
-    fontWeight: '600',
+    fontSize: 15,
+    fontWeight: '700',
+    letterSpacing: 0.2,
   },
   timeText: {
-    fontSize: 12,
+    fontSize: 13,
     marginTop: 4,
+    opacity: 0.6,
   },
   statusBadge: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
+    paddingHorizontal: 14,
+    paddingVertical: 7,
     borderRadius: 20,
   },
   statusBadgeText: {
     color: '#fff',
     fontSize: 12,
-    fontWeight: '600',
+    fontWeight: '700',
+    letterSpacing: 0.3,
   },
   cardRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginVertical: 6,
-    gap: 8,
+    marginVertical: 8,
+    gap: 10,
   },
   cardLabel: {
-    fontSize: 13,
-    fontWeight: '500',
+    fontSize: 14,
+    fontWeight: '600',
     flex: 1,
+    letterSpacing: 0.1,
   },
   cardValue: {
-    fontSize: 13,
+    fontSize: 14,
+    fontWeight: '500',
     flex: 1,
   },
   cardBottom: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginTop: 10,
-    paddingTop: 10,
+    marginTop: 14,
+    paddingTop: 14,
     borderTopWidth: 1,
   },
   scheduleStatus: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
+    gap: 8,
   },
   scheduleStatusText: {
-    fontSize: 12,
-    fontWeight: '600',
+    fontSize: 13,
+    fontWeight: '700',
+    letterSpacing: 0.2,
   },
   emptyContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    paddingHorizontal: 20,
+    paddingHorizontal: 32,
   },
   emptyText: {
-    fontSize: 16,
-    fontWeight: '600',
-    marginTop: 12,
+    fontSize: 18,
+    fontWeight: '700',
+    marginTop: 16,
+    letterSpacing: 0.3,
   },
   emptySubText: {
-    fontSize: 13,
-    marginTop: 6,
+    fontSize: 14,
+    marginTop: 8,
+    textAlign: 'center',
+    opacity: 0.6,
   },
   errorContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    paddingHorizontal: 20,
+    paddingHorizontal: 32,
   },
   errorText: {
-    fontSize: 16,
-    fontWeight: '600',
-    marginTop: 12,
-    marginBottom: 16,
+    fontSize: 18,
+    fontWeight: '700',
+    marginTop: 16,
+    marginBottom: 20,
+    textAlign: 'center',
+    letterSpacing: 0.3,
   },
   retryButton: {
-    paddingHorizontal: 24,
-    paddingVertical: 10,
-    borderRadius: 8,
+    paddingHorizontal: 32,
+    paddingVertical: 12,
+    borderRadius: 12,
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
   },
   retryButtonText: {
     color: '#fff',
-    fontSize: 14,
-    fontWeight: '600',
+    fontSize: 15,
+    fontWeight: '700',
+    letterSpacing: 0.5,
   },
   footerLoader: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 16,
-    gap: 8,
+    paddingVertical: 20,
+    gap: 10,
   },
   footerLoaderText: {
-    fontSize: 12,
+    fontSize: 13,
+    fontWeight: '500',
   },
   loadingOverlay: {
     ...StyleSheet.absoluteFillObject,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: 'rgba(0, 0, 0, 0.3)',
+    backgroundColor: 'rgba(0, 0, 0, 0.4)',
   },
 });

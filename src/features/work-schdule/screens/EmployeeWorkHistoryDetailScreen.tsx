@@ -1,3 +1,4 @@
+/* eslint-disable react-native/no-inline-styles */
 /* eslint-disable react-hooks/exhaustive-deps */
 /**
  * Employee Work History Detail Screen
@@ -136,12 +137,26 @@ export const EmployeeWorkHistoryDetailScreen: React.FC = () => {
   };
 
   const formatDate = (dateString: string): string => {
-    const date = new Date(dateString);
+    if (!dateString) return '';
+
+    const cleanDateString = dateString.replace(' GM', ' GMT');
+
+    // 2. Tạo đối tượng Date
+    const date = new Date(cleanDateString);
+
+    if (isNaN(date.getTime())) {
+      return dateString;
+    }
+
+    // 4. Format sang tiếng Việt
     return date.toLocaleDateString('vi-VN', {
-      weekday: 'long',
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
+      weekday: 'long', // Thứ Tư
+      year: 'numeric', // 2025
+      month: 'long', // tháng 10
+      day: 'numeric', // 8
+      // Nếu muốn hiện thêm giờ:
+      // hour: '2-digit',
+      // minute: '2-digit'
     });
   };
 
@@ -206,7 +221,13 @@ export const EmployeeWorkHistoryDetailScreen: React.FC = () => {
   const renderDetailRow = (label: string, value: string, icon?: string) => (
     <View style={styles.detailRow}>
       {icon && (
-        <MaterialCommunityIcons name={icon} size={20} color={colors.primary} />
+        <View style={{ width: 24, alignItems: 'center' }}>
+          <MaterialCommunityIcons
+            name={icon}
+            size={20}
+            color={colors.primary}
+          />
+        </View>
       )}
       <View style={styles.detailContent}>
         <Text style={[styles.detailLabel, { color: colors.text }]}>
@@ -491,7 +512,7 @@ export const EmployeeWorkHistoryDetailScreen: React.FC = () => {
                       <Text
                         style={[styles.detailValue, { color: colors.text }]}
                       >
-                        {item.customer_name || item.customer_id?.name || 'N/A'}
+                        {item.customer_name || 'N/A'}
                       </Text>
                     </View>
                     <View style={styles.detailRow}>
@@ -663,19 +684,19 @@ const styles = StyleSheet.create({
   },
   detailRow: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: 10,
+    gap: 8,
   },
   detailLabel: {
     fontSize: 12,
     fontWeight: '500',
-    flex: 0.4,
+    color: '#666',
+    marginBottom: 2,
   },
   detailValue: {
-    fontSize: 12,
-    flex: 0.6,
-    textAlign: 'right',
+    fontSize: 13,
+    fontWeight: '600',
   },
   emptyInvoices: {
     flex: 1,
@@ -740,6 +761,7 @@ const styles = StyleSheet.create({
   },
   detailContent: {
     flex: 1,
+    justifyContent: 'center',
   },
   noteContainer: {
     padding: 12,
