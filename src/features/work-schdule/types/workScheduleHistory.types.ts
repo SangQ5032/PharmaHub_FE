@@ -24,6 +24,65 @@ export interface BranchInfo {
   phone: string;
 }
 
+/**
+ * Invoice Item Types
+ */
+export interface InvoiceItem {
+  medicine_id:
+    | string
+    | {
+        _id: string;
+        name: string;
+        unit: string;
+        price: number;
+        category: string;
+      };
+  batch_id:
+    | string
+    | {
+        _id: string;
+        batch_number: string;
+        expiry_date: string;
+      };
+  name: string;
+  batch_number: string;
+  quantity: number;
+  unit_price: number;
+  line_total: number;
+}
+
+/**
+ * Invoice Types
+ */
+export interface InvoiceData {
+  _id: string;
+  invoice_code: string;
+  branch_id: string;
+  employee_id: string;
+  customer_id?:
+    | string
+    | {
+        _id: string;
+        name: string;
+        phone: string;
+        address: string;
+      };
+  customer_name?: string;
+  customer_phone?: string;
+  payment_method: 'cash' | 'card' | 'transfer';
+  items: InvoiceItem[];
+  subtotal: number;
+  discount: number;
+  tax_rate: number;
+  tax_amount: number;
+  total_amount: number;
+  note?: string;
+  status: 'completed' | 'pending' | 'cancelled';
+  exported: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface WorkScheduleHistoryRecord {
   note: any;
   _id: string;
@@ -47,7 +106,7 @@ export interface WorkScheduleHistoryRecord {
     totalAmount: number; // Tổng tiền (VND)
     totalItems: number; // Tổng số sản phẩm
   };
-  invoices?: any[]; // Danh sách chi tiết hoá đơn
+  invoices?: InvoiceData[]; // Danh sách chi tiết hoá đơn
   createdAt: string; // ISO 8601 format
   updatedAt: string; // ISO 8601 format
   __v?: number;
@@ -78,9 +137,11 @@ export interface WorkScheduleHistoryParams {
   limit?: number;
   from_date?: string; // YYYY-MM-DD
   to_date?: string; // YYYY-MM-DD
+  search?: string; // YYYY-MM-DD - Tìm kiếm theo ngày cụ thể
   shift?: Shift;
   user_id?: string;
   branch_id?: string; // Only for system_admin
+  status?: 'checked_in' | 'checked_out' | 'late' | 'early' | 'absent';
 }
 
 /**
@@ -91,9 +152,11 @@ export interface WorkHistoryFilters {
   limit: number;
   fromDate?: string;
   toDate?: string;
+  search?: string; // Tìm kiếm theo ngày cụ thể
   shift?: Shift;
   userId?: string; // For system_admin to filter by specific employee
   branchId?: string; // For system_admin to filter by specific branch
+  status?: 'checked_in' | 'checked_out' | 'late' | 'early' | 'absent';
 }
 
 /**

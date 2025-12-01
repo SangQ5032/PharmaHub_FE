@@ -17,7 +17,9 @@ export const useMyWorkHistory = (filters?: WorkHistoryFilters) => {
     limit: filters?.limit || 10,
     ...(filters?.fromDate && { from_date: filters.fromDate }),
     ...(filters?.toDate && { to_date: filters.toDate }),
+    ...(filters?.search && { search: filters.search }),
     ...(filters?.shift && { shift: filters.shift }),
+    ...(filters?.status && { status: filters.status }),
   };
 
   return useQuery({
