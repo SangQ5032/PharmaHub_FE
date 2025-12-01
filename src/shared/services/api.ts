@@ -65,12 +65,6 @@ api.interceptors.request.use(
 // ====== RESPONSE INTERCEPTOR ======
 api.interceptors.response.use(
   response => {
-    console.log('[API Response]', {
-      url: response.config.url,
-      status: response.status,
-      hasData: !!response.data,
-      data: response.data,
-    });
     return response;
   },
   async (error: AxiosError) => {

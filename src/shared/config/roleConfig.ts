@@ -60,6 +60,13 @@ export const ROLE_CONFIG: Record<UserRole, RoleConfig> = {
         route: ROUTES.ADMIN_WORK_HISTORY,
         description: 'Xem lịch sử làm việc toàn hệ thống',
       },
+      {
+        id: 'admin-6',
+        name: 'Quản lý lương',
+        icon: 'cash-multiple',
+        route: ROUTES.PAYROLL_MENU,
+        description: 'Quản lý và duyệt lương nhân viên',
+      },
     ],
     tabs: [
       {
@@ -117,25 +124,25 @@ export const ROLE_CONFIG: Record<UserRole, RoleConfig> = {
         description: 'Quản lý đơn nhập hàng',
       },
       {
-        id: 'manager-5',
-        name: 'Quản lý tồn kho',
+        id: 'manager-6',
+        name: 'Kho Thuốc',
         icon: 'warehouse',
         route: ROUTES.WAREHOUSE_HUB,
         description: 'Quản lý tồn kho thuốc',
       },
       {
-        id: 'manager-6',
-        name: 'Quản lý tồn kho',
-        icon: 'warehouse',
-        route: ROUTES.WAREHOUSE_HUB,
-        description: 'Quản lý tồn kho thuốc',
-      },
-      {
-        id: 'manager-6',
+        id: 'manager-7',
         name: 'Lịch sử hoá đơn',
         icon: 'file-document-outline',
         route: ROUTES.BRANCH_INVOICE_HISTORY,
         description: 'Xem lịch sử bán hàng',
+      },
+      {
+        id: 'manager-8',
+        name: 'Quản Lý Lương',
+        icon: 'cash-multiple',
+        route: ROUTES.PAYROLL_MENU,
+        description: 'Quản lý bảng lương nhân viên',
       },
     ],
     tabs: [
@@ -194,6 +201,13 @@ export const ROLE_CONFIG: Record<UserRole, RoleConfig> = {
         icon: 'file-document-outline',
         route: ROUTES.INVOICE_LIST,
         description: 'Xem danh sách hóa đơn đã tạo',
+      },
+      {
+        id: 'staff-7',
+        name: 'Lương Của Tôi',
+        icon: 'cash-multiple',
+        route: ROUTES.PAYROLL_MENU,
+        description: 'Xem lương và chi tiết tính lương',
       },
     ],
     tabs: [
