@@ -89,18 +89,35 @@ const HomeScreen = () => {
     navigation.navigate(route as never);
   };
 
+  /**
+   * Xử lý navigation cho các route khác nhau
+   */
+  const handleCardPress = (item: RoleOption) => {
+    // Kiểm tra nếu là "Bán Hàng" (staff-3)
+    if (item.id === 'staff-3') {
+      handleSalesPress(item.route);
+      return;
+    }
+
+    // Với Payroll routes, có thể thêm logic xác thực token nếu cần
+    if (item.route === ROUTES.PAYROLL_LIST) {
+      // Payroll list tự động filter dựa vào role của user
+      navigation.navigate(ROUTES.PAYROLL_LIST as never);
+      return;
+    }
+
+    if (item.route === ROUTES.CREATE_PAYROLL) {
+      // Create payroll screen
+      navigation.navigate(ROUTES.CREATE_PAYROLL as never);
+      return;
+    }
+
+    // Navigate bình thường cho các route khác
+    navigation.navigate(item.route as never);
+  };
+
   const renderFunctionCard = ({ item }: { item: RoleOption }) => (
-    <TouchableOpacity
-      style={styles.card}
-      onPress={() => {
-        // Kiểm tra nếu là "Bán Hàng" (staff-3)
-        if (item.id === 'staff-3') {
-          handleSalesPress(item.route);
-        } else {
-          navigation.navigate(item.route as never);
-        }
-      }}
-    >
+    <TouchableOpacity style={styles.card} onPress={() => handleCardPress(item)}>
       <View style={styles.iconContainer}>
         <Icon name={item.icon} size={32} color="#4CAF50" />
       </View>

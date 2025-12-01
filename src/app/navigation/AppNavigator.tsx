@@ -71,6 +71,14 @@ import {
   EmployeeWorkHistoryDetailScreen,
 } from '@features/work-schdule';
 import {
+  PayrollMenuScreen,
+  PayrollListScreen,
+  BranchPayrollListScreen,
+  PayrollDetailsScreen,
+  CreatePayrollScreen,
+  PayrollSummaryScreen,
+} from '@features/payroll';
+import {
   RootStackParamList,
   AuthStackParamList,
   MainStackParamList,
@@ -385,6 +393,33 @@ const MainAppNavigator = () => {
         name={ROUTES.BRANCH_INVOICE_HISTORY}
         component={BranchInvoiceHistoryScreen}
         options={{ headerShown: false }}
+      />
+
+      {/* Payroll Routes */}
+      <MainStack.Screen
+        name={ROUTES.PAYROLL_MENU}
+        component={PayrollMenuScreen}
+        options={{ headerShown: true, title: 'Quản Lý Lương' }}
+      />
+      <MainStack.Screen
+        name={ROUTES.PAYROLL_LIST}
+        component={BranchPayrollListScreen}
+        options={{ headerShown: true, title: 'Danh Sách Bảng Lương' }}
+      />
+      <MainStack.Screen
+        name={ROUTES.PAYROLL_DETAIL}
+        component={PayrollDetailsScreen}
+        options={{ headerShown: true, title: 'Chi Tiết Lương' }}
+      />
+      <MainStack.Screen
+        name={ROUTES.CREATE_PAYROLL}
+        component={CreatePayrollScreen}
+        options={{ headerShown: true, title: 'Tạo Bảng Lương' }}
+      />
+      <MainStack.Screen
+        name={ROUTES.PAYROLL_SUMMARY}
+        component={PayrollSummaryScreen}
+        options={{ headerShown: true, title: 'Báo Cáo Lương' }}
       />
     </MainStack.Navigator>
   );

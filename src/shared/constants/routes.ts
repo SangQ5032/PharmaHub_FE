@@ -54,4 +54,10 @@ export const ROUTES = {
   CATEGORIES: 'Categories',
   ADD_CATEGORY: 'AddCategory',
   CATEGORY_DETAIL: 'CategoryDetail',
-};
+  // Payroll routes
+  PAYROLL_MENU: 'PayrollMenu',
+  PAYROLL_LIST: 'PayrollList',
+  PAYROLL_DETAIL: 'PayrollDetail',
+  CREATE_PAYROLL: 'CreatePayroll',
+  PAYROLL_SUMMARY: 'PayrollSummary',
+} as const;

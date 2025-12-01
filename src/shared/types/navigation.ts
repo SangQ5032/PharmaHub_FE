@@ -62,4 +62,9 @@ export type MainStackParamList = {
   [ROUTES.CATEGORIES]: undefined;
   [ROUTES.ADD_CATEGORY]: { mode?: 'edit'; item?: any } | undefined;
   [ROUTES.CATEGORY_DETAIL]: { categoryId: string } | undefined;
+  [ROUTES.PAYROLL_MENU]: undefined;
+  [ROUTES.PAYROLL_LIST]: undefined;
+  [ROUTES.PAYROLL_DETAIL]: { payrollId: string } | undefined;
+  [ROUTES.CREATE_PAYROLL]: undefined;
+  [ROUTES.PAYROLL_SUMMARY]: { branchId?: string; month?: string } | undefined;
 };
