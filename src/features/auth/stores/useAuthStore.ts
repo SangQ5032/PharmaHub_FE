@@ -67,7 +67,14 @@ export const useAuthStore = create<AuthState>((set, get) => ({
    */
   setUser: user => {
     set({ user });
-    // Không còn lưu vào AsyncStorage nữa
+    // Lưu vào AsyncStorage
+    if (user) {
+      AsyncStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(user)).catch(
+        error => {
+          console.error('❌ Lỗi khi lưu user vào AsyncStorage:', error);
+        },
+      );
+    }
   },
 
   /**

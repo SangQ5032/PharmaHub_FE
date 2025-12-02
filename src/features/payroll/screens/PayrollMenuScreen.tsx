@@ -5,7 +5,6 @@ import {
   TouchableOpacity,
   Text,
   ScrollView,
-  Dimensions,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { useAuthStore } from '@features/auth/stores/useAuthStore';
@@ -27,11 +26,49 @@ export const PayrollMenuScreen: React.FC = () => {
   const user = useAuthStore(state => state.user);
   const role = user?.role;
 
+  // Debug log
+  React.useEffect(() => {
+    console.log('=== PayrollMenuScreen Debug ===');
+    console.log('User:', user);
+    console.log('Role:', role);
+  }, [user, role]);
+
   // Menu options based on role
   const getMenuOptions = (): MenuOption[] => {
     const baseOptions: MenuOption[] = [];
 
-    if (role === 'branch-manager') {
+    if (role === 'system-admin') {
+      return [
+        {
+          id: 'payroll-list',
+          title: 'Danh sách bảng lương',
+          description:
+            'Xem danh sách bảng lương của tất cả nhân viên toàn hệ thống',
+          icon: 'file-document-multiple',
+          iconColor: '#fff',
+          bgColor: '#1976d2',
+          route: ROUTES.PAYROLL_LIST,
+        },
+        {
+          id: 'branch-payroll-list',
+          title: 'Bảng lương theo chi nhánh',
+          description: 'Xem bảng lương của từng chi nhánh',
+          icon: 'office-building',
+          iconColor: '#fff',
+          bgColor: '#9C27B0',
+          route: ROUTES.PAYROLL_BRANCH_SELECTION,
+        },
+        {
+          id: 'payroll-summary',
+          title: 'Báo cáo lương',
+          description: 'Xem báo cáo tổng hợp lương toàn hệ thống',
+          icon: 'chart-line',
+          iconColor: '#fff',
+          bgColor: '#FF9800',
+          route: ROUTES.PAYROLL_SUMMARY,
+        },
+      ];
+    } else if (role === 'branch-manager') {
       return [
         {
           id: 'payroll-list',
@@ -90,7 +127,9 @@ export const PayrollMenuScreen: React.FC = () => {
       <View style={styles.header}>
         <Text style={styles.headerTitle}>Quản Lý Lương</Text>
         <Text style={styles.headerSubtitle}>
-          {role === 'branch_manager'
+          {role === 'system-admin'
+            ? 'Quản lý lương toàn hệ thống'
+            : role === 'branch-manager'
             ? 'Quản lý lương cho chi nhánh'
             : 'Xem thông tin lương cá nhân'}
         </Text>

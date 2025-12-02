@@ -23,7 +23,7 @@ export interface RoleConfig {
 
 // Config cho từng role - 3 option cho mỗi role + tabs
 export const ROLE_CONFIG: Record<UserRole, RoleConfig> = {
-  system_admin: {
+  'system-admin': {
     options: [
       {
         id: 'admin-1',
@@ -86,7 +86,7 @@ export const ROLE_CONFIG: Record<UserRole, RoleConfig> = {
       },
     ],
   },
-  branch_manager: {
+  'branch-manager': {
     options: [
       {
         id: 'manager-1',
@@ -224,21 +224,21 @@ export const ROLE_CONFIG: Record<UserRole, RoleConfig> = {
     ],
   },
 };
-const normalizeRole = (role?: string) => role?.replace(/-/g, '_').toLowerCase();
+
 export const getRoleConfig = (role: UserRole | undefined): RoleConfig => {
-  const normalized = normalizeRole(role);
-  if (!normalized || !ROLE_CONFIG[normalized as UserRole]) {
-    return ROLE_CONFIG.employee;
+  if (!role || !ROLE_CONFIG[role]) {
+    return ROLE_CONFIG.employee; // Default là employee
   }
-  return ROLE_CONFIG[normalized as UserRole];
+  return ROLE_CONFIG[role];
 };
 
 /**
  * Lấy config cho role cụ thể
  */
 // export const getRoleConfig = (role: UserRole | undefined): RoleConfig => {
-//   if (!role || !ROLE_CONFIG[role]) {
-//     return ROLE_CONFIG.employee; // Default là staff
+//   const normalized = normalizeRole(role);
+//   if (!normalized || !ROLE_CONFIG[normalized as UserRole]) {
+//     return ROLE_CONFIG.employee;
 //   }
-//   return ROLE_CONFIG[role];
+//   return ROLE_CONFIG[normalized as UserRole];
 // };

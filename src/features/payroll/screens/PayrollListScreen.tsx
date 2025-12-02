@@ -74,8 +74,15 @@ export const PayrollListScreen: React.FC<PayrollListScreenProps> = ({
         page: 1,
         limit: 10,
       });
+    } else if (userRole === 'system-admin') {
+      // System admin can see all payrolls
+      setPayrollFilters({
+        month: currentMonth,
+        page: 1,
+        limit: 10,
+      });
     } else {
-      // Fallback for admin role
+      // Fallback
       setPayrollFilters({
         month: currentMonth,
         page: 1,

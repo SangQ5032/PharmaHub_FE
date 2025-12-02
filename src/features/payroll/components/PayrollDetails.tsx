@@ -8,6 +8,8 @@ import {
   ActivityIndicator,
   Alert,
   Dimensions,
+  Modal,
+  TextInput,
 } from 'react-native';
 import { PayrollDetail } from '../types';
 
@@ -86,6 +88,9 @@ export const PayrollDetails: React.FC<PayrollDetailsProps> = ({
   rejectingLoading = false,
   userRole = 'employee',
 }) => {
+  const [showRejectModal, setShowRejectModal] = useState(false);
+  const [rejectReason, setRejectReason] = useState('');
+
   if (loading) {
     return (
       <View style={styles.centerContainer}>
@@ -130,18 +135,23 @@ export const PayrollDetails: React.FC<PayrollDetailsProps> = ({
     ]);
   };
 
-  const handleReject = () => {
-    Alert.alert('Từ chối lương', 'Bạn chắc chắn muốn từ chối lương này?', [
-      {
-        text: 'Hủy',
-        style: 'cancel',
-      },
-      {
-        text: 'Từ chối',
-        onPress: () => onReject?.(),
-        style: 'destructive',
-      },
-    ]);
+  const handleRejectPress = () => {
+    setShowRejectModal(true);
+  };
+
+  const handleConfirmReject = () => {
+    if (!rejectReason.trim()) {
+      Alert.alert('Lỗi', 'Vui lòng nhập lý do từ chối');
+      return;
+    }
+    setShowRejectModal(false);
+    onReject?.(rejectReason);
+    setRejectReason('');
+  };
+
+  const handleCancelReject = () => {
+    setShowRejectModal(false);
+    setRejectReason('');
   };
 
   return (
@@ -339,7 +349,14 @@ export const PayrollDetails: React.FC<PayrollDetailsProps> = ({
             {payroll.approved_by && (
               <View style={styles.statusRow}>
                 <Text style={styles.statusLabel}>Người duyệt:</Text>
-                <Text style={styles.statusValue}>{payroll.approved_by}</Text>
+                <Text style={styles.statusValue}>
+                  {typeof payroll.approved_by === 'object'
+                    ? payroll.approved_by.fullName ||
+                      payroll.approved_by.name ||
+                      payroll.approved_by.username ||
+                      'Unknown'
+                    : payroll.approved_by}
+                </Text>
               </View>
             )}
           </View>
@@ -374,7 +391,7 @@ export const PayrollDetails: React.FC<PayrollDetailsProps> = ({
             {canReject && (
               <TouchableOpacity
                 style={[styles.actionButton, styles.rejectButton]}
-                onPress={handleReject}
+                onPress={handleRejectPress}
                 disabled={rejectingLoading}
               >
                 {rejectingLoading ? (
@@ -386,6 +403,48 @@ export const PayrollDetails: React.FC<PayrollDetailsProps> = ({
             )}
           </View>
         )}
+
+        {/* Reject Reason Modal */}
+        <Modal
+          visible={showRejectModal}
+          transparent={true}
+          animationType="fade"
+          onRequestClose={handleCancelReject}
+        >
+          <View style={styles.modalOverlay}>
+            <View style={styles.modalContent}>
+              <Text style={styles.modalTitle}>Nhập lý do từ chối</Text>
+              <Text style={styles.modalSubtitle}>
+                Vui lòng nhập lý do chi tiết cho việc từ chối bảng lương này
+              </Text>
+              <TextInput
+                style={styles.reasonInput}
+                placeholder="Lý do từ chối..."
+                placeholderTextColor="#999"
+                multiline={true}
+                numberOfLines={5}
+                value={rejectReason}
+                onChangeText={setRejectReason}
+                textAlignVertical="top"
+              />
+              <View style={styles.modalButtonsContainer}>
+                <TouchableOpacity
+                  style={[styles.modalButton, styles.cancelButton]}
+                  onPress={handleCancelReject}
+                >
+                  <Text style={styles.cancelButtonText}>Hủy</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.modalButton, styles.confirmButton]}
+                  onPress={handleConfirmReject}
+                  disabled={!rejectReason.trim()}
+                >
+                  <Text style={styles.confirmButtonText}>Xác nhận từ chối</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+        </Modal>
       </View>
     </ScrollView>
   );
@@ -731,5 +790,76 @@ const styles = StyleSheet.create({
   emptyText: {
     fontSize: 16,
     color: '#999',
+  },
+
+  // Modal Styles
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 16,
+  },
+  modalContent: {
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    padding: 20,
+    width: '100%',
+    maxWidth: 400,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    elevation: 5,
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#1a1a1a',
+    marginBottom: 8,
+  },
+  modalSubtitle: {
+    fontSize: 13,
+    color: '#666',
+    marginBottom: 16,
+    lineHeight: 18,
+  },
+  reasonInput: {
+    borderWidth: 1,
+    borderColor: '#ddd',
+    borderRadius: 8,
+    padding: 12,
+    fontSize: 14,
+    color: '#333',
+    minHeight: 100,
+    marginBottom: 16,
+    backgroundColor: '#f8f9fa',
+  },
+  modalButtonsContainer: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  modalButton: {
+    flex: 1,
+    paddingVertical: 12,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  cancelButton: {
+    backgroundColor: '#f0f0f0',
+  },
+  cancelButtonText: {
+    color: '#666',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  confirmButton: {
+    backgroundColor: '#f44336',
+  },
+  confirmButtonText: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: '600',
   },
 });

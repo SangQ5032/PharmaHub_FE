@@ -3,7 +3,7 @@
  * Định nghĩa các types cho API lấy lịch sử làm việc
  */
 
-export type UserRole = 'employee' | 'branch_manager' | 'system_admin';
+export type UserRole = 'employee' | 'branch-manager' | 'system-admin';
 export type Shift = 'morning' | 'afternoon';
 
 export interface UserInfo {

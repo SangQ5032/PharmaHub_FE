@@ -86,9 +86,9 @@ export const useWorkHistory = (filters?: WorkHistoryFilters) => {
     const role = user?.role;
     if (role === 'employee') {
       setSelectedEndpoint('employee');
-    } else if (role === 'branch_manager' || role === 'branch-manager') {
+    } else if (role === 'branch-manager') {
       setSelectedEndpoint('branch-manager');
-    } else if (role === 'system_admin' || role === 'system-admin') {
+    } else if (role === 'system-admin') {
       setSelectedEndpoint('system-admin');
     }
   }, [user?.role]);

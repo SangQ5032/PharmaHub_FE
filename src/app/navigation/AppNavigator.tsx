@@ -74,6 +74,7 @@ import {
   PayrollMenuScreen,
   PayrollListScreen,
   BranchPayrollListScreen,
+  PayrollBranchSelectionScreen,
   PayrollDetailsScreen,
   CreatePayrollScreen,
   PayrollSummaryScreen,
@@ -405,6 +406,16 @@ const MainAppNavigator = () => {
         name={ROUTES.PAYROLL_LIST}
         component={BranchPayrollListScreen}
         options={{ headerShown: true, title: 'Danh Sách Bảng Lương' }}
+      />
+      <MainStack.Screen
+        name={ROUTES.BRANCH_PAYROLL_LIST}
+        component={BranchPayrollListScreen}
+        options={{ headerShown: true, title: 'Bảng Lương Theo Chi Nhánh' }}
+      />
+      <MainStack.Screen
+        name={ROUTES.PAYROLL_BRANCH_SELECTION}
+        component={PayrollBranchSelectionScreen}
+        options={{ headerShown: true, title: 'Chọn Chi Nhánh' }}
       />
       <MainStack.Screen
         name={ROUTES.PAYROLL_DETAIL}
