@@ -79,6 +79,7 @@ import {
   CreatePayrollScreen,
   PayrollSummaryScreen,
 } from '@features/payroll';
+import { StatisticsScreen } from '@features/statistics/screens';
 import {
   RootStackParamList,
   AuthStackParamList,
@@ -105,7 +106,7 @@ const AuthNavigator = () => (
 );
 
 // Create Main Stack Navigator (contains tabs and other screens)
-const MainStack = createNativeStackNavigator<MainStackParamList>();
+const MainStack = createNativeStackNavigator<any>();
 const MainAppNavigator = () => {
   const user = useAuthStore(state => state.user);
   const role = user?.role;
@@ -431,6 +432,13 @@ const MainAppNavigator = () => {
         name={ROUTES.PAYROLL_SUMMARY}
         component={PayrollSummaryScreen}
         options={{ headerShown: true, title: 'Báo Cáo Lương' }}
+      />
+
+      {/* Statistics Routes */}
+      <MainStack.Screen
+        name={ROUTES.EMPLOYEE_STATISTICS}
+        component={StatisticsScreen}
+        options={{ headerShown: true, title: 'Thống Kê Doanh Thu' }}
       />
     </MainStack.Navigator>
   );

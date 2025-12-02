@@ -209,6 +209,13 @@ export const ROLE_CONFIG: Record<UserRole, RoleConfig> = {
         route: ROUTES.PAYROLL_MENU,
         description: 'Xem lương và chi tiết tính lương',
       },
+      {
+        id: 'staff-8',
+        name: 'Thống Kê Doanh Thu',
+        icon: 'chart-box',
+        route: ROUTES.EMPLOYEE_STATISTICS,
+        description: 'Xem thống kê doanh thu cá nhân',
+      },
     ],
     tabs: [
       {

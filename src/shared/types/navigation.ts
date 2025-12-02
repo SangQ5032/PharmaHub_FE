@@ -19,6 +19,9 @@ export type MainStackParamList = {
   HomeTabs: undefined;
   [ROUTES.WORK_SCHEDULE]: undefined;
   [ROUTES.MY_WORK_SCHEDULE]: undefined;
+  [ROUTES.WORK_SCHEDULE_MENU]: undefined;
+  [ROUTES.WORK_SCHEDULE_LIST]: undefined;
+  [ROUTES.CREATE_WEEK_SCHEDULE]: undefined;
   [ROUTES.CHECKIN_CHECKOUT]: undefined;
   [ROUTES.MEDICINES_HUB]: undefined;
   [ROUTES.MEDICINES]: undefined;
@@ -29,6 +32,20 @@ export type MainStackParamList = {
   [ROUTES.ADD_SUPPLIER]: { mode?: 'edit'; item?: any } | undefined;
   [ROUTES.IMPORT_LIST]: undefined;
   [ROUTES.CREATE_IMPORT]: undefined;
+  [ROUTES.IMPORT_DETAIL]: undefined;
+  [ROUTES.INVENTORY_LIST]: undefined;
+  [ROUTES.INVENTORY_DETAIL]: undefined;
+  [ROUTES.INVENTORY_DETAIL_WITH_BATCHES]: undefined;
+  [ROUTES.BATCH_DETAIL]: undefined;
+  [ROUTES.BRANCH_INVENTORY_MANAGEMENT]: undefined;
+  [ROUTES.REPORT_SELECTION]: undefined;
+  [ROUTES.REPORT_VIEW]: {
+    type: ReportType;
+    format: ReportFormat;
+    filter: ReportFilter;
+    title: string;
+  };
+  [ROUTES.WAREHOUSE_HUB]: undefined;
   [ROUTES.BRANCH_REVENUE_REPORT]: undefined;
   [ROUTES.BRANCH_EMPLOYEE_LIST]: {
     branchId: string;
@@ -38,6 +55,9 @@ export type MainStackParamList = {
     employeeId?: string;
     employeeName?: string;
   };
+  [ROUTES.EMPLOYEE_WORK_HISTORY_DETAIL]: undefined;
+  [ROUTES.BRANCH_WORK_HISTORY]: undefined;
+  [ROUTES.ADMIN_WORK_HISTORY]: undefined;
   [ROUTES.EMPLOYEE_REVENUE]: {
     employeeId?: string;
     employeeName?: string;
@@ -49,13 +69,7 @@ export type MainStackParamList = {
   [ROUTES.CREATE_INVOICE]: undefined;
   [ROUTES.INVOICE_LIST]: undefined;
   [ROUTES.INVOICE_DETAIL]: { invoiceId: string } | undefined;
-  [ROUTES.REPORT_SELECTION]: undefined;
-  [ROUTES.REPORT_VIEW]: {
-    type: ReportType;
-    format: ReportFormat;
-    filter: ReportFilter;
-    title: string;
-  };
+  [ROUTES.BRANCH_INVOICE_HISTORY]: undefined;
   [ROUTES.BRANCH_LIST]: undefined;
   [ROUTES.ADD_EDIT_BRANCH]: { mode?: 'edit'; item?: any } | undefined;
   [ROUTES.BRANCH_DETAIL]: { branchId: string; branchName?: string } | undefined;
@@ -64,7 +78,16 @@ export type MainStackParamList = {
   [ROUTES.CATEGORY_DETAIL]: { categoryId: string } | undefined;
   [ROUTES.PAYROLL_MENU]: undefined;
   [ROUTES.PAYROLL_LIST]: undefined;
+  [ROUTES.BRANCH_PAYROLL_LIST]: undefined;
+  [ROUTES.PAYROLL_BRANCH_SELECTION]: undefined;
   [ROUTES.PAYROLL_DETAIL]: { payrollId: string } | undefined;
   [ROUTES.CREATE_PAYROLL]: undefined;
   [ROUTES.PAYROLL_SUMMARY]: { branchId?: string; month?: string } | undefined;
+  [ROUTES.EMPLOYEE_STATISTICS]: undefined;
+  // Additional non-ROUTES screen names
+  CREATE_EMPLOYEE: undefined;
+  MapPicker: undefined;
+  SalesMedicineDetail: undefined;
+  CreateCustomer: undefined;
+  PaymentQR: undefined;
 };
