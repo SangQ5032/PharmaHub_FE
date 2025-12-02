@@ -43,9 +43,9 @@ export const PayrollDetailsScreen: React.FC<PayrollDetailsScreenProps> = ({
   const { mutate: reject, isPending: rejectingLoading } = useRejectPayroll();
 
   const canApprove =
-    userRole === 'system_admin' && payroll?.status === 'pending';
+    userRole === 'system-admin' && payroll?.status === 'pending';
   const canReject =
-    userRole === 'system_admin' && payroll?.status === 'pending';
+    userRole === 'system-admin' && payroll?.status === 'pending';
 
   const handleApprove = () => {
     if (!payroll) return;
@@ -71,11 +71,11 @@ export const PayrollDetailsScreen: React.FC<PayrollDetailsScreenProps> = ({
     );
   };
 
-  const handleReject = () => {
+  const handleReject = (reason?: string) => {
     if (!payroll) return;
 
     reject(
-      { payrollId: payroll._id, data: { note: actionNote } },
+      { payrollId: payroll._id, data: { reason: reason || '' } },
       {
         onSuccess: () => {
           Alert.alert('Thành công', 'Từ chối lương thành công', [

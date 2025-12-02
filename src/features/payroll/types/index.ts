@@ -66,7 +66,7 @@ export interface ApprovePayrollRequest {
 
 // Reject payroll request
 export interface RejectPayrollRequest {
-  note?: string;
+  reason?: string;
 }
 
 // Payroll detail object
@@ -85,7 +85,7 @@ export interface PayrollDetail {
   final_salary: number;
   status: PayrollStatus;
   note: string;
-  approved_by: string | null;
+  approved_by: PayrollUser | string | null;
   approved_at: string | null;
   createdAt: string;
   updatedAt: string;

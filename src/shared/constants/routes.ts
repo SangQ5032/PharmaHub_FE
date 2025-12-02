@@ -60,4 +60,6 @@ export const ROUTES = {
   PAYROLL_DETAIL: 'PayrollDetail',
   CREATE_PAYROLL: 'CreatePayroll',
   PAYROLL_SUMMARY: 'PayrollSummary',
+  BRANCH_PAYROLL_LIST: 'BranchPayrollList',
+  PAYROLL_BRANCH_SELECTION: 'PayrollBranchSelection',
 } as const;

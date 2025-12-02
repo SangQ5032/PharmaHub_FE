@@ -178,7 +178,7 @@ export default function BranchRevenueReportScreen({ navigation }: any) {
         <View style={styles.header}>
           <Text style={styles.headerTitle}>Báo cáo doanh thu chi nhánh</Text>
           <Text style={styles.headerSubtitle}>
-            {user?.role === 'system_admin'
+            {user?.role === 'system-admin'
               ? 'Tổng quan hiệu quả kinh doanh toàn hệ thống'
               : 'Tổng quan hiệu quả kinh doanh chi nhánh'}
           </Text>
@@ -214,8 +214,8 @@ export default function BranchRevenueReportScreen({ navigation }: any) {
           </View>
         </View>
 
-        {/* Search Bar - Only for system_admin */}
-        {user?.role === 'system_admin' && (
+        {/* Search Bar - Only for system-admin */}
+        {user?.role === 'system-admin' && (
           <View style={styles.searchSection}>
             <SearchBar
               value={searchQuery}
@@ -257,8 +257,8 @@ export default function BranchRevenueReportScreen({ navigation }: any) {
           </View>
         </View>
 
-        {/* Sort Buttons - Only for system_admin */}
-        {user?.role === 'system_admin' && (
+        {/* Sort Buttons - Only for system-admin */}
+        {user?.role === 'system-admin' && (
           <View style={styles.sortSection}>
             <Text style={styles.sortLabel}>Sắp xếp:</Text>
             <ScrollView

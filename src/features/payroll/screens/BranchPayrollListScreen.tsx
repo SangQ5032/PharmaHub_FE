@@ -10,7 +10,7 @@ import {
   TouchableOpacity,
   SectionList,
 } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useRoute } from '@react-navigation/native';
 import { usePayrollList } from '../hooks/usePayroll';
 import { PayrollList } from '../components';
 import { usePayrollStore } from '../stores/payrollStore';
@@ -22,7 +22,7 @@ interface BranchPayrollListScreenProps {
   token?: string;
   onSelectPayroll?: (payroll: PayrollDetail) => void;
   currentBranchId?: string;
-  userRole?: string; // 'employee', 'system_admin', 'branch_manager', etc.
+  userRole?: string; // 'employee', 'system-admin', 'branch-manager', etc.
 }
 
 export const BranchPayrollListScreen: React.FC<
@@ -34,13 +34,21 @@ export const BranchPayrollListScreen: React.FC<
   userRole: initialUserRole,
 }) => {
   const navigation = useNavigation();
+  const route = useRoute();
   const authUser = useAuthStore(state => state.user);
   const authToken = useAuthStore(state => state.accessToken);
 
   // Sử dụng auth store nếu props không được truyền
   const token = initialToken || authToken || '';
-  const userRole = initialUserRole || authUser?.role || 'branch_manager';
-  const currentBranchId = initialBranchId || authUser?.branch_id;
+  const userRole = initialUserRole || authUser?.role || 'branch-manager';
+
+  // Lấy branchId từ route params (nếu là system-admin chọn từ màn hình selection)
+  // hoặc từ auth store (nếu là branch-manager)
+  const routeParams = route.params as
+    | { branchId?: string; branchName?: string }
+    | undefined;
+  const currentBranchId =
+    routeParams?.branchId || initialBranchId || authUser?.branch_id;
 
   const { payrollFilters, setPayrollFilters } = usePayrollStore();
   const [refreshing, setRefreshing] = useState(false);
@@ -62,7 +70,7 @@ export const BranchPayrollListScreen: React.FC<
 
   // Build filters for API
   const apiFilters = {
-    branch_id: currentBranchId,
+    ...(currentBranchId && { branch_id: currentBranchId }),
     ...(localMonth && { month: localMonth }),
     ...(localStatus && { status: localStatus }),
     ...(localUserId && { user_id: localUserId }),
