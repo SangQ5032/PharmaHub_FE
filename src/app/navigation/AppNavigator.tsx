@@ -81,6 +81,16 @@ import {
 } from '@features/payroll';
 import { StatisticsScreen } from '@features/statistics/screens';
 import {
+  BranchStatisticsHubScreen,
+  RevenueStatsScreen,
+  EmployeesStatsScreen,
+  MedicinesStatsScreen,
+  ImportsStatsScreen,
+  BatchStatusStatsScreen,
+  CustomersStatsScreen,
+  RevenueByPeriodStatsScreen,
+} from '@features/statistics/screens';
+import {
   RootStackParamList,
   AuthStackParamList,
   MainStackParamList,
@@ -439,6 +449,46 @@ const MainAppNavigator = () => {
         name={ROUTES.EMPLOYEE_STATISTICS}
         component={StatisticsScreen}
         options={{ headerShown: true, title: 'Thống Kê Doanh Thu' }}
+      />
+      <MainStack.Screen
+        name={ROUTES.BRANCH_STATISTICS_HUB}
+        component={BranchStatisticsHubScreen}
+        options={{ headerShown: true, title: 'Thống Kê Chi Nhánh' }}
+      />
+      <MainStack.Screen
+        name={ROUTES.BRANCH_REVENUE_STATS}
+        component={RevenueStatsScreen}
+        options={{ headerShown: true, title: 'Doanh Thu Chi Nhánh' }}
+      />
+      <MainStack.Screen
+        name={ROUTES.BRANCH_EMPLOYEES_STATS}
+        component={EmployeesStatsScreen}
+        options={{ headerShown: true, title: 'Doanh Thu Nhân Viên' }}
+      />
+      <MainStack.Screen
+        name={ROUTES.BRANCH_MEDICINES_STATS}
+        component={MedicinesStatsScreen}
+        options={{ headerShown: true, title: 'Bán Hàng Theo Thuốc' }}
+      />
+      <MainStack.Screen
+        name={ROUTES.BRANCH_IMPORTS_STATS}
+        component={ImportsStatsScreen}
+        options={{ headerShown: true, title: 'Lô Hàng Đã Nhập' }}
+      />
+      <MainStack.Screen
+        name={ROUTES.BRANCH_BATCH_STATUS_STATS}
+        component={BatchStatusStatsScreen}
+        options={{ headerShown: true, title: 'Tình Trạng Lô Hàng' }}
+      />
+      <MainStack.Screen
+        name={ROUTES.BRANCH_CUSTOMERS_STATS}
+        component={CustomersStatsScreen}
+        options={{ headerShown: true, title: 'Doanh Thu Khách Hàng' }}
+      />
+      <MainStack.Screen
+        name={ROUTES.BRANCH_REVENUE_BY_PERIOD_STATS}
+        component={RevenueByPeriodStatsScreen}
+        options={{ headerShown: true, title: 'Xu Hướng Doanh Thu' }}
       />
     </MainStack.Navigator>
   );

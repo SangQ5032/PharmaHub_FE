@@ -144,6 +144,13 @@ export const ROLE_CONFIG: Record<UserRole, RoleConfig> = {
         route: ROUTES.PAYROLL_MENU,
         description: 'Quản lý bảng lương nhân viên',
       },
+      {
+        id: 'manager-9',
+        name: 'Thống Kê Chi Nhánh',
+        icon: 'chart-box-multiple',
+        route: ROUTES.BRANCH_STATISTICS_HUB,
+        description: 'Xem thống kê chi tiết chi nhánh',
+      },
     ],
     tabs: [
       {

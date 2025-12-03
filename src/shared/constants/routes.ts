@@ -64,4 +64,12 @@ export const ROUTES = {
   PAYROLL_BRANCH_SELECTION: 'PayrollBranchSelection',
   // Statistics routes
   EMPLOYEE_STATISTICS: 'EmployeeStatistics',
+  BRANCH_STATISTICS_HUB: 'BranchStatisticsHub',
+  BRANCH_REVENUE_STATS: 'BranchRevenueStats',
+  BRANCH_EMPLOYEES_STATS: 'BranchEmployeesStats',
+  BRANCH_MEDICINES_STATS: 'BranchMedicinesStats',
+  BRANCH_IMPORTS_STATS: 'BranchImportsStats',
+  BRANCH_BATCH_STATUS_STATS: 'BranchBatchStatusStats',
+  BRANCH_CUSTOMERS_STATS: 'BranchCustomersStats',
+  BRANCH_REVENUE_BY_PERIOD_STATS: 'BranchRevenueByPeriodStats',
 } as const;

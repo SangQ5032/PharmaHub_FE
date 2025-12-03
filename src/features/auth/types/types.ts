@@ -5,6 +5,8 @@ export interface User {
   name: string;
   email: string;
   role: UserRole;
+  branchId?: string; // Chi nhánh của user (nếu có)
+  branch_id?: string; // Alternative naming convention
 }
 
 // Login với Firebase ID Token (cho phone auth)
