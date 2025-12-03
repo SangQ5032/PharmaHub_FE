@@ -89,6 +89,10 @@ import {
   BatchStatusStatsScreen,
   CustomersStatsScreen,
   RevenueByPeriodStatsScreen,
+  SystemAdminStatisticsMenuScreen,
+  SystemAdminBranchListScreen,
+  SystemAdminBranchRevenueDetailedScreen,
+  SystemAdminBranchRevenueDetailScreen,
   SystemAdminDashboardScreen,
   SystemAdminBranchRevenueScreen,
   SystemAdminEmployeeRevenueScreen,
@@ -497,6 +501,26 @@ const MainAppNavigator = () => {
       />
 
       {/* System Admin Statistics Routes */}
+      <MainStack.Screen
+        name={ROUTES.SYSTEM_ADMIN_STATISTICS_MENU}
+        component={SystemAdminStatisticsMenuScreen}
+        options={{ headerShown: true, title: 'Thống Kê Hệ Thống' }}
+      />
+      <MainStack.Screen
+        name={ROUTES.SYSTEM_ADMIN_BRANCH_LIST}
+        component={SystemAdminBranchListScreen}
+        options={{ headerShown: true, title: 'Chi Nhánh' }}
+      />
+      <MainStack.Screen
+        name={ROUTES.SYSTEM_ADMIN_BRANCH_REVENUE_DETAILED}
+        component={SystemAdminBranchRevenueDetailedScreen}
+        options={{ headerShown: true, title: 'Doanh Thu Chi Nhánh' }}
+      />
+      <MainStack.Screen
+        name="SystemAdminBranchRevenueDetail"
+        component={SystemAdminBranchRevenueDetailScreen}
+        options={{ headerShown: false }}
+      />
       <MainStack.Screen
         name="SystemAdminDashboard"
         component={SystemAdminDashboardScreen}

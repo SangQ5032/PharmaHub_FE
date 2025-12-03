@@ -73,6 +73,9 @@ export const ROUTES = {
   BRANCH_CUSTOMERS_STATS: 'BranchCustomersStats',
   BRANCH_REVENUE_BY_PERIOD_STATS: 'BranchRevenueByPeriodStats',
   // System Admin Statistics routes
+  SYSTEM_ADMIN_STATISTICS_MENU: 'SystemAdminStatisticsMenu',
+  SYSTEM_ADMIN_BRANCH_LIST: 'SystemAdminBranchList',
+  SYSTEM_ADMIN_BRANCH_REVENUE_DETAILED: 'SystemAdminBranchRevenueDetailed',
   SYSTEM_ADMIN_DASHBOARD: 'SystemAdminDashboard',
   SYSTEM_ADMIN_BRANCH_REVENUE: 'SystemAdminBranchRevenue',
   SYSTEM_ADMIN_EMPLOYEE_REVENUE: 'SystemAdminEmployeeRevenue',
