@@ -7,6 +7,7 @@ import apiClient from '@shared/services/api';
 import {
   OverallStatisticsResponse,
   BranchRevenueStatisticsResponse,
+  BranchRevenueDetailResponse,
   EmployeeRevenueStatisticsResponse,
   TopSellingMedicinesResponse,
   RevenueByPeriodResponse,
@@ -43,6 +44,34 @@ export const systemAdminStatisticsApi = {
     const res = await apiClient.get(`${BASE_PATH}/branches-revenue`, {
       params,
     });
+    return res.data;
+  },
+
+  /**
+   * Get branch revenue statistics with detailed info
+   * Lấy thống kê doanh thu chi tiết từng chi nhánh
+   */
+  getBranchRevenueDetailed: async (
+    params?: StatisticsQueryParams,
+  ): Promise<BranchRevenueStatisticsResponse> => {
+    const res = await apiClient.get(`${BASE_PATH}/branches-revenue-detailed`, {
+      params,
+    });
+    return res.data;
+  },
+
+  /**
+   * Get detailed revenue analysis for a specific branch
+   * Lấy chi tiết doanh thu, chi phí, lợi nhuận của 1 chi nhánh
+   */
+  getBranchRevenueDetail: async (
+    branchId: string,
+    params?: StatisticsQueryParams,
+  ): Promise<BranchRevenueDetailResponse> => {
+    const res = await apiClient.get(
+      `${BASE_PATH}/branches-revenue-detail/${branchId}`,
+      { params },
+    );
     return res.data;
   },
 

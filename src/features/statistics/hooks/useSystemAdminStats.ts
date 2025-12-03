@@ -43,6 +43,23 @@ export const useSystemAdminBranchRevenue = (params?: StatisticsQueryParams) => {
 };
 
 /**
+ * Hook to fetch branch revenue statistics with detailed info
+ * Lấy thống kê doanh thu chi tiết từng chi nhánh
+ */
+export const useSystemAdminBranchRevenueDetailed = (
+  params?: StatisticsQueryParams,
+) => {
+  const { user } = useAuth();
+
+  return useQuery({
+    queryKey: ['systemAdminBranchRevenueDetailed', params],
+    queryFn: () => systemAdminStatisticsApi.getBranchRevenueDetailed(params),
+    enabled: !!user && user.role === 'system-admin',
+    staleTime: 5 * 60 * 1000,
+  });
+};
+
+/**
  * Hook to fetch employee revenue statistics (all employees)
  * Lấy thống kê doanh thu từng nhân viên
  */
@@ -148,6 +165,25 @@ export const useSystemAdminDashboard = (params?: StatisticsQueryParams) => {
     queryKey: ['systemAdminDashboard', params],
     queryFn: () => systemAdminStatisticsApi.getDashboard(params),
     enabled: !!user && user.role === 'system-admin',
+    staleTime: 5 * 60 * 1000,
+  });
+};
+
+/**
+ * Hook to fetch detailed revenue analysis for a specific branch
+ * Lấy chi tiết doanh thu, chi phí, lợi nhuận của 1 chi nhánh
+ */
+export const useSystemAdminBranchRevenueDetail = (
+  branchId?: string,
+  params?: StatisticsQueryParams,
+) => {
+  const { user } = useAuth();
+
+  return useQuery({
+    queryKey: ['systemAdminBranchRevenueDetail', branchId, params],
+    queryFn: () =>
+      systemAdminStatisticsApi.getBranchRevenueDetail(branchId!, params),
+    enabled: !!user && user.role === 'system-admin' && !!branchId,
     staleTime: 5 * 60 * 1000,
   });
 };

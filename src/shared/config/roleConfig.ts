@@ -29,7 +29,7 @@ export const ROLE_CONFIG: Record<UserRole, RoleConfig> = {
         id: 'admin-1',
         name: 'Thống Kê Hệ Thống',
         icon: 'chart-box-multiple',
-        route: ROUTES.SYSTEM_ADMIN_DASHBOARD,
+        route: ROUTES.SYSTEM_ADMIN_STATISTICS_MENU,
         description: 'Xem thống kê toàn hệ thống',
       },
       {

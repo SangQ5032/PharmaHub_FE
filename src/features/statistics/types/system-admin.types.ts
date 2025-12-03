@@ -224,3 +224,47 @@ export interface QueryState<T> {
   error: Error | null;
   refetch: () => void;
 }
+
+/**
+ * Branch Revenue Detail - Chi tiết doanh thu 1 chi nhánh
+ */
+export interface BranchRevenueDetail {
+  branchId: string;
+  branchName: string;
+  branchAddress: string;
+  branchPhone: string;
+  revenue: {
+    totalRevenue: number;
+    totalInvoices: number;
+    totalQuantity: number;
+    totalDiscount: number;
+    totalTax: number;
+    averageInvoiceValue: number;
+  };
+  expenditure: {
+    importCost: {
+      totalCost: number;
+      totalImports: number;
+      totalQuantity: number;
+    };
+    salary: {
+      totalSalary: number;
+      totalEmployees: number;
+      totalBonus: number;
+      totalPenalty: number;
+    };
+    total: number;
+  };
+  summary: {
+    totalRevenue: number;
+    totalExpenditure: number;
+    netProfit: number;
+    profitMargin: string;
+  };
+}
+
+export interface BranchRevenueDetailResponse {
+  success: boolean;
+  message: string;
+  data: BranchRevenueDetail;
+}
