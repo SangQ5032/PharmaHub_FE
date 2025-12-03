@@ -7,3 +7,8 @@ export * from './ImportsStatsScreen';
 export * from './BatchStatusStatsScreen';
 export * from './CustomersStatsScreen';
 export * from './RevenueByPeriodStatsScreen';
+export { default as SystemAdminDashboardScreen } from './SystemAdminDashboardScreen';
+export { default as SystemAdminBranchRevenueScreen } from './SystemAdminBranchRevenueScreen';
+export { default as SystemAdminEmployeeRevenueScreen } from './SystemAdminEmployeeRevenueScreen';
+export { default as SystemAdminTopMedicinesScreen } from './SystemAdminTopMedicinesScreen';
+export { default as SystemAdminBatchStatusScreen } from './SystemAdminBatchStatusScreen';
