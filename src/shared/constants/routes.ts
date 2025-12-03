@@ -72,4 +72,11 @@ export const ROUTES = {
   BRANCH_BATCH_STATUS_STATS: 'BranchBatchStatusStats',
   BRANCH_CUSTOMERS_STATS: 'BranchCustomersStats',
   BRANCH_REVENUE_BY_PERIOD_STATS: 'BranchRevenueByPeriodStats',
+  // System Admin Statistics routes
+  SYSTEM_ADMIN_DASHBOARD: 'SystemAdminDashboard',
+  SYSTEM_ADMIN_BRANCH_REVENUE: 'SystemAdminBranchRevenue',
+  SYSTEM_ADMIN_EMPLOYEE_REVENUE: 'SystemAdminEmployeeRevenue',
+  SYSTEM_ADMIN_TOP_MEDICINES: 'SystemAdminTopMedicines',
+  SYSTEM_ADMIN_BATCH_STATUS: 'SystemAdminBatchStatus',
+  SYSTEM_ADMIN_REVENUE_BY_PERIOD: 'SystemAdminRevenueByPeriod',
 } as const;

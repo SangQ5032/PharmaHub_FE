@@ -89,6 +89,11 @@ import {
   BatchStatusStatsScreen,
   CustomersStatsScreen,
   RevenueByPeriodStatsScreen,
+  SystemAdminDashboardScreen,
+  SystemAdminBranchRevenueScreen,
+  SystemAdminEmployeeRevenueScreen,
+  SystemAdminTopMedicinesScreen,
+  SystemAdminBatchStatusScreen,
 } from '@features/statistics/screens';
 import {
   RootStackParamList,
@@ -489,6 +494,41 @@ const MainAppNavigator = () => {
         name={ROUTES.BRANCH_REVENUE_BY_PERIOD_STATS}
         component={RevenueByPeriodStatsScreen}
         options={{ headerShown: true, title: 'Xu Hướng Doanh Thu' }}
+      />
+
+      {/* System Admin Statistics Routes */}
+      <MainStack.Screen
+        name="SystemAdminDashboard"
+        component={SystemAdminDashboardScreen}
+        options={{ headerShown: true, title: 'Dashboard Quản Lý Hệ Thống' }}
+      />
+      <MainStack.Screen
+        name="SystemAdminBranchRevenue"
+        component={SystemAdminBranchRevenueScreen}
+        options={{ headerShown: false }}
+      />
+      <MainStack.Screen
+        name="SystemAdminEmployeeRevenue"
+        component={SystemAdminEmployeeRevenueScreen}
+        options={{ headerShown: false }}
+      />
+      <MainStack.Screen
+        name="SystemAdminTopMedicines"
+        component={SystemAdminTopMedicinesScreen}
+        options={{ headerShown: false }}
+      />
+      <MainStack.Screen
+        name="SystemAdminBatchStatus"
+        component={SystemAdminBatchStatusScreen}
+        options={{ headerShown: false }}
+      />
+      <MainStack.Screen
+        name="SystemAdminRevenueByPeriod"
+        component={RevenueByPeriodStatsScreen}
+        options={{
+          headerShown: true,
+          title: 'Xu Hướng Doanh Thu Toàn Hệ Thống',
+        }}
       />
     </MainStack.Navigator>
   );
