@@ -122,3 +122,10 @@ dependencies {
     // Google Maps SDK for Android
     implementation 'com.google.android.gms:play-services-maps:18.2.0'
 }
+
+// Resolve react-native-camera variant ambiguity - prefer 'general' variant
+configurations.all {
+    attributes {
+        attribute(Attribute.of('react-native-camera', String), 'general')
+    }
+}

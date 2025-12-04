@@ -5,12 +5,22 @@ import {
   getInvoiceById,
   getInvoicesByBranch,
   getInvoicesByMe,
+  scanBarcode,
 } from '../api/sales.api';
 import { CreateInvoiceRequest, CreateInvoiceResponse } from '../types';
 
 export const useCreateInvoice = () => {
   return useMutation<CreateInvoiceResponse, Error, CreateInvoiceRequest>({
     mutationFn: createInvoice,
+  });
+};
+
+/**
+ * Scan barcode để lấy thông tin thuốc
+ */
+export const useScanBarcode = () => {
+  return useMutation({
+    mutationFn: (barcode: string) => scanBarcode(barcode),
   });
 };
 

@@ -79,3 +79,14 @@ export const getInvoiceById = async (id: string): Promise<any> => {
   const response = await api.get(`${INVOICES_ENDPOINT}/${id}`);
   return response.data;
 };
+
+/**
+ * Scan barcode để lấy thông tin thuốc
+ * API: POST /api/sales/scan-barcode
+ */
+export const scanBarcode = async (barcode: string): Promise<any> => {
+  const response = await api.post(`${SALES_ENDPOINT}/scan-barcode`, {
+    barcode,
+  });
+  return response.data;
+};

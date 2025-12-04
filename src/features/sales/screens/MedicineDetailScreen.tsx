@@ -19,7 +19,12 @@ const MedicineDetailScreen: React.FC = () => {
   const navigation = useNavigation<any>();
   const route = useRoute<any>();
   const { user } = useAuthStore();
-  const { medicine, onAddMedicine } = route.params || {};
+  const {
+    medicine,
+    onAddMedicine,
+    batches: routeBatches,
+    fromBarcodeScan,
+  } = route.params || {};
 
   const [quantity, setQuantity] = useState('1');
   const [selectedBatch, setSelectedBatch] = useState<any>(null);
@@ -27,10 +32,20 @@ const MedicineDetailScreen: React.FC = () => {
   const [batchSearchQuery, setBatchSearchQuery] = useState('');
 
   const branchId = user?.branch_id || '';
-  const { data: batches = [], isLoading: batchesLoading } = useGetBatches(
-    branchId,
-    medicine?._id,
-  );
+
+  // ✅ Nếu batches được pass từ route (từ barcode scan), dùng luôn
+  // Nếu không, mới fetch từ API
+  const shouldFetchBatches = !routeBatches || routeBatches.length === 0;
+  const { data: fetchedBatches = [], isLoading: batchesLoading } =
+    useGetBatches(
+      branchId,
+      medicine?._id,
+      shouldFetchBatches, // ✅ Chỉ fetch nếu cần thiết
+    );
+
+  // Sử dụng batches từ route nếu có, nếu không dùng batches được fetch
+  const batches =
+    routeBatches && routeBatches.length > 0 ? routeBatches : fetchedBatches;
 
   const price = String(medicine?.retail_price || medicine?.price || 0);
 
@@ -58,6 +73,7 @@ const MedicineDetailScreen: React.FC = () => {
       return;
     }
 
+    // ✅ Gọi callback TRƯỚC Alert để callback execute (navigate về CreateInvoice)
     if (onAddMedicine) {
       onAddMedicine(
         medicine,
@@ -67,11 +83,18 @@ const MedicineDetailScreen: React.FC = () => {
       );
     }
 
+    // Alert chỉ dùng để hiển thị thông báo
+    // Nếu từ barcode scan, callback sẽ handle navigation
+    // Nếu không, navigation.goBack() sẽ quay lại CreateInvoice
     Alert.alert('Thành công', 'Đã thêm thuốc vào đơn hàng', [
       {
         text: 'OK',
         onPress: () => {
-          navigation.goBack();
+          // Nếu không phải barcode scan, goBack về CreateInvoice
+          if (!fromBarcodeScan) {
+            navigation.goBack();
+          }
+          // Nếu là barcode scan, callback đã xử lý navigation rồi
         },
       },
     ]);
