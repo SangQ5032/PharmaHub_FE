@@ -60,7 +60,15 @@ const CreateInvoiceScreen: React.FC = () => {
       // Clear the params so it doesn't auto-select on subsequent visits
       navigation.setParams({ newCustomer: undefined });
     }
-  }, [route.params?.newCustomer, navigation]);
+
+    // Handle new item from barcode scanner
+    if (route.params?.newItem) {
+      const newItem = route.params.newItem;
+      setItems([...items, newItem]);
+      // Clear the params
+      navigation.setParams({ newItem: undefined });
+    }
+  }, [route.params?.newCustomer, route.params?.newItem, navigation, items]);
 
   const medicines = medicinesResponse?.data || [];
   const customers = customersData || [];
@@ -268,6 +276,16 @@ const CreateInvoiceScreen: React.FC = () => {
               >
                 <Text style={styles.medicineSelectButtonText}>
                   {medicineSearchQuery || 'Chọn thuốc/sản phẩm'}
+                </Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={styles.barcodeScanButton}
+                onPress={() => navigation.navigate('BarcodeScanner')}
+                disabled={isPending}
+              >
+                <Text style={styles.barcodeScanButtonText}>
+                  📷 Scan barcode
                 </Text>
               </TouchableOpacity>
             </>
@@ -812,6 +830,20 @@ const styles = StyleSheet.create({
   createCustomerButtonText: {
     fontSize: 13,
     color: '#0066CC',
+    fontWeight: '600',
+  },
+  barcodeScanButton: {
+    marginTop: 8,
+    borderWidth: 1,
+    borderColor: '#9C27B0',
+    borderRadius: 6,
+    padding: 12,
+    alignItems: 'center',
+    backgroundColor: '#F3E5F5',
+  },
+  barcodeScanButtonText: {
+    fontSize: 14,
+    color: '#7B1FA2',
     fontWeight: '600',
   },
   emptyText: {

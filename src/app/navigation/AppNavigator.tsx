@@ -59,6 +59,7 @@ import {
   MedicineDetailScreen as SalesMedicineDetailScreen,
   CreateCustomerScreen,
   PaymentQRScreen,
+  BarcodeScannerScreen,
 } from '@features/sales';
 import {
   WorkScheduleListScreen,
@@ -414,6 +415,11 @@ const MainAppNavigator = () => {
         name={ROUTES.BRANCH_INVOICE_HISTORY}
         component={BranchInvoiceHistoryScreen}
         options={{ headerShown: false }}
+      />
+      <MainStack.Screen
+        name="BarcodeScanner"
+        component={BarcodeScannerScreen}
+        options={{ headerShown: true, title: 'Scan Barcode' }}
       />
 
       {/* Payroll Routes */}

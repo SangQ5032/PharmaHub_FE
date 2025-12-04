@@ -38,8 +38,13 @@ export const useMedicinesWithBatches = (
 /**
  * Lấy danh sách batch của một thuốc tại chi nhánh
  * Sắp xếp theo ngày hết hạn (sớm nhất trước - FIFO)
+ * @param shouldFetch - Optional: Kiểm soát có fetch hay không (mặc định: true)
  */
-export const useGetBatches = (branchId: string, medicineId: string) => {
+export const useGetBatches = (
+  branchId: string,
+  medicineId: string,
+  shouldFetch: boolean = true,
+) => {
   return useQuery({
     queryKey: ['batches', branchId, medicineId],
     queryFn: async () => {
@@ -51,6 +56,6 @@ export const useGetBatches = (branchId: string, medicineId: string) => {
         );
       });
     },
-    enabled: !!branchId && !!medicineId,
+    enabled: !!branchId && !!medicineId && shouldFetch, // ✅ Thêm shouldFetch
   });
 };
