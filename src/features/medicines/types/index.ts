@@ -4,6 +4,12 @@ export type Category = {
   description: string;
 };
 
+export type Unit = {
+  unit: string;
+  multiplier: number;
+  price: number;
+};
+
 export type Medicine = {
   _id: string;
   name: string;
@@ -11,14 +17,12 @@ export type Medicine = {
   brand_name: string;
   dosage_form: string;
   strength: string;
-  unit: string;
+  base_unit: string;
   packaging: string;
-  category_id: Category;
+  category_id: Category | null;
   prescription_required: boolean;
   is_controlled: boolean;
-  retail_price: number;
-  minimum_price: number | null;
-  max_price: number | null;
+  units: Unit[];
   manufacturer: string;
   country_of_origin: string;
   indications: string;

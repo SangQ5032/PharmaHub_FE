@@ -123,13 +123,16 @@ const MedicineListScreen: React.FC = () => {
 
         {/* Header row */}
         <View style={styles.headerRow}>
-          <View style={[styles.headerCell, { flex: 35 }]}>
+          <View style={[styles.headerCell, { flex: 30 }]}>
             <Text style={[styles.headerText, styles.left]}>TÊN THUỐC</Text>
           </View>
-          <View style={[styles.headerCell, { flex: 25 }]}>
-            <Text style={[styles.headerText, styles.center]}>NHÓM</Text>
+          <View style={[styles.headerCell, { flex: 20 }]}>
+            <Text style={[styles.headerText, styles.center]}>DẠNG BÁO CHỈ</Text>
           </View>
-          <View style={[styles.headerCell, { flex: 25 }]}>
+          <View style={[styles.headerCell, { flex: 15 }]}>
+            <Text style={[styles.headerText, styles.center]}>ĐỘ MẠNH</Text>
+          </View>
+          <View style={[styles.headerCell, { flex: 20 }]}>
             <Text style={[styles.headerText, styles.center]}>GIÁ</Text>
           </View>
           <View style={[styles.headerCell, { flex: 15 }]}>

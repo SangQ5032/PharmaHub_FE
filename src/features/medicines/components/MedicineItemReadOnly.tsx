@@ -12,6 +12,18 @@ const formatPrice = (p?: number | null) => {
   return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.');
 };
 
+const getBasePrice = (medicine: Medicine) => {
+  if (!medicine.units || medicine.units.length === 0) return '-';
+  // Tìm unit có multiplier = 1 (base unit)
+  const baseUnit = medicine.units.find(u => u.multiplier === 1);
+  if (baseUnit) {
+    return formatPrice(baseUnit.price);
+  }
+  // Nếu không có, lấy giá nhỏ nhất
+  const minPrice = Math.min(...medicine.units.map(u => u.price));
+  return formatPrice(minPrice);
+};
+
 interface MedicineItemReadOnlyProps {
   item: Medicine;
 }
@@ -29,24 +41,31 @@ const MedicineItemReadOnly: React.FC<MedicineItemReadOnlyProps> = ({
     <TouchableOpacity onPress={handleViewDetail} activeOpacity={0.8}>
       <View style={styles.card}>
         <View style={styles.row}>
-          {/* Name (35%) */}
-          <View style={[styles.cell, { flex: 35 }]}>
+          {/* Name (30%) */}
+          <View style={[styles.cell, { flex: 30 }]}>
             <Text style={[styles.cellText, styles.left]} numberOfLines={1}>
               {item.name || '-'}
             </Text>
           </View>
 
-          {/* Category (25%) */}
-          <View style={[styles.cell, { flex: 25 }]}>
+          {/* Dosage Form (20%) */}
+          <View style={[styles.cell, { flex: 20 }]}>
             <Text style={[styles.cellText, styles.center]} numberOfLines={1}>
-              {item.category_id?.name || '-'}
+              {item.dosage_form || '-'}
             </Text>
           </View>
 
-          {/* Price (25%) */}
-          <View style={[styles.cell, { flex: 25 }]}>
+          {/* Strength (15%) */}
+          <View style={[styles.cell, { flex: 15 }]}>
+            <Text style={[styles.cellText, styles.center]} numberOfLines={1}>
+              {item.strength || '-'}
+            </Text>
+          </View>
+
+          {/* Price (20%) */}
+          <View style={[styles.cell, { flex: 20 }]}>
             <Text style={[styles.cellText, styles.center]}>
-              {formatPrice(item.retail_price)}
+              {getBasePrice(item)}
             </Text>
           </View>
 

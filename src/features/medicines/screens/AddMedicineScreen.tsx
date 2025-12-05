@@ -27,14 +27,11 @@ const AddMedicineScreen: React.FC = () => {
   const [brandName, setBrandName] = useState('');
   const [dosageForm, setDosageForm] = useState('');
   const [strength, setStrength] = useState('');
-  const [unit, setUnit] = useState('');
   const [packaging, setPackaging] = useState('');
   const [categoryId, setCategoryId] = useState('');
   const [prescriptionRequired, setPrescriptionRequired] = useState(false);
   const [isControlled, setIsControlled] = useState(false);
-  const [retailPrice, setRetailPrice] = useState('');
-  const [minimumPrice, setMinimumPrice] = useState('');
-  const [maxPrice, setMaxPrice] = useState('');
+  const [units, setUnits] = useState<any[]>([]);
   const [manufacturer, setManufacturer] = useState('');
   const [countryOfOrigin, setCountryOfOrigin] = useState('');
   const [indications, setIndications] = useState('');
@@ -55,24 +52,11 @@ const AddMedicineScreen: React.FC = () => {
       setBrandName(editingItem.brand_name ?? '');
       setDosageForm(editingItem.dosage_form ?? '');
       setStrength(editingItem.strength ?? '');
-      setUnit(editingItem.unit ?? '');
       setPackaging(editingItem.packaging ?? '');
       setCategoryId(editingItem.category_id?._id ?? '');
       setPrescriptionRequired(editingItem.prescription_required ?? false);
       setIsControlled(editingItem.is_controlled ?? false);
-      setRetailPrice(
-        editingItem.retail_price != null
-          ? String(editingItem.retail_price)
-          : '',
-      );
-      setMinimumPrice(
-        editingItem.minimum_price != null
-          ? String(editingItem.minimum_price)
-          : '',
-      );
-      setMaxPrice(
-        editingItem.max_price != null ? String(editingItem.max_price) : '',
-      );
+      setUnits(editingItem.units ?? []);
       setManufacturer(editingItem.manufacturer ?? '');
       setCountryOfOrigin(editingItem.country_of_origin ?? '');
       setIndications(editingItem.indications ?? '');
@@ -94,8 +78,7 @@ const AddMedicineScreen: React.FC = () => {
   const validate = () => {
     if (!name.trim()) return 'Tên thuốc là bắt buộc';
     if (!genericName.trim()) return 'Hoạt chất là bắt buộc';
-    if (!retailPrice.trim() || Number.isNaN(Number(retailPrice)))
-      return 'Giá bán lẻ hợp lệ là bắt buộc';
+    if (!units || units.length === 0) return 'Phải thêm ít nhất một đơn vị giá';
     return null;
   };
 
@@ -112,14 +95,11 @@ const AddMedicineScreen: React.FC = () => {
       brand_name: brandName.trim() || undefined,
       dosage_form: dosageForm.trim() || undefined,
       strength: strength.trim() || undefined,
-      unit: unit.trim() || undefined,
       packaging: packaging.trim() || undefined,
       category_id: categoryId.trim() || undefined,
       prescription_required: prescriptionRequired,
       is_controlled: isControlled,
-      retail_price: Number(retailPrice),
-      minimum_price: minimumPrice ? Number(minimumPrice) : null,
-      max_price: maxPrice ? Number(maxPrice) : null,
+      units: units,
       manufacturer: manufacturer.trim() || undefined,
       country_of_origin: countryOfOrigin.trim() || undefined,
       indications: indications.trim() || undefined,
@@ -216,15 +196,6 @@ const AddMedicineScreen: React.FC = () => {
               placeholder="VD: 500mg"
             />
           </View>
-          <View style={styles.halfContainer}>
-            <Text style={styles.label}>Đơn vị</Text>
-            <TextInput
-              style={[styles.input, styles.halfInput]}
-              value={unit}
-              onChangeText={setUnit}
-              placeholder="VD: viên, hộp"
-            />
-          </View>
         </View>
 
         <Text style={styles.label}>Đóng gói</Text>
@@ -267,39 +238,12 @@ const AddMedicineScreen: React.FC = () => {
         </View>
 
         {/* Section 3: Giá cả */}
-        <Text style={styles.sectionTitle}>Giá cả</Text>
-
-        <Text style={styles.label}>Giá bán lẻ *</Text>
-        <TextInput
-          style={styles.input}
-          value={retailPrice}
-          onChangeText={setRetailPrice}
-          keyboardType="numeric"
-          placeholder="VD: 15000"
-        />
-
-        <View style={styles.rowHalf}>
-          <View style={styles.halfContainer}>
-            <Text style={styles.label}>Giá tối thiểu</Text>
-            <TextInput
-              style={[styles.input, styles.halfInput]}
-              value={minimumPrice}
-              onChangeText={setMinimumPrice}
-              keyboardType="numeric"
-              placeholder="Tùy chọn"
-            />
-          </View>
-          <View style={styles.halfContainer}>
-            <Text style={styles.label}>Giá tối đa</Text>
-            <TextInput
-              style={[styles.input, styles.halfInput]}
-              value={maxPrice}
-              onChangeText={setMaxPrice}
-              keyboardType="numeric"
-              placeholder="Tùy chọn"
-            />
-          </View>
-        </View>
+        <Text style={styles.sectionTitle}>Giá cả - Đơn vị</Text>
+        <Text style={styles.infoText}>
+          Thông tin giá và đơn vị sẽ được quản lý thông qua API. Hiện tại hệ
+          thống yêu cầu định nghĩa các unit (box, blister, tablet) với giá tương
+          ứng.
+        </Text>
 
         {/* Section 4: Thông tin sản xuất */}
         <Text style={styles.sectionTitle}>Thông tin sản xuất</Text>
@@ -525,6 +469,14 @@ const styles = StyleSheet.create({
   statusButtonText: {
     fontSize: 13,
     color: '#333',
+  },
+  infoText: {
+    fontSize: 12,
+    color: '#666',
+    marginBottom: 12,
+    backgroundColor: '#f5f5f5',
+    padding: 8,
+    borderRadius: 4,
   },
 
   fixedBottom: {

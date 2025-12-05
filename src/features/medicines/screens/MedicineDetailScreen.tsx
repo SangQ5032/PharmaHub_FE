@@ -193,15 +193,17 @@ const MedicineDetailScreen: React.FC = () => {
               {/* Giá cả */}
               <View style={styles.card}>
                 <SectionTitle title="Giá cả" />
-                <Row
-                  label="Giá bán lẻ"
-                  value={formatPrice(item.retail_price)}
-                />
-                <Row
-                  label="Giá tối thiểu"
-                  value={formatPrice(item.minimum_price)}
-                />
-                <Row label="Giá tối đa" value={formatPrice(item.max_price)} />
+                {item.units && item.units.length > 0 ? (
+                  item.units.map((unit: any, index: number) => (
+                    <Row
+                      key={index}
+                      label={`${unit.unit} (x${unit.multiplier})`}
+                      value={`${formatPrice(unit.price)} đ`}
+                    />
+                  ))
+                ) : (
+                  <Row label="Đơn vị giá" value="-" />
+                )}
               </View>
 
               {/* Thông tin sản xuất */}
