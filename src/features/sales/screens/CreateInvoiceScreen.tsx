@@ -10,8 +10,13 @@ import {
   FlatList,
   TextInput,
   Modal,
+  BackHandler,
 } from 'react-native';
-import { useNavigation, useRoute } from '@react-navigation/native';
+import {
+  useNavigation,
+  useRoute,
+  useFocusEffect,
+} from '@react-navigation/native';
 import { useCreateInvoice } from '../hooks/useSales';
 import { useMedicinesWithBatches } from '../hooks/useMedicines';
 import { useGetCustomers } from '../hooks/useCustomers';
@@ -23,6 +28,28 @@ const CreateInvoiceScreen: React.FC = () => {
   const route = useRoute<any>();
   const { user } = useAuthStore();
   const branchId = user?.branch_id || '';
+
+  // Disable back button and handle back gesture
+  useFocusEffect(
+    React.useCallback(() => {
+      const onBackPress = () => {
+        // Navigate to Home instead of going back
+        navigation.reset({
+          index: 0,
+          routes: [{ name: 'HomeTabs' }],
+        });
+        return true;
+      };
+
+      // Subscribe to hardware back press
+      const backHandler = BackHandler.addEventListener(
+        'hardwareBackPress',
+        onBackPress,
+      );
+
+      return () => backHandler.remove();
+    }, [navigation]),
+  );
 
   const { mutate: createInvoiceMutation, isPending } = useCreateInvoice();
   // const { data: medicinesResponse, isLoading: medicinesLoading } =
@@ -203,7 +230,11 @@ const CreateInvoiceScreen: React.FC = () => {
             {
               text: 'OK',
               onPress: () => {
-                navigation.navigate('Sales');
+                // Navigate to Home instead of Sales
+                navigation.reset({
+                  index: 0,
+                  routes: [{ name: 'HomeTabs' }],
+                });
               },
             },
           ],

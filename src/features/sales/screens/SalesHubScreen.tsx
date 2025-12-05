@@ -13,16 +13,6 @@ const SalesHubScreen: React.FC = () => {
 
   return (
     <View style={styles.container}>
-      {/* <View style={styles.header}>
-        <TouchableOpacity
-          style={styles.backBtn}
-          onPress={() => navigation.goBack()}
-        >
-          <Text style={styles.backText}>← Back</Text>
-        </TouchableOpacity>
-        <Text style={styles.title}>Bán Hàng</Text>
-      </View> */}
-
       <View style={styles.content}>
         {/* Create Invoice Card */}
         <TouchableOpacity
@@ -45,27 +35,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#F5F5F5',
-  },
-  header: {
-    height: 56,
-    backgroundColor: '#2EB872',
-    justifyContent: 'center',
-    alignItems: 'center',
-    flexDirection: 'row',
-  },
-  title: {
-    color: '#fff',
-    fontSize: 20,
-    fontWeight: '700',
-  },
-  backBtn: {
-    position: 'absolute',
-    left: 12,
-    top: 18,
-  },
-  backText: {
-    color: '#fff',
-    fontWeight: '600',
   },
   content: {
     flex: 1,
