@@ -4,6 +4,7 @@ import {
   getMedicinesByBranch,
   getMedicinesWithBatches,
   getBatchesByMedicineAndBranch,
+  getMedicineById,
   Batch,
 } from '../api/medicines.api';
 
@@ -57,5 +58,26 @@ export const useGetBatches = (
       });
     },
     enabled: !!branchId && !!medicineId && shouldFetch, // ✅ Thêm shouldFetch
+  });
+};
+
+/**
+ * Lấy chi tiết thuốc theo ID
+ * @param medicineId - ID của thuốc
+ * @param enabled - Có fetch hay không (mặc định: true)
+ */
+export const useMedicineDetail = (
+  medicineId: string | undefined,
+  enabled: boolean = true,
+) => {
+  return useQuery({
+    queryKey: ['medicine_detail', medicineId],
+    queryFn: async () => {
+      if (!medicineId) return null;
+      const response = await getMedicineById(medicineId);
+      // Response format: { success: boolean, data: Medicine }
+      return response.data || response;
+    },
+    enabled: !!medicineId && enabled,
   });
 };

@@ -132,9 +132,46 @@ export default function InventoryDetailWithBatchesScreen() {
           <View style={styles.statusGrid}>
             <View style={styles.statusCard}>
               <Text style={styles.statusLabel}>Số lượng</Text>
-              <Text style={styles.statusValue}>{inventory.quantity}</Text>
-              <Text style={styles.statusUnit}>{medicine?.unit}</Text>
+              <Text style={styles.statusValue}>
+                {inventory.total_quantity_in_base_unit || inventory.quantity}
+              </Text>
+              <Text style={styles.statusUnit}>
+                {medicine?.base_unit || medicine?.unit}
+              </Text>
             </View>
+
+            {/* Multi-Unit Display */}
+            {inventory.quantities_by_unit && (
+              <>
+                {inventory.quantities_by_unit.box !== undefined && (
+                  <View style={styles.statusCard}>
+                    <Text style={styles.statusLabel}>Hộp</Text>
+                    <Text style={styles.statusValue}>
+                      {inventory.quantities_by_unit.box}
+                    </Text>
+                    <Text style={styles.statusUnit}>hộp</Text>
+                  </View>
+                )}
+                {inventory.quantities_by_unit.blister !== undefined && (
+                  <View style={styles.statusCard}>
+                    <Text style={styles.statusLabel}>Vỉ</Text>
+                    <Text style={styles.statusValue}>
+                      {inventory.quantities_by_unit.blister}
+                    </Text>
+                    <Text style={styles.statusUnit}>vỉ</Text>
+                  </View>
+                )}
+                {inventory.quantities_by_unit.tablet !== undefined && (
+                  <View style={styles.statusCard}>
+                    <Text style={styles.statusLabel}>Viên</Text>
+                    <Text style={styles.statusValue}>
+                      {inventory.quantities_by_unit.tablet}
+                    </Text>
+                    <Text style={styles.statusUnit}>viên</Text>
+                  </View>
+                )}
+              </>
+            )}
 
             <View style={styles.statusCard}>
               <Text style={styles.statusLabel}>Cảnh báo</Text>

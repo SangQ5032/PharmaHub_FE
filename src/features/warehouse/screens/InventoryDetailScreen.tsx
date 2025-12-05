@@ -296,9 +296,43 @@ export default function InventoryDetailScreen() {
                 status === 'sufficient' && styles.successValue,
               ]}
             >
-              {item.total_quantity} {item.medicine?.unit || ''}
+              {item.total_quantity_in_base_unit || item.total_quantity}{' '}
+              {item.medicine?.base_unit || item.medicine?.unit || ''}
             </Text>
           </View>
+
+          {/* Multi-Unit Display */}
+          {item.quantities_by_unit && (
+            <View style={styles.multiUnitContainer}>
+              <Text style={styles.label}>Tồn kho theo đơn vị:</Text>
+              <View style={styles.unitQuantities}>
+                {item.quantities_by_unit.box !== undefined && (
+                  <View style={styles.unitQuantityItem}>
+                    <Text style={styles.unitQuantityLabel}>Hộp:</Text>
+                    <Text style={styles.unitQuantityValue}>
+                      {item.quantities_by_unit.box}
+                    </Text>
+                  </View>
+                )}
+                {item.quantities_by_unit.blister !== undefined && (
+                  <View style={styles.unitQuantityItem}>
+                    <Text style={styles.unitQuantityLabel}>Vỉ:</Text>
+                    <Text style={styles.unitQuantityValue}>
+                      {item.quantities_by_unit.blister}
+                    </Text>
+                  </View>
+                )}
+                {item.quantities_by_unit.tablet !== undefined && (
+                  <View style={styles.unitQuantityItem}>
+                    <Text style={styles.unitQuantityLabel}>Viên:</Text>
+                    <Text style={styles.unitQuantityValue}>
+                      {item.quantities_by_unit.tablet}
+                    </Text>
+                  </View>
+                )}
+              </View>
+            </View>
+          )}
 
           {item.warning_threshold && (
             <View style={styles.infoRow}>
@@ -562,6 +596,33 @@ const styles = StyleSheet.create({
     marginTop: 12,
     fontSize: 14,
     color: '#757575',
+  },
+  multiUnitContainer: {
+    marginTop: 12,
+    padding: 12,
+    backgroundColor: '#F5F5F5',
+    borderRadius: 8,
+  },
+  unitQuantities: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 16,
+    marginTop: 8,
+  },
+  unitQuantityItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  unitQuantityLabel: {
+    fontSize: 13,
+    color: '#757575',
+    fontWeight: '500',
+  },
+  unitQuantityValue: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#2196F3',
   },
   errorContainer: {
     flex: 1,

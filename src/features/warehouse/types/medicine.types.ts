@@ -10,6 +10,41 @@ export interface MedicineCategory {
 }
 
 /**
+ * Cấu trúc đóng gói thuốc (package_structure)
+ */
+export interface PackageStructure {
+  box?: {
+    contains: number;
+    child: 'blister' | null;
+  };
+  blister?: {
+    contains: number;
+    child: 'tablet' | null;
+  };
+  tablet?: {
+    contains: number;
+    child: null;
+  };
+}
+
+/**
+ * Giá theo đơn vị
+ */
+export interface MedicinePrices {
+  base_unit_price: number;
+  price_per_unit: {
+    box?: number;
+    blister?: number;
+    tablet?: number;
+  };
+  unit_prices?: {
+    box?: number;
+    blister?: number;
+    tablet?: number;
+  };
+}
+
+/**
  * Thông tin thuốc
  */
 export interface Medicine {
@@ -20,6 +55,7 @@ export interface Medicine {
   dosage_form?: string;
   strength?: string;
   unit: string;
+  base_unit?: 'tablet' | 'blister' | 'box';
   packaging?: string;
   category_id?: MedicineCategory | null;
   prescription_required?: boolean;
@@ -38,6 +74,8 @@ export interface Medicine {
   barcode?: string;
   alert_threshold?: number;
   status?: string;
+  package_structure?: PackageStructure;
+  prices?: MedicinePrices;
   createdAt?: string;
   updatedAt?: string;
 }

@@ -2,17 +2,17 @@ import api from '@shared/services/api';
 import { CreateInvoiceRequest, CreateInvoiceResponse } from '../types';
 
 const SALES_ENDPOINT = '/sales';
-const INVOICES_ENDPOINT = '/sales/invoices';
+const INVOICES_ENDPOINT = '/invoices'; // Updated to /invoices according to API_CURL_EXAMPLES.md
 
 /**
  * Tạo hoá đơn bán hàng mới
- * API: POST /api/sales
+ * API: POST /api/invoices (updated from /api/sales)
  */
 export const createInvoice = async (
   data: CreateInvoiceRequest,
 ): Promise<CreateInvoiceResponse> => {
   const response = await api.post<CreateInvoiceResponse>(
-    `${SALES_ENDPOINT}`,
+    `${INVOICES_ENDPOINT}`,
     data,
   );
   return response.data;
@@ -20,7 +20,7 @@ export const createInvoice = async (
 
 /**
  * Lấy danh sách hoá đơn của toàn bộ chi nhánh hoặc chi nhánh chỉ định
- * API: GET /api/sales/invoices/branch
+ * API: GET /api/invoices/branch (updated from /api/sales/invoices/branch)
  */
 export const getInvoicesByBranch = async (params?: {
   page?: number;
@@ -40,7 +40,7 @@ export const getInvoicesByBranch = async (params?: {
 
 /**
  * Lấy danh sách hoá đơn của nhân viên hiện tại
- * API: GET /api/sales/invoices/me
+ * API: GET /api/invoices/me (updated from /api/sales/invoices/me)
  */
 export const getInvoicesByMe = async (params?: {
   page?: number;
@@ -73,7 +73,7 @@ export const getInvoices = async (
 
 /**
  * Lấy chi tiết hoá đơn
- * API: GET /api/sales/invoices/:id
+ * API: GET /api/invoices/:id (updated from /api/sales/invoices/:id)
  */
 export const getInvoiceById = async (id: string): Promise<any> => {
   const response = await api.get(`${INVOICES_ENDPOINT}/${id}`);

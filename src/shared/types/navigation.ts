@@ -36,7 +36,7 @@ export type MainStackParamList = {
   [ROUTES.INVENTORY_LIST]: undefined;
   [ROUTES.INVENTORY_DETAIL]: undefined;
   [ROUTES.INVENTORY_DETAIL_WITH_BATCHES]: undefined;
-  [ROUTES.BATCH_DETAIL]: undefined;
+  [ROUTES.BATCH_DETAIL]: { id?: string; batch?: any } | undefined;
   [ROUTES.BRANCH_INVENTORY_MANAGEMENT]: undefined;
   [ROUTES.REPORT_SELECTION]: undefined;
   [ROUTES.REPORT_VIEW]: {

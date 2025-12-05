@@ -1,3 +1,32 @@
+import { Batch, MedicineWithBatches } from './batch.types';
+import { Medicine } from './medicine.types';
+import { Branch } from './import.types';
+
+// MedicineDetail type alias for backward compatibility
+export type MedicineDetail = Medicine;
+
+/**
+ * Chi tiết tồn kho theo đơn vị
+ */
+export interface QuantitiesByUnit {
+  box?: number;
+  blister?: number;
+  tablet?: number;
+}
+
+/**
+ * Chi tiết tồn kho của một loại thuốc tại chi nhánh
+ */
+export interface InventoryDetail {
+  _id: string;
+  medicine: Medicine;
+  branch?: Branch;
+  total_quantity_in_base_unit: number;
+  quantities_by_unit?: QuantitiesByUnit;
+  status?: 'sufficient' | 'low' | 'low_stock' | 'out_of_stock';
+  batches?: Batch[];
+}
+
 export interface GetMedicinesWithBatchesResponse {
   success: boolean;
   message: string;

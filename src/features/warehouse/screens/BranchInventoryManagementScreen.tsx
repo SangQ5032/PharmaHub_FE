@@ -155,14 +155,36 @@ export default function BranchInventoryManagementScreen() {
       <SectionList
         sections={sections}
         keyExtractor={item => item._id}
-        renderItem={({ item }) => (
-          <BatchCard
-            batch={item}
-            onPress={() => {
-              navigation.navigate(ROUTES.BATCH_DETAIL, { id: item._id });
-            }}
-          />
-        )}
+        renderItem={({ item }) => {
+          console.log('BranchInventoryManagementScreen: batch item =', {
+            _id: item._id,
+            batch_number: item.batch_number,
+            fullItem: item,
+          });
+          return (
+            <BatchCard
+              batch={item}
+              onPress={() => {
+                console.log('BranchInventoryManagementScreen: onPress called', {
+                  _id: item._id,
+                  hasId: !!item._id,
+                });
+                if (item._id) {
+                  console.log(
+                    'BranchInventoryManagementScreen: navigating with id =',
+                    item._id,
+                  );
+                  navigation.navigate(ROUTES.BATCH_DETAIL, { id: item._id });
+                } else {
+                  console.error(
+                    'BranchInventoryManagementScreen: item._id is missing!',
+                    item,
+                  );
+                }
+              }}
+            />
+          );
+        }}
         renderSectionHeader={({ section: { title } }) => (
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>{title}</Text>

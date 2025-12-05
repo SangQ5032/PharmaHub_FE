@@ -40,12 +40,14 @@ export default function InventoryListScreen({ route }: any) {
 
   // Handle item press - navigate to batch detail
   const handleItemPress = (item: Batch) => {
-    navigation.navigate(
-      ROUTES.BATCH_DETAIL as never,
-      {
-        batch: item,
-      } as never,
-    );
+    if (item._id) {
+      navigation.navigate(
+        ROUTES.BATCH_DETAIL as never,
+        {
+          id: item._id,
+        } as never,
+      );
+    }
   };
 
   // Filter buttons

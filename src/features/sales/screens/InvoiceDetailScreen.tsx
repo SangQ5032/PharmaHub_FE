@@ -4,10 +4,8 @@ import {
   Text,
   StyleSheet,
   ScrollView,
-  TouchableOpacity,
   ActivityIndicator,
   Alert,
-  Share,
 } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { useGetInvoiceById } from '../hooks/useSales';
@@ -27,25 +25,6 @@ const InvoiceDetailScreen: React.FC = () => {
       navigation.goBack();
     }
   }, [error, navigation]);
-
-  const handleShare = async () => {
-    try {
-      if (invoice) {
-        const message = `
-Hóa Đơn: ${invoice.invoice_code}
-Khách hàng: ${invoice.customer_name}
-Số điện thoại: ${invoice.customer_phone}
-Tổng cộng: ${invoice.total_amount?.toLocaleString('vi-VN')}₫
-        `;
-        await Share.share({
-          message,
-          title: `Hóa Đơn ${invoice.invoice_code}`,
-        });
-      }
-    } catch (err) {
-      Alert.alert('Lỗi', 'Không thể chia sẻ hóa đơn');
-    }
-  };
 
   if (isLoading) {
     return (
@@ -127,6 +106,12 @@ Tổng cộng: ${invoice.total_amount?.toLocaleString('vi-VN')}₫
         {/* Branch Info */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Thông tin cửa hàng</Text>
+          {invoice.branch_id?._id && (
+            <View style={styles.infoRow}>
+              <Text style={styles.label}>ID Cửa hàng:</Text>
+              <Text style={styles.value}>{invoice.branch_id._id}</Text>
+            </View>
+          )}
           <View style={styles.infoRow}>
             <Text style={styles.label}>Tên cửa hàng:</Text>
             <Text style={styles.value}>{invoice.branch_id?.name}</Text>
@@ -144,6 +129,12 @@ Tổng cộng: ${invoice.total_amount?.toLocaleString('vi-VN')}₫
         {/* Customer Info */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Thông tin khách hàng</Text>
+          {invoice.customer_id?._id && (
+            <View style={styles.infoRow}>
+              <Text style={styles.label}>ID Khách hàng:</Text>
+              <Text style={styles.value}>{invoice.customer_id._id}</Text>
+            </View>
+          )}
           <View style={styles.infoRow}>
             <Text style={styles.label}>Tên:</Text>
             <Text style={styles.value}>{invoice.customer_name}</Text>
@@ -169,6 +160,12 @@ Tổng cộng: ${invoice.total_amount?.toLocaleString('vi-VN')}₫
         {/* Employee Info */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Nhân viên bán hàng</Text>
+          {invoice.employee_id?._id && (
+            <View style={styles.infoRow}>
+              <Text style={styles.label}>ID Nhân viên:</Text>
+              <Text style={styles.value}>{invoice.employee_id._id}</Text>
+            </View>
+          )}
           <View style={styles.infoRow}>
             <Text style={styles.label}>Tên:</Text>
             <Text style={styles.value}>{invoice.employee_id?.name}</Text>
@@ -185,13 +182,25 @@ Tổng cộng: ${invoice.total_amount?.toLocaleString('vi-VN')}₫
           {invoice.items?.map((item, index) => (
             <View key={index} style={styles.itemCard}>
               <View style={styles.itemHeader}>
-                <Text style={styles.itemName}>{item.name}</Text>
-                <Text style={styles.itemUnit}>{item.medicine_id?.unit}</Text>
+                <View style={styles.itemHeaderLeft}>
+                  <Text style={styles.itemName}>{item.name}</Text>
+                  {item.medicine_id?._id && (
+                    <Text style={styles.itemId}>
+                      ID: {item.medicine_id._id}
+                    </Text>
+                  )}
+                </View>
               </View>
               <View style={styles.itemRow}>
                 <Text style={styles.itemLabel}>Lô hàng:</Text>
                 <Text style={styles.itemValue}>{item.batch_number}</Text>
               </View>
+              {item.batch_id?._id && (
+                <View style={styles.itemRow}>
+                  <Text style={styles.itemLabel}>ID Lô hàng:</Text>
+                  <Text style={styles.itemValue}>{item.batch_id._id}</Text>
+                </View>
+              )}
               <View style={styles.itemRow}>
                 <Text style={styles.itemLabel}>Ngày hết hạn:</Text>
                 <Text style={styles.itemValue}>
@@ -202,8 +211,18 @@ Tổng cộng: ${invoice.total_amount?.toLocaleString('vi-VN')}₫
               </View>
               <View style={styles.itemRow}>
                 <Text style={styles.itemLabel}>Số lượng:</Text>
-                <Text style={styles.itemValue}>{item.quantity}</Text>
+                <Text style={styles.itemValue}>
+                  {item.quantity} {item.unit || 'cái'}
+                </Text>
               </View>
+              {item.total_base_units !== undefined && (
+                <View style={styles.itemRow}>
+                  <Text style={styles.itemLabel}>
+                    Tổng số lượng (đơn vị cơ bản):
+                  </Text>
+                  <Text style={styles.itemValue}>{item.total_base_units}</Text>
+                </View>
+              )}
               <View style={styles.itemRow}>
                 <Text style={styles.itemLabel}>Giá bán:</Text>
                 <Text style={styles.itemValue}>
@@ -247,6 +266,21 @@ Tổng cộng: ${invoice.total_amount?.toLocaleString('vi-VN')}₫
               {invoice.total_amount?.toLocaleString('vi-VN')}₫
             </Text>
           </View>
+          {invoice.exported !== undefined && (
+            <View style={styles.infoRow}>
+              <Text style={styles.label}>Đã xuất:</Text>
+              <Text
+                style={[
+                  styles.value,
+                  {
+                    color: invoice.exported ? '#4CAF50' : '#999',
+                  },
+                ]}
+              >
+                {invoice.exported ? '✓ Có' : '✗ Chưa'}
+              </Text>
+            </View>
+          )}
         </View>
 
         {/* Payment Method */}
@@ -288,22 +322,6 @@ Tổng cộng: ${invoice.total_amount?.toLocaleString('vi-VN')}₫
           </View>
         </View>
       </ScrollView>
-
-      {/* Action Buttons */}
-      <View style={styles.actionButtonsContainer}>
-        <TouchableOpacity
-          style={[styles.actionButton, styles.shareButton]}
-          onPress={handleShare}
-        >
-          <Text style={styles.actionButtonText}>Chia sẻ</Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[styles.actionButton, styles.closeButton]}
-          onPress={() => navigation.goBack()}
-        >
-          <Text style={styles.closeButtonText}>Đóng</Text>
-        </TouchableOpacity>
-      </View>
     </View>
   );
 };
@@ -315,7 +333,6 @@ const styles = StyleSheet.create({
   },
   content: {
     padding: 16,
-    paddingBottom: 80,
   },
   loadingContainer: {
     flex: 1,
@@ -430,14 +447,22 @@ const styles = StyleSheet.create({
   itemHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     marginBottom: 8,
+  },
+  itemHeaderLeft: {
+    flex: 1,
   },
   itemName: {
     fontSize: 14,
     fontWeight: '600',
     color: '#333',
-    flex: 1,
+    marginBottom: 4,
+  },
+  itemId: {
+    fontSize: 11,
+    color: '#999',
+    fontStyle: 'italic',
   },
   itemUnit: {
     fontSize: 12,
@@ -485,42 +510,6 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: '#666',
     lineHeight: 20,
-  },
-  actionButtonsContainer: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    flexDirection: 'row',
-    backgroundColor: '#FFF',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderTopWidth: 1,
-    borderTopColor: '#EEE',
-    gap: 12,
-  },
-  actionButton: {
-    flex: 1,
-    paddingVertical: 12,
-    borderRadius: 6,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  shareButton: {
-    backgroundColor: '#E3F2FD',
-  },
-  closeButton: {
-    backgroundColor: '#0066CC',
-  },
-  actionButtonText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#0066CC',
-  },
-  closeButtonText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#FFF',
   },
 });
 

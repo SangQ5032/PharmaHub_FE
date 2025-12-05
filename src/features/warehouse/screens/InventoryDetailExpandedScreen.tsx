@@ -188,36 +188,108 @@ export default function InventoryDetailExpandedScreen() {
               <Text style={styles.statusCardLabel}>Tồn Kho Hiện Tại</Text>
             </View>
             <Text style={styles.statusCardValue}>
-              {inventory.total_quantity}
+              {inventory.total_quantity_in_base_unit ||
+                inventory.total_quantity}
             </Text>
-            <Text style={styles.statusCardUnit}>{medicine?.unit}</Text>
+            <Text style={styles.statusCardUnit}>
+              {medicine?.base_unit || medicine?.unit}
+            </Text>
           </View>
 
-          <View style={[styles.statusCardLarge, styles.statusCardOrange]}>
-            <View style={styles.statusCardTop}>
-              <MaterialCommunityIcons name="alert" size={24} color="#FF9800" />
-              <Text style={styles.statusCardLabel}>Mức Cảnh Báo</Text>
-            </View>
-            <Text style={styles.statusCardValue}>
-              {inventory.warning_threshold}
-            </Text>
-            <Text style={styles.statusCardUnit}>{medicine?.unit}</Text>
-          </View>
+          {/* Multi-Unit Display */}
+          {inventory.quantities_by_unit && (
+            <>
+              {inventory.quantities_by_unit.box !== undefined && (
+                <View style={[styles.statusCardLarge, styles.statusCardBlue]}>
+                  <View style={styles.statusCardTop}>
+                    <MaterialCommunityIcons
+                      name="package-variant"
+                      size={24}
+                      color="#2196F3"
+                    />
+                    <Text style={styles.statusCardLabel}>Hộp</Text>
+                  </View>
+                  <Text style={styles.statusCardValue}>
+                    {inventory.quantities_by_unit.box}
+                  </Text>
+                  <Text style={styles.statusCardUnit}>hộp</Text>
+                </View>
+              )}
+              {inventory.quantities_by_unit.blister !== undefined && (
+                <View style={[styles.statusCardLarge, styles.statusCardOrange]}>
+                  <View style={styles.statusCardTop}>
+                    <MaterialCommunityIcons
+                      name="package-variant-closed"
+                      size={24}
+                      color="#FF9800"
+                    />
+                    <Text style={styles.statusCardLabel}>Vỉ</Text>
+                  </View>
+                  <Text style={styles.statusCardValue}>
+                    {inventory.quantities_by_unit.blister}
+                  </Text>
+                  <Text style={styles.statusCardUnit}>vỉ</Text>
+                </View>
+              )}
+              {inventory.quantities_by_unit.tablet !== undefined && (
+                <View style={[styles.statusCardLarge, styles.statusCardGreen]}>
+                  <View style={styles.statusCardTop}>
+                    <MaterialCommunityIcons
+                      name="pill"
+                      size={24}
+                      color="#4CAF50"
+                    />
+                    <Text style={styles.statusCardLabel}>Viên</Text>
+                  </View>
+                  <Text style={styles.statusCardValue}>
+                    {inventory.quantities_by_unit.tablet}
+                  </Text>
+                  <Text style={styles.statusCardUnit}>viên</Text>
+                </View>
+              )}
+            </>
+          )}
 
-          <View style={[styles.statusCardLarge, styles.statusCardBlue]}>
-            <View style={styles.statusCardTop}>
-              <MaterialCommunityIcons
-                name="currency-usd"
-                size={24}
-                color="#2196F3"
-              />
-              <Text style={styles.statusCardLabel}>Giá Trị Kho</Text>
-            </View>
-            <Text style={styles.statusCardValue}>
-              {(inventory.total_value || 0 / 1000000).toFixed(1)}M
-            </Text>
-            <Text style={styles.statusCardUnit}>đ</Text>
-          </View>
+          {!inventory.quantities_by_unit && (
+            <>
+              <View style={[styles.statusCardLarge, styles.statusCardOrange]}>
+                <View style={styles.statusCardTop}>
+                  <MaterialCommunityIcons
+                    name="alert"
+                    size={24}
+                    color="#FF9800"
+                  />
+                  <Text style={styles.statusCardLabel}>Mức Cảnh Báo</Text>
+                </View>
+                <Text style={styles.statusCardValue}>
+                  {inventory.warning_threshold ||
+                    medicine?.alert_threshold ||
+                    0}
+                </Text>
+                <Text style={styles.statusCardUnit}>
+                  {medicine?.base_unit || medicine?.unit}
+                </Text>
+              </View>
+
+              <View style={[styles.statusCardLarge, styles.statusCardBlue]}>
+                <View style={styles.statusCardTop}>
+                  <MaterialCommunityIcons
+                    name="currency-usd"
+                    size={24}
+                    color="#2196F3"
+                  />
+                  <Text style={styles.statusCardLabel}>Giá Trị Kho</Text>
+                </View>
+                <Text style={styles.statusCardValue}>
+                  {inventory.total_value
+                    ? (inventory.total_value / 1000000).toFixed(1)
+                    : '0.0'}
+                  M
+                </Text>
+                <Text style={styles.statusCardUnit}>đ</Text>
+              </View>
+            </>
+          )}
         </View>
 
         {/* Branch Information */}

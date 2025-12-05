@@ -49,9 +49,17 @@ export interface ImportItem {
     unit: string;
   };
   quantity: number;
+  unit: 'box' | 'blister' | 'tablet';
   unit_price: number;
+  quantity_in_base_unit?: number;
   batch_number: string;
   expiry_date: string;
+  retail_price_for_base_unit?: number;
+  retail_price_per_unit?: {
+    box?: number;
+    blister?: number;
+    tablet?: number;
+  };
 }
 
 /**
@@ -80,6 +88,7 @@ export interface CreateImportBody {
   items: {
     medicine_id: string;
     quantity: number;
+    unit: 'box' | 'blister' | 'tablet';
     unit_price: number;
     batch_number: string;
     expiry_date: string;
