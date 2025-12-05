@@ -93,8 +93,8 @@ const HomeScreen = () => {
    * Xử lý navigation cho các route khác nhau
    */
   const handleCardPress = (item: RoleOption) => {
-    // Kiểm tra nếu là "Bán Hàng" (staff-3)
-    if (item.id === 'staff-3') {
+    // Kiểm tra nếu là "Bán Hàng" (staff-4)
+    if (item.id === 'staff-4') {
       handleSalesPress(item.route);
       return;
     }

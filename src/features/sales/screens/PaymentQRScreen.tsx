@@ -40,7 +40,10 @@ const PaymentQRScreen: React.FC = () => {
             {
               text: 'OK',
               onPress: () => {
-                navigation.navigate('Sales');
+                navigation.reset({
+                  index: 0,
+                  routes: [{ name: 'HomeTabs' }],
+                });
               },
             },
           ],
