@@ -21,18 +21,56 @@ export interface BranchInfo {
 }
 
 /**
+ * Cấu trúc đóng gói thuốc (package_structure)
+ */
+export interface PackageStructure {
+  box?: {
+    contains: number;
+    child: 'blister' | null;
+  };
+  blister?: {
+    contains: number;
+    child: 'tablet' | null;
+  };
+  tablet?: {
+    contains: number;
+    child: null;
+  };
+}
+
+/**
+ * Giá theo đơn vị
+ */
+export interface MedicinePrices {
+  base_unit_price: number;
+  price_per_unit: {
+    box?: number;
+    blister?: number;
+    tablet?: number;
+  };
+  unit_prices?: {
+    box?: number;
+    blister?: number;
+    tablet?: number;
+  };
+}
+
+/**
  * Thông tin thuốc
  */
 export interface MedicineInfo {
   _id: string;
   name: string;
   unit: string;
+  base_unit?: 'tablet' | 'blister' | 'box';
   retail_price?: number;
   generic_name?: string;
   brand_name?: string;
   strength?: string;
   manufacturer?: string;
   category_id?: string;
+  package_structure?: PackageStructure;
+  prices?: MedicinePrices;
 }
 
 /**

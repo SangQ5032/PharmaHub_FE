@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   View,
   Text,
@@ -12,7 +12,7 @@ import {
   TextInput,
 } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
-import { useGetBatches } from '../hooks/useMedicines';
+import { useGetBatches, useMedicineDetail } from '../hooks/useMedicines';
 import { useAuthStore } from '../../auth/stores/useAuthStore';
 
 const MedicineDetailScreen: React.FC = () => {
@@ -20,18 +20,32 @@ const MedicineDetailScreen: React.FC = () => {
   const route = useRoute<any>();
   const { user } = useAuthStore();
   const {
-    medicine,
+    medicine: medicineFromParams,
     onAddMedicine,
     batches: routeBatches,
     fromBarcodeScan,
   } = route.params || {};
 
   const [quantity, setQuantity] = useState('1');
+  const [selectedUnit, setSelectedUnit] = useState<
+    'box' | 'blister' | 'tablet'
+  >('tablet');
   const [selectedBatch, setSelectedBatch] = useState<any>(null);
   const [showBatchModal, setShowBatchModal] = useState(false);
   const [batchSearchQuery, setBatchSearchQuery] = useState('');
 
   const branchId = user?.branch_id || '';
+  const medicineId = medicineFromParams?._id;
+
+  // ✅ Gọi API để lấy thông tin thuốc mới nhất
+  const {
+    data: medicineFromAPI,
+    isLoading: medicineLoading,
+    error: medicineError,
+  } = useMedicineDetail(medicineId, !!medicineId);
+
+  // ✅ Sử dụng dữ liệu từ API nếu có, fallback về route params
+  const medicine = medicineFromAPI || medicineFromParams;
 
   // ✅ Nếu batches được pass từ route (từ barcode scan), dùng luôn
   // Nếu không, mới fetch từ API
@@ -40,31 +54,58 @@ const MedicineDetailScreen: React.FC = () => {
     useGetBatches(
       branchId,
       medicine?._id,
-      shouldFetchBatches, // ✅ Chỉ fetch nếu cần thiết
+      shouldFetchBatches && !!medicine?._id, // ✅ Chỉ fetch nếu cần thiết và có medicine ID
     );
 
   // Sử dụng batches từ route nếu có, nếu không dùng batches được fetch
   const batches =
     routeBatches && routeBatches.length > 0 ? routeBatches : fetchedBatches;
 
-  const price = String(medicine?.retail_price || medicine?.price || 0);
+  // ✅ Tính tổng tồn kho từ batches (tính bằng base_unit)
+  const totalQuantityFromBatches = useMemo(() => {
+    if (!batches || batches.length === 0) return 0;
+    return batches.reduce((sum: number, batch: any) => {
+      return sum + (batch.quantity || 0);
+    }, 0);
+  }, [batches]);
+
+  // ✅ Kết hợp thông tin: sử dụng total_quantity từ batches nếu có, fallback về medicine.total_quantity
+  const totalQuantity =
+    totalQuantityFromBatches || medicine?.total_quantity || 0;
+
+  // ✅ Get price based on selected unit từ units array trong medicine response
+  const getUnitPrice = () => {
+    // Ưu tiên lấy từ units array trong medicine response
+    if (medicine?.units && Array.isArray(medicine.units)) {
+      const unitData = medicine.units.find((u: any) => u.unit === selectedUnit);
+      if (unitData?.price) {
+        return unitData.price;
+      }
+    }
+
+    // Fallback về prices object
+    if (medicine?.prices?.price_per_unit?.[selectedUnit]) {
+      return medicine.prices.price_per_unit[selectedUnit];
+    }
+    if (medicine?.prices?.unit_prices?.[selectedUnit]) {
+      return medicine.prices.unit_prices[selectedUnit];
+    }
+
+    // Fallback to retail_price for tablet
+    if (selectedUnit === 'tablet') {
+      return medicine?.retail_price || medicine?.price || 0;
+    }
+    return 0;
+  };
+
+  const price = getUnitPrice();
+
+  // ✅ Lấy base_unit từ medicine response
+  const baseUnit = medicine?.base_unit || medicine?.unit || 'viên';
 
   const handleAddMedicine = () => {
     if (!quantity || Number(quantity) <= 0) {
       Alert.alert('Lỗi', 'Số lượng không hợp lệ');
-      return;
-    }
-
-    if (!selectedBatch) {
-      Alert.alert('Lỗi', 'Vui lòng chọn lô (batch)');
-      return;
-    }
-
-    if (Number(quantity) > selectedBatch.quantity) {
-      Alert.alert(
-        'Lỗi',
-        `Lô này chỉ còn ${selectedBatch.quantity}, không đủ ${quantity}`,
-      );
       return;
     }
 
@@ -73,13 +114,26 @@ const MedicineDetailScreen: React.FC = () => {
       return;
     }
 
+    // ✅ Với role employee, bắt buộc phải chọn batch
+    if (user?.role === 'employee') {
+      if (!selectedBatch) {
+        Alert.alert(
+          'Lỗi',
+          'Vui lòng chọn lô thuốc trước khi thêm vào đơn hàng',
+        );
+        return;
+      }
+    }
+
     // ✅ Gọi callback TRƯỚC Alert để callback execute (navigate về CreateInvoice)
     if (onAddMedicine) {
       onAddMedicine(
         medicine,
         Number(quantity),
-        Number(price),
-        selectedBatch._id,
+        selectedUnit,
+        price,
+        selectedBatch?._id, // Truyền batch_id nếu có
+        selectedBatch?.batch_number, // Truyền batch_number để hiển thị
       );
     }
 
@@ -102,8 +156,8 @@ const MedicineDetailScreen: React.FC = () => {
 
   const handleQuantityChange = (newQuantity: string) => {
     const num = parseInt(newQuantity, 10) || 0;
-    if (medicine.total_quantity && num > medicine.total_quantity) {
-      setQuantity(String(medicine.total_quantity));
+    if (totalQuantity && num > totalQuantity) {
+      setQuantity(String(totalQuantity));
     } else if (num < 0) {
       setQuantity('0');
     } else {
@@ -111,10 +165,33 @@ const MedicineDetailScreen: React.FC = () => {
     }
   };
 
-  if (!medicine) {
+  // Hiển thị loading khi đang fetch dữ liệu từ API
+  if (medicineLoading && !medicineFromParams) {
     return (
       <View style={styles.container}>
         <ActivityIndicator size="large" color="#0066CC" />
+        <Text style={styles.loadingText}>Đang tải thông tin thuốc...</Text>
+      </View>
+    );
+  }
+
+  // Hiển thị lỗi nếu không có dữ liệu
+  if (!medicine) {
+    return (
+      <View style={styles.container}>
+        <View style={styles.errorContainer}>
+          <Text style={styles.errorText}>
+            {medicineError
+              ? 'Không thể tải thông tin thuốc'
+              : 'Không tìm thấy thông tin thuốc'}
+          </Text>
+          <TouchableOpacity
+            style={styles.retryButton}
+            onPress={() => navigation.goBack()}
+          >
+            <Text style={styles.retryButtonText}>Quay lại</Text>
+          </TouchableOpacity>
+        </View>
       </View>
     );
   }
@@ -156,12 +233,35 @@ const MedicineDetailScreen: React.FC = () => {
           </View>
         )}
 
-        {medicine.unit && (
+        {(medicine.base_unit || medicine.unit) && (
           <View style={styles.infoRow}>
-            <Text style={styles.infoLabel}>Đơn vị:</Text>
-            <Text style={styles.infoValue}>{medicine.unit}</Text>
+            <Text style={styles.infoLabel}>Đơn vị cơ bản:</Text>
+            <Text style={styles.infoValue}>
+              {medicine.base_unit || medicine.unit}
+            </Text>
           </View>
         )}
+
+        {medicine.units &&
+          Array.isArray(medicine.units) &&
+          medicine.units.length > 0 && (
+            <View style={styles.infoRow}>
+              <Text style={styles.infoLabel}>Đơn vị bán:</Text>
+              <View style={styles.unitsInfoContainer}>
+                {medicine.units.map((unit: any, index: number) => (
+                  <Text key={index} style={styles.unitsInfoText}>
+                    {unit.unit === 'box'
+                      ? 'Hộp'
+                      : unit.unit === 'blister'
+                      ? 'Vỉ'
+                      : 'Viên'}
+                    : {unit.multiplier} {baseUnit} ={' '}
+                    {Number(unit.price || 0).toLocaleString('vi-VN')}₫
+                  </Text>
+                ))}
+              </View>
+            </View>
+          )}
 
         {medicine.packaging && (
           <View style={styles.infoRow}>
@@ -203,15 +303,37 @@ const MedicineDetailScreen: React.FC = () => {
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Giá & Tồn kho</Text>
 
-        <View style={styles.infoRow}>
-          <Text style={styles.infoLabel}>Giá bán lẻ:</Text>
-          <Text style={styles.priceValue}>
-            {Number(
-              medicine.retail_price || medicine.price || 0,
-            ).toLocaleString('vi-VN')}
-            ₫
-          </Text>
-        </View>
+        {/* Hiển thị giá theo từng đơn vị */}
+        {medicine.units &&
+        Array.isArray(medicine.units) &&
+        medicine.units.length > 0 ? (
+          medicine.units.map((unit: any, index: number) => (
+            <View key={index} style={styles.infoRow}>
+              <Text style={styles.infoLabel}>
+                Giá bán (
+                {unit.unit === 'box'
+                  ? 'Hộp'
+                  : unit.unit === 'blister'
+                  ? 'Vỉ'
+                  : 'Viên'}
+                ):
+              </Text>
+              <Text style={styles.priceValue}>
+                {Number(unit.price || 0).toLocaleString('vi-VN')}₫
+              </Text>
+            </View>
+          ))
+        ) : (
+          <View style={styles.infoRow}>
+            <Text style={styles.infoLabel}>Giá bán lẻ:</Text>
+            <Text style={styles.priceValue}>
+              {Number(
+                medicine.retail_price || medicine.price || 0,
+              ).toLocaleString('vi-VN')}
+              ₫
+            </Text>
+          </View>
+        )}
 
         {medicine.minimum_price && (
           <View style={styles.infoRow}>
@@ -231,27 +353,30 @@ const MedicineDetailScreen: React.FC = () => {
           </View>
         )}
 
+        {/* ✅ Tồn kho tính từ batches */}
         <View
-          style={[
-            styles.infoRow,
-            medicine.total_quantity === 0 && styles.outOfStock,
-          ]}
+          style={[styles.infoRow, totalQuantity === 0 && styles.outOfStock]}
         >
           <Text style={styles.infoLabel}>Tồn kho:</Text>
           <Text
             style={[
               styles.infoValue,
-              medicine.total_quantity === 0 && styles.outOfStockText,
+              totalQuantity === 0 && styles.outOfStockText,
             ]}
           >
-            {medicine.total_quantity || 0} {medicine.unit || 'viên'}
+            {totalQuantity} {baseUnit}
+            {batches && batches.length > 0 && (
+              <Text style={styles.batchCountText}> ({batches.length} lô)</Text>
+            )}
           </Text>
         </View>
 
         {medicine.alert_threshold && (
           <View style={styles.infoRow}>
             <Text style={styles.infoLabel}>Mức cảnh báo:</Text>
-            <Text style={styles.infoValue}>{medicine.alert_threshold}</Text>
+            <Text style={styles.infoValue}>
+              {medicine.alert_threshold} {baseUnit}
+            </Text>
           </View>
         )}
       </View>
@@ -308,14 +433,14 @@ const MedicineDetailScreen: React.FC = () => {
         </View>
       )}
 
-      {/* Batches Info */}
-      {medicine.batches && medicine.batches.length > 0 && (
+      {/* Batches Info - Hiển thị từ batches API response */}
+      {batches && batches.length > 0 && (
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>
-            Thông tin lô ({medicine.batches.length})
+            Thông tin lô ({batches.length})
           </Text>
 
-          {medicine.batches.map((batch: any, index: number) => (
+          {batches.map((batch: any, index: number) => (
             <View key={batch._id} style={styles.batchCard}>
               <View style={styles.batchHeader}>
                 <Text style={styles.batchNumber}>Lô {index + 1}</Text>
@@ -339,20 +464,38 @@ const MedicineDetailScreen: React.FC = () => {
 
                 <View style={styles.batchRow}>
                   <Text style={styles.batchLabel}>Số lượng:</Text>
-                  <Text style={styles.batchValue}>{batch.quantity}</Text>
-                </View>
-
-                <View style={styles.batchRow}>
-                  <Text style={styles.batchLabel}>Giá nhập:</Text>
                   <Text style={styles.batchValue}>
-                    {Number(batch.import_price).toLocaleString('vi-VN')}₫
+                    {batch.quantity} {baseUnit}
                   </Text>
                 </View>
+
+                {batch.import_price !== undefined && (
+                  <View style={styles.batchRow}>
+                    <Text style={styles.batchLabel}>Giá nhập:</Text>
+                    <Text style={styles.batchValue}>
+                      {Number(batch.import_price).toLocaleString('vi-VN')}₫
+                    </Text>
+                  </View>
+                )}
 
                 {batch.supplier_name && (
                   <View style={styles.batchRow}>
                     <Text style={styles.batchLabel}>Nhà cung cấp:</Text>
                     <Text style={styles.batchValue}>{batch.supplier_name}</Text>
+                  </View>
+                )}
+
+                {batch.status && (
+                  <View style={styles.batchRow}>
+                    <Text style={styles.batchLabel}>Trạng thái:</Text>
+                    <Text
+                      style={[
+                        styles.batchValue,
+                        batch.status === 'active' && styles.activeStatus,
+                      ]}
+                    >
+                      {batch.status === 'active' ? 'Hoạt động' : batch.status}
+                    </Text>
                   </View>
                 )}
               </View>
@@ -365,19 +508,111 @@ const MedicineDetailScreen: React.FC = () => {
       <View style={styles.addSection}>
         <Text style={styles.addSectionTitle}>Thêm vào đơn hàng</Text>
 
-        {/* Batch Selection */}
-        <View style={styles.batchSelectionContainer}>
-          <Text style={styles.label}>Lô (Batch) *</Text>
-          {batchesLoading ? (
-            <ActivityIndicator size="small" color="#0066CC" />
-          ) : (
+        {/* Unit Selection */}
+        <View style={styles.unitSelectionContainer}>
+          <Text style={styles.label}>Đơn vị *</Text>
+          <View style={styles.unitSelector}>
+            {/* Hiển thị các đơn vị từ units array trong medicine response */}
+            {medicine?.units &&
+            Array.isArray(medicine.units) &&
+            medicine.units.length > 0
+              ? medicine.units.map((unitData: any) => {
+                  const unit = unitData.unit as 'box' | 'blister' | 'tablet';
+                  return (
+                    <TouchableOpacity
+                      key={unit}
+                      style={[
+                        styles.unitButton,
+                        selectedUnit === unit && styles.unitButtonActive,
+                      ]}
+                      onPress={() => setSelectedUnit(unit)}
+                    >
+                      <Text
+                        style={[
+                          styles.unitButtonText,
+                          selectedUnit === unit && styles.unitButtonTextActive,
+                        ]}
+                      >
+                        {unit === 'box'
+                          ? 'Hộp'
+                          : unit === 'blister'
+                          ? 'Vỉ'
+                          : 'Viên'}
+                      </Text>
+                      {unitData.price && (
+                        <Text
+                          style={[
+                            styles.unitPriceText,
+                            selectedUnit === unit && styles.unitPriceTextActive,
+                          ]}
+                        >
+                          {Number(unitData.price).toLocaleString('vi-VN')}₫
+                        </Text>
+                      )}
+                      {unitData.multiplier && (
+                        <Text
+                          style={[
+                            styles.unitMultiplierText,
+                            selectedUnit === unit &&
+                              styles.unitMultiplierTextActive,
+                          ]}
+                        >
+                          ({unitData.multiplier} {baseUnit})
+                        </Text>
+                      )}
+                    </TouchableOpacity>
+                  );
+                })
+              : // Fallback: hiển thị các đơn vị mặc định
+                (['box', 'blister', 'tablet'] as const).map(unit => (
+                  <TouchableOpacity
+                    key={unit}
+                    style={[
+                      styles.unitButton,
+                      selectedUnit === unit && styles.unitButtonActive,
+                    ]}
+                    onPress={() => setSelectedUnit(unit)}
+                  >
+                    <Text
+                      style={[
+                        styles.unitButtonText,
+                        selectedUnit === unit && styles.unitButtonTextActive,
+                      ]}
+                    >
+                      {unit === 'box'
+                        ? 'Hộp'
+                        : unit === 'blister'
+                        ? 'Vỉ'
+                        : 'Viên'}
+                    </Text>
+                    {medicine?.prices?.price_per_unit?.[unit] && (
+                      <Text
+                        style={[
+                          styles.unitPriceText,
+                          selectedUnit === unit && styles.unitPriceTextActive,
+                        ]}
+                      >
+                        {Number(
+                          medicine.prices.price_per_unit[unit],
+                        ).toLocaleString('vi-VN')}
+                        ₫
+                      </Text>
+                    )}
+                  </TouchableOpacity>
+                ))}
+          </View>
+        </View>
+
+        {/* Batch Selection - Chỉ hiển thị cho employee role */}
+        {user?.role === 'employee' && batches.length > 0 && (
+          <View style={styles.batchSelectionContainer}>
+            <Text style={styles.label}>Chọn lô thuốc *</Text>
             <TouchableOpacity
               style={[
                 styles.batchSelectButton,
                 !selectedBatch && styles.batchSelectButtonEmpty,
               ]}
               onPress={() => setShowBatchModal(true)}
-              disabled={batches.length === 0}
             >
               <Text
                 style={[
@@ -386,18 +621,24 @@ const MedicineDetailScreen: React.FC = () => {
                 ]}
               >
                 {selectedBatch
-                  ? `${selectedBatch.batch_number} (HSD: ${new Date(
+                  ? `Lô: ${selectedBatch.batch_number} | HSD: ${new Date(
                       selectedBatch.expiry_date,
-                    ).toLocaleDateString('vi-VN')}, Còn: ${
+                    ).toLocaleDateString('vi-VN')} | Còn: ${
                       selectedBatch.quantity
-                    })`
-                  : batches.length === 0
-                  ? 'Không có lô nào'
-                  : 'Chọn lô hàng...'}
+                    }`
+                  : 'Chọn lô thuốc'}
               </Text>
             </TouchableOpacity>
-          )}
-        </View>
+            {selectedBatch && (
+              <TouchableOpacity
+                style={styles.changeBatchButton}
+                onPress={() => setSelectedBatch(null)}
+              >
+                <Text style={styles.changeBatchButtonText}>Thay đổi lô</Text>
+              </TouchableOpacity>
+            )}
+          </View>
+        )}
 
         <View style={styles.quantityPriceRow}>
           <View style={[styles.inputContainer, styles.quantityInputContainer]}>
@@ -423,15 +664,25 @@ const MedicineDetailScreen: React.FC = () => {
                 <Text style={styles.quantityButtonText}>+</Text>
               </TouchableOpacity>
             </View>
-            {selectedBatch && (
-              <Text style={styles.quantityNote}>
-                Lô còn: {selectedBatch.quantity}
-              </Text>
-            )}
+            <Text style={styles.quantityNote}>
+              {selectedUnit === 'box'
+                ? 'Hộp'
+                : selectedUnit === 'blister'
+                ? 'Vỉ'
+                : 'Viên'}
+            </Text>
           </View>
 
           <View style={[styles.inputContainer, styles.priceInputContainer]}>
-            <Text style={styles.label}>Giá bán (₫)</Text>
+            <Text style={styles.label}>
+              Giá bán (₫/
+              {selectedUnit === 'box'
+                ? 'hộp'
+                : selectedUnit === 'blister'
+                ? 'vỉ'
+                : 'viên'}
+              )
+            </Text>
             <Text style={styles.priceDisplay}>
               {Number(price).toLocaleString('vi-VN')}
             </Text>
@@ -445,11 +696,7 @@ const MedicineDetailScreen: React.FC = () => {
           </Text>
         </View>
 
-        <TouchableOpacity
-          style={[styles.addButton, !selectedBatch && styles.addButtonDisabled]}
-          onPress={handleAddMedicine}
-          disabled={!selectedBatch || batches.length === 0}
-        >
+        <TouchableOpacity style={styles.addButton} onPress={handleAddMedicine}>
           <Text style={styles.addButtonText}>Thêm vào đơn hàng</Text>
         </TouchableOpacity>
       </View>
@@ -768,6 +1015,69 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: '700',
   },
+  unitSelectionContainer: {
+    marginBottom: 16,
+  },
+  unitSelector: {
+    flexDirection: 'row',
+    gap: 8,
+    marginTop: 8,
+  },
+  unitButton: {
+    flex: 1,
+    borderWidth: 1,
+    borderColor: '#DDD',
+    borderRadius: 6,
+    padding: 12,
+    alignItems: 'center',
+    backgroundColor: '#F9F9F9',
+  },
+  unitButtonActive: {
+    backgroundColor: '#0066CC',
+    borderColor: '#0066CC',
+  },
+  unitButtonText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#666',
+    marginBottom: 4,
+  },
+  unitButtonTextActive: {
+    color: '#FFF',
+  },
+  unitPriceText: {
+    fontSize: 11,
+    color: '#999',
+  },
+  unitPriceTextActive: {
+    color: '#FFF',
+  },
+  unitMultiplierText: {
+    fontSize: 10,
+    color: '#999',
+    marginTop: 2,
+  },
+  unitMultiplierTextActive: {
+    color: '#FFF',
+  },
+  unitsInfoContainer: {
+    flex: 1,
+    alignItems: 'flex-end',
+  },
+  unitsInfoText: {
+    fontSize: 12,
+    color: '#333',
+    marginBottom: 4,
+  },
+  batchCountText: {
+    fontSize: 12,
+    color: '#666',
+    fontStyle: 'italic',
+  },
+  activeStatus: {
+    color: '#00AA44',
+    fontWeight: '600',
+  },
   batchSelectionContainer: {
     marginBottom: 16,
   },
@@ -789,6 +1099,21 @@ const styles = StyleSheet.create({
   },
   batchSelectButtonEmptyText: {
     color: '#999',
+  },
+  changeBatchButton: {
+    marginTop: 8,
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    backgroundColor: '#FFF3CD',
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: '#FFC107',
+    alignItems: 'center',
+  },
+  changeBatchButtonText: {
+    fontSize: 12,
+    color: '#856404',
+    fontWeight: '600',
   },
   modalContainer: {
     flex: 1,
@@ -859,6 +1184,35 @@ const styles = StyleSheet.create({
   },
   spacer: {
     height: 20,
+  },
+  loadingText: {
+    marginTop: 12,
+    fontSize: 14,
+    color: '#666',
+    textAlign: 'center',
+  },
+  errorContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  errorText: {
+    fontSize: 16,
+    color: '#DC3545',
+    textAlign: 'center',
+    marginBottom: 20,
+  },
+  retryButton: {
+    backgroundColor: '#0066CC',
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 6,
+  },
+  retryButtonText: {
+    color: '#FFF',
+    fontSize: 14,
+    fontWeight: '600',
   },
 });
 

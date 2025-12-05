@@ -22,6 +22,7 @@ import { useAuthStore } from '@features/auth';
 interface ImportItem {
   medicine: Medicine;
   quantity: number;
+  unit: 'box' | 'blister' | 'tablet';
   unit_price: number;
   batch_number: string;
   expiry_date: string;
@@ -63,6 +64,7 @@ export default function CreateImportScreen() {
       {
         medicine,
         quantity: 1,
+        unit: 'tablet', // Default to tablet (base unit)
         unit_price: medicine.retail_price || 0,
         batch_number: '',
         expiry_date: '',
@@ -110,6 +112,18 @@ export default function CreateImportScreen() {
     setItems(
       items.map(item =>
         item.medicine._id === medicineId ? { ...item, expiry_date } : item,
+      ),
+    );
+  };
+
+  // Handle update unit
+  const handleUpdateUnit = (
+    medicineId: string,
+    unit: 'box' | 'blister' | 'tablet',
+  ) => {
+    setItems(
+      items.map(item =>
+        item.medicine._id === medicineId ? { ...item, unit } : item,
       ),
     );
   };
@@ -168,6 +182,7 @@ export default function CreateImportScreen() {
       items: items.map(item => ({
         medicine_id: item.medicine._id,
         quantity: item.quantity,
+        unit: item.unit,
         unit_price: item.unit_price,
         batch_number: item.batch_number.trim(),
         expiry_date: item.expiry_date,
@@ -305,6 +320,37 @@ export default function CreateImportScreen() {
 
                 <View style={styles.medicineInputs}>
                   <View style={styles.inputGroup}>
+                    <Text style={styles.inputLabel}>Đơn vị *</Text>
+                    <View style={styles.unitSelector}>
+                      {(['box', 'blister', 'tablet'] as const).map(unit => (
+                        <TouchableOpacity
+                          key={unit}
+                          style={[
+                            styles.unitButton,
+                            item.unit === unit && styles.unitButtonActive,
+                          ]}
+                          onPress={() =>
+                            handleUpdateUnit(item.medicine._id, unit)
+                          }
+                        >
+                          <Text
+                            style={[
+                              styles.unitButtonText,
+                              item.unit === unit && styles.unitButtonTextActive,
+                            ]}
+                          >
+                            {unit === 'box'
+                              ? 'Hộp'
+                              : unit === 'blister'
+                              ? 'Vỉ'
+                              : 'Viên'}
+                          </Text>
+                        </TouchableOpacity>
+                      ))}
+                    </View>
+                  </View>
+
+                  <View style={styles.inputGroup}>
                     <Text style={styles.inputLabel}>Số lượng</Text>
                     <TextInput
                       style={styles.input}
@@ -318,9 +364,19 @@ export default function CreateImportScreen() {
                       }
                     />
                   </View>
+                </View>
 
+                <View style={styles.medicineInputs}>
                   <View style={styles.inputGroup}>
-                    <Text style={styles.inputLabel}>Đơn giá</Text>
+                    <Text style={styles.inputLabel}>
+                      Đơn giá (
+                      {item.unit === 'box'
+                        ? 'hộp'
+                        : item.unit === 'blister'
+                        ? 'vỉ'
+                        : 'viên'}
+                      )
+                    </Text>
                     <TextInput
                       style={styles.input}
                       keyboardType="numeric"
@@ -627,5 +683,31 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     minHeight: 80,
     textAlignVertical: 'top',
+  },
+  unitSelector: {
+    flexDirection: 'row',
+    gap: 8,
+    marginBottom: 8,
+  },
+  unitButton: {
+    flex: 1,
+    borderWidth: 1,
+    borderColor: '#E0E0E0',
+    borderRadius: 6,
+    padding: 8,
+    alignItems: 'center',
+  },
+  unitButtonActive: {
+    backgroundColor: '#4CAF50',
+    borderColor: '#4CAF50',
+  },
+  unitButtonText: {
+    fontSize: 14,
+    color: '#757575',
+    fontWeight: '500',
+  },
+  unitButtonTextActive: {
+    color: '#FFFFFF',
+    fontWeight: '600',
   },
 });

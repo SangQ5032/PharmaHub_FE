@@ -1,17 +1,26 @@
 export type SaleItem = {
   medicine_id: string;
   quantity: number;
-  unit_price: number;
+  unit: 'box' | 'blister' | 'tablet';
+  unit_price?: number; // Optional, sẽ được tính từ medicine prices
+  batch_id?: string; // Optional, bắt buộc cho employee role
+  batch_number?: string; // Optional, để hiển thị trong UI
 };
 
 export type CreateInvoiceRequest = {
   branch_id: string; // Chi nhánh bắt buộc
   customer_name: string; // Tên khách hàng
-  items: SaleItem[];
+  items: {
+    medicine_id: string;
+    quantity: number;
+    unit: 'box' | 'blister' | 'tablet';
+    batch_id?: string; // Optional, bắt buộc cho employee role
+  }[];
   payment_method?: 'cash' | 'card' | 'bank' | 'e-wallet';
   discount?: number;
   tax_rate?: number;
   customer_phone?: string;
+  customer_id?: string;
   note?: string;
 };
 
@@ -30,10 +39,12 @@ export type BatchInfo = {
 
 export type InvoiceItem = {
   medicine_id: MedicineInfo;
-  batch_id: BatchInfo;
+  batch_id?: BatchInfo; // Optional, FEFO tự động chọn
   name: string;
-  batch_number: string;
+  batch_number?: string;
   quantity: number;
+  unit?: 'box' | 'blister' | 'tablet';
+  total_base_units?: number; // Số lượng đã convert sang base unit
   unit_price: number;
   line_total: number;
 };

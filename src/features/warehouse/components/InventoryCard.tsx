@@ -78,9 +78,40 @@ export const InventoryCard: React.FC<InventoryCardProps> = ({
               { color: statusColors[status] },
             ]}
           >
-            {item.quantity} {item.medicine?.unit || ''}
+            {(item as any).total_quantity_in_base_unit || item.quantity}{' '}
+            {(item as any).medicine?.base_unit || item.medicine?.unit || ''}
           </Text>
         </View>
+
+        {/* Multi-Unit Display */}
+        {(item as any).quantities_by_unit && (
+          <View style={styles.multiUnitRow}>
+            <Text style={styles.label}>Tồn kho:</Text>
+            <View style={styles.unitChips}>
+              {(item as any).quantities_by_unit.box !== undefined && (
+                <View style={styles.unitChip}>
+                  <Text style={styles.unitChipText}>
+                    {(item as any).quantities_by_unit.box} hộp
+                  </Text>
+                </View>
+              )}
+              {(item as any).quantities_by_unit.blister !== undefined && (
+                <View style={styles.unitChip}>
+                  <Text style={styles.unitChipText}>
+                    {(item as any).quantities_by_unit.blister} vỉ
+                  </Text>
+                </View>
+              )}
+              {(item as any).quantities_by_unit.tablet !== undefined && (
+                <View style={styles.unitChip}>
+                  <Text style={styles.unitChipText}>
+                    {(item as any).quantities_by_unit.tablet} viên
+                  </Text>
+                </View>
+              )}
+            </View>
+          </View>
+        )}
 
         {item.medicine?.warning_threshold && (
           <View style={styles.row}>
@@ -193,5 +224,26 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '600',
     color: '#FF9800',
+  },
+  multiUnitRow: {
+    marginTop: 8,
+    marginBottom: 8,
+  },
+  unitChips: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 6,
+    marginTop: 4,
+  },
+  unitChip: {
+    backgroundColor: '#E3F2FD',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
+  unitChipText: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: '#1976D2',
   },
 });

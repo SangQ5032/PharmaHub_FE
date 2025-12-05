@@ -99,14 +99,26 @@ const CreateInvoiceScreen: React.FC = () => {
       onAddMedicine: (
         selectedMedicine: any,
         quantity: number,
-        price: number,
-        batchId: string,
+        unit: 'box' | 'blister' | 'tablet',
+        price?: number,
+        batchId?: string,
+        batchNumber?: string,
       ) => {
+        // Get price from medicine prices if available, otherwise use retail_price
+        const unitPrice =
+          price ||
+          selectedMedicine?.prices?.price_per_unit?.[unit] ||
+          selectedMedicine?.prices?.unit_prices?.[unit] ||
+          selectedMedicine?.retail_price ||
+          0;
+
         const newItem: SaleItem = {
           medicine_id: selectedMedicine._id,
-          batch_id: batchId,
           quantity,
-          unit_price: price,
+          unit,
+          unit_price: unitPrice,
+          batch_id: batchId, // Thêm batch_id nếu có
+          batch_number: batchNumber, // Thêm batch_number để hiển thị
         };
         setItems([...items, newItem]);
       },
@@ -119,7 +131,7 @@ const CreateInvoiceScreen: React.FC = () => {
 
   const calculateTotals = () => {
     const subtotal = items.reduce(
-      (sum, item) => sum + item.quantity * item.unit_price,
+      (sum, item) => sum + item.quantity * (item.unit_price || 0),
       0,
     );
     return {
@@ -145,21 +157,30 @@ const CreateInvoiceScreen: React.FC = () => {
       return;
     }
 
-    // Kiểm tra tất cả item có batch_id không
-    const itemsWithoutBatch = items.filter(item => !item.batch_id);
-    if (itemsWithoutBatch.length > 0) {
-      Alert.alert('Lỗi', 'Vui lòng chọn lô (batch) cho tất cả sản phẩm');
+    // Validate all items have unit
+    const itemsWithoutUnit = items.filter(item => !item.unit);
+    if (itemsWithoutUnit.length > 0) {
+      Alert.alert('Lỗi', 'Vui lòng chọn đơn vị cho tất cả sản phẩm');
       return;
     }
 
+    // Prepare items for API (include batch_id if present, ensure unit is present)
+    const apiItems = items.map(item => ({
+      medicine_id: item.medicine_id,
+      quantity: item.quantity,
+      unit: item.unit,
+      ...(item.batch_id && { batch_id: item.batch_id }), // Thêm batch_id nếu có
+    }));
+
     const invoiceData: CreateInvoiceRequest = {
       branch_id: branchId,
-      items,
+      items: apiItems,
       discount: 0,
       tax_rate: 0,
       payment_method: paymentMethod,
-      customer_id: customerId || undefined,
+      customer_name: customerName.trim(),
       customer_phone: customerPhone.trim(),
+      customer_id: customerId || undefined,
       note: note.trim() || undefined,
     };
 
@@ -312,19 +333,42 @@ const CreateInvoiceScreen: React.FC = () => {
                   </TouchableOpacity>
                 </View>
                 <View style={styles.itemDetails}>
-                  {item.batch_id && (
-                    <Text style={styles.itemDetail}>Lô: {item.batch_id}</Text>
-                  )}
                   <Text style={styles.itemDetail}>
-                    Số lượng: {item.quantity}{' '}
-                    {getMedicineUnit(item.medicine_id)}
+                    Đơn vị:{' '}
+                    {item.unit === 'box'
+                      ? 'Hộp'
+                      : item.unit === 'blister'
+                      ? 'Vỉ'
+                      : 'Viên'}
                   </Text>
                   <Text style={styles.itemDetail}>
-                    Giá: {Number(item.unit_price).toLocaleString('vi-VN')}₫
+                    Số lượng: {item.quantity}{' '}
+                    {item.unit === 'box'
+                      ? 'hộp'
+                      : item.unit === 'blister'
+                      ? 'vỉ'
+                      : 'viên'}
+                  </Text>
+                  {item.batch_number && (
+                    <Text style={styles.itemDetail}>
+                      Lô: {item.batch_number}
+                    </Text>
+                  )}
+                  <Text style={styles.itemDetail}>
+                    Giá: {Number(item.unit_price || 0).toLocaleString('vi-VN')}
+                    ₫/
+                    {item.unit === 'box'
+                      ? 'hộp'
+                      : item.unit === 'blister'
+                      ? 'vỉ'
+                      : 'viên'}
                   </Text>
                   <Text style={styles.itemTotal}>
                     Thành tiền:{' '}
-                    {(item.quantity * item.unit_price).toLocaleString('vi-VN')}₫
+                    {(item.quantity * (item.unit_price || 0)).toLocaleString(
+                      'vi-VN',
+                    )}
+                    ₫
                   </Text>
                 </View>
               </View>

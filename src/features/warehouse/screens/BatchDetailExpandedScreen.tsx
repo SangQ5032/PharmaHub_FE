@@ -16,17 +16,54 @@ import { useRoute, useNavigation } from '@react-navigation/native';
 import { useGetBatchDetail } from '@features/warehouse/hooks/useBatches';
 
 interface RouteParams {
-  id: string;
+  id?: string;
+  batch?: {
+    _id: string;
+    [key: string]: any;
+  };
 }
 
 export default function BatchDetailExpandedScreen() {
   const route = useRoute();
   const navigation = useNavigation();
-  const { id } = route.params as RouteParams;
+  // Đọc params theo nhiều cách để đảm bảo tương thích
+  const params = route.params as RouteParams | undefined;
+  // Thử nhiều cách để lấy id: từ id trực tiếp, hoặc từ batch._id
+  const id =
+    params?.id ||
+    params?.batch?._id ||
+    (route.params as any)?.id ||
+    (route.params as any)?.batch?._id ||
+    (route.params as any)?.batchId ||
+    undefined;
   const [refreshing, setRefreshing] = useState(false);
 
-  const { data: response, isLoading, error, refetch } = useGetBatchDetail(id);
+  // Chỉ gọi hook khi có id hợp lệ
+  // Hook sẽ tự động không chạy nếu id là undefined hoặc empty string (enabled: !!id)
+  const {
+    data: response,
+    isLoading,
+    error,
+    refetch,
+  } = useGetBatchDetail(id || '');
   const batch = response?.data;
+
+  // Debug: Log để kiểm tra
+  React.useEffect(() => {
+    console.log('BatchDetailExpandedScreen: route params =', route.params);
+    console.log('BatchDetailExpandedScreen: params =', params);
+    console.log('BatchDetailExpandedScreen: id =', id);
+    if (id) {
+      console.log('BatchDetailExpandedScreen: id found =', id);
+    } else {
+      console.warn('BatchDetailExpandedScreen: id is missing!', {
+        params,
+        routeParams: route.params,
+        routeName: route.name,
+        routeKey: route.key,
+      });
+    }
+  }, [id, params, route.params, route.name, route.key]);
 
   const onRefresh = async () => {
     setRefreshing(true);
@@ -40,6 +77,28 @@ export default function BatchDetailExpandedScreen() {
       headerBackTitle: 'Lô hàng',
     });
   }, [navigation, batch]);
+
+  // Kiểm tra nếu không có id
+  if (!id) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={styles.centerContainer}>
+          <MaterialCommunityIcons
+            name="alert-circle-outline"
+            size={48}
+            color="#F44336"
+          />
+          <Text style={styles.errorText}>Không tìm thấy ID lô hàng</Text>
+          <TouchableOpacity
+            style={styles.retryButton}
+            onPress={() => navigation.goBack()}
+          >
+            <Text style={styles.retryButtonText}>Quay lại</Text>
+          </TouchableOpacity>
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   if (isLoading && !batch) {
     return (
