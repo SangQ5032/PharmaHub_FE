@@ -1,7 +1,7 @@
 export type SaleItem = {
   medicine_id: string;
   quantity: number;
-  unit: 'box' | 'blister' | 'tablet';
+  unit: string; // Linh hoạt - hỗ trợ bất kỳ đơn vị nào (box, blister, tablet, bottle, etc.)
   unit_price?: number; // Optional, sẽ được tính từ medicine prices
   batch_id?: string; // Optional, bắt buộc cho employee role
   batch_number?: string; // Optional, để hiển thị trong UI
@@ -13,7 +13,7 @@ export type CreateInvoiceRequest = {
   items: {
     medicine_id: string;
     quantity: number;
-    unit: 'box' | 'blister' | 'tablet';
+    unit: string; // Linh hoạt - hỗ trợ bất kỳ đơn vị nào
     batch_id?: string; // Optional, bắt buộc cho employee role
   }[];
   payment_method?: 'cash' | 'card' | 'bank' | 'e-wallet';
@@ -43,7 +43,7 @@ export type InvoiceItem = {
   name: string;
   batch_number?: string;
   quantity: number;
-  unit?: 'box' | 'blister' | 'tablet';
+  unit?: string; // Linh hoạt - hỗ trợ bất kỳ đơn vị nào
   total_base_units?: number; // Số lượng đã convert sang base unit
   unit_price: number;
   line_total: number;

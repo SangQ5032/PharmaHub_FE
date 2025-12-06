@@ -23,6 +23,7 @@ import { useMedicinesWithBatches } from '../hooks/useMedicines';
 import { useGetCustomers } from '../hooks/useCustomers';
 import { useAuthStore } from '../../auth/stores/useAuthStore';
 import { SaleItem, CreateInvoiceRequest } from '../types';
+import { getUnitDisplayName } from '../../../utils/medicineUnits';
 
 const CreateInvoiceScreen: React.FC = () => {
   const navigation = useNavigation<any>();
@@ -181,7 +182,7 @@ const CreateInvoiceScreen: React.FC = () => {
       onAddMedicine: (
         selectedMedicine: any,
         quantity: number,
-        unit: 'box' | 'blister' | 'tablet',
+        unit: string, // Linh hoạt - hỗ trợ bất kỳ đơn vị nào
         price?: number,
         batchId?: string,
         batchNumber?: string,
@@ -479,20 +480,11 @@ const CreateInvoiceScreen: React.FC = () => {
                 </View>
                 <View style={styles.itemDetails}>
                   <Text style={styles.itemDetail}>
-                    Đơn vị:{' '}
-                    {item.unit === 'box'
-                      ? 'Hộp'
-                      : item.unit === 'blister'
-                      ? 'Vỉ'
-                      : 'Viên'}
+                    Đơn vị: {getUnitDisplayName(item.unit)}
                   </Text>
                   <Text style={styles.itemDetail}>
                     Số lượng: {item.quantity}{' '}
-                    {item.unit === 'box'
-                      ? 'hộp'
-                      : item.unit === 'blister'
-                      ? 'vỉ'
-                      : 'viên'}
+                    {getUnitDisplayName(item.unit).toLowerCase()}
                   </Text>
                   {item.batch_number && (
                     <Text style={styles.itemDetail}>
@@ -501,12 +493,7 @@ const CreateInvoiceScreen: React.FC = () => {
                   )}
                   <Text style={styles.itemDetail}>
                     Giá: {Number(item.unit_price || 0).toLocaleString('vi-VN')}
-                    ₫/
-                    {item.unit === 'box'
-                      ? 'hộp'
-                      : item.unit === 'blister'
-                      ? 'vỉ'
-                      : 'viên'}
+                    ₫/{getUnitDisplayName(item.unit).toLowerCase()}
                   </Text>
                   <Text style={styles.itemTotal}>
                     Thành tiền:{' '}
