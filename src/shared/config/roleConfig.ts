@@ -74,6 +74,13 @@ export const ROLE_CONFIG: Record<UserRole, RoleConfig> = {
         route: ROUTES.PAYROLL_MENU,
         description: 'Quản lý và duyệt lương nhân viên',
       },
+      {
+        id: 'admin-8',
+        name: 'Quản lý khách hàng',
+        icon: 'account-multiple',
+        route: ROUTES.CUSTOMER_LIST,
+        description: 'Quản lý danh sách khách hàng',
+      },
     ],
     tabs: [
       {
@@ -158,6 +165,13 @@ export const ROLE_CONFIG: Record<UserRole, RoleConfig> = {
         route: ROUTES.BRANCH_STATISTICS_HUB,
         description: 'Xem thống kê chi tiết chi nhánh',
       },
+      {
+        id: 'manager-10',
+        name: 'Quản lý khách hàng',
+        icon: 'account-multiple',
+        route: ROUTES.CUSTOMER_LIST,
+        description: 'Quản lý danh sách khách hàng',
+      },
     ],
     tabs: [
       {
@@ -229,6 +243,13 @@ export const ROLE_CONFIG: Record<UserRole, RoleConfig> = {
         icon: 'chart-box',
         route: ROUTES.EMPLOYEE_STATISTICS,
         description: 'Xem thống kê doanh thu cá nhân',
+      },
+      {
+        id: 'staff-9',
+        name: 'Quản lý khách hàng',
+        icon: 'account-multiple',
+        route: ROUTES.CUSTOMER_LIST,
+        description: 'Quản lý danh sách khách hàng',
       },
     ],
     tabs: [

@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 import React, { useState } from 'react';
 import {
   View,
@@ -68,6 +69,12 @@ const CreateInvoiceScreen: React.FC = () => {
   const [paymentMethod, setPaymentMethod] = useState<'cash' | 'bank'>('cash');
   const [note, setNote] = useState('');
 
+  // Thêm state cho discount và tax
+  const [discount, setDiscount] = useState(0);
+  const [taxRate, setTaxRate] = useState(0);
+  const [maxDiscountEligible, setMaxDiscountEligible] = useState(0);
+  const [discountError, setDiscountError] = useState(''); // Thêm state để lưu lỗi
+
   // Items state
   const [items, setItems] = useState<SaleItem[]>([]);
   const [showMedicineModal, setShowMedicineModal] = useState(false);
@@ -97,8 +104,48 @@ const CreateInvoiceScreen: React.FC = () => {
     }
   }, [route.params?.newCustomer, route.params?.newItem, navigation, items]);
 
+  // Thêm useEffect để reset discount khi thay đổi khách hàng
+  React.useEffect(() => {
+    if (!customerId) {
+      setMaxDiscountEligible(0);
+      setDiscount(0);
+    }
+  }, [customerId]);
+
+  // Thêm hàm validate discount
+  const validateDiscount = (value: number): string => {
+    if (value < 0) {
+      return 'Chiết khấu không được âm';
+    }
+    if (value > 0 && value < 1000) {
+      return 'Chiết khấu tối thiểu phải là 1,000₫';
+    }
+    if (customerId && value > maxDiscountEligible) {
+      return `Chiết khấu không được vượt quá ${maxDiscountEligible.toLocaleString(
+        'vi-VN',
+      )}₫ (chiết khấu tối đa)`;
+    }
+    if (value > subtotal) {
+      return 'Chiết khấu không được vượt quá tổng tiền hàng';
+    }
+    return '';
+  };
+
+  // Cập nhật useEffect để reset discount error khi thay đổi khách hàng hoặc subtotal
+  React.useEffect(() => {
+    if (!customerId) {
+      setMaxDiscountEligible(0);
+      setDiscount(0);
+      setDiscountError('');
+    } else if (discount > 0) {
+      // Re-validate khi subtotal thay đổi
+      const error = validateDiscount(discount);
+      setDiscountError(error);
+    }
+  }, [customerId, subtotal, maxDiscountEligible]);
+
   const medicines = medicinesResponse?.data || [];
-  const customers = customersData || [];
+  const customers = customersData?.data || []; // Sửa: thêm .data để lấy mảng từ response object
 
   const filteredMedicines = medicines.filter((med: any) =>
     med?.name?.toLowerCase().includes(medicineSearchQuery.toLowerCase()),
@@ -116,6 +163,14 @@ const CreateInvoiceScreen: React.FC = () => {
     setCustomerPhone(customer.phone);
     setCustomerSearchQuery('');
     setShowCustomerModal(false);
+
+    // Tính toán max_discount_eligible từ total_spent
+    const totalSpent = customer.total_spent || 0;
+    const maxDiscount = Math.floor(totalSpent / 100000) * 1000;
+    setMaxDiscountEligible(maxDiscount);
+
+    // Reset discount về 0 khi chọn khách hàng mới
+    setDiscount(0);
   };
 
   const handleSelectMedicine = (medicine: any) => {
@@ -161,13 +216,39 @@ const CreateInvoiceScreen: React.FC = () => {
       (sum, item) => sum + item.quantity * (item.unit_price || 0),
       0,
     );
+
+    // Áp dụng discount (không được vượt quá subtotal hoặc maxDiscountEligible)
+    const appliedDiscount = Math.min(
+      discount,
+      subtotal,
+      maxDiscountEligible || subtotal,
+    );
+
+    // Tính taxable amount sau khi trừ discount
+    const taxableAmount = subtotal - appliedDiscount;
+
+    // Tính tax amount
+    const taxAmount = (taxRate / 100) * taxableAmount;
+
+    // Tính total amount
+    const total = taxableAmount + taxAmount;
+
     return {
       subtotal,
-      total: subtotal,
+      discount: appliedDiscount,
+      taxRate,
+      taxAmount,
+      total,
     };
   };
 
-  const { subtotal, total } = calculateTotals();
+  const {
+    subtotal,
+    discount: appliedDiscount,
+    taxRate: appliedTaxRate,
+    taxAmount,
+    total,
+  } = calculateTotals();
 
   const handleSubmit = async () => {
     // Validation
@@ -191,6 +272,39 @@ const CreateInvoiceScreen: React.FC = () => {
       return;
     }
 
+    // Validate discount
+    if (discount < 0) {
+      Alert.alert('Lỗi', 'Chiết khấu không được âm');
+      return;
+    }
+    if (discount > 0 && discount < 1000) {
+      Alert.alert('Lỗi', 'Chiết khấu tối thiểu phải là 1,000₫');
+      return;
+    }
+    if (discount > subtotal) {
+      Alert.alert('Lỗi', 'Chiết khấu không được vượt quá tổng tiền hàng');
+      return;
+    }
+    if (customerId && discount > maxDiscountEligible) {
+      Alert.alert(
+        'Lỗi',
+        `Chiết khấu không được vượt quá ${maxDiscountEligible.toLocaleString(
+          'vi-VN',
+        )}₫ (chiết khấu tối đa)`,
+      );
+      return;
+    }
+    if (discountError) {
+      Alert.alert('Lỗi', discountError);
+      return;
+    }
+
+    // Validate tax rate
+    if (taxRate < 0 || taxRate > 100) {
+      Alert.alert('Lỗi', 'Thuế suất phải từ 0 đến 100%');
+      return;
+    }
+
     // Prepare items for API (include batch_id if present, ensure unit is present)
     const apiItems = items.map(item => ({
       medicine_id: item.medicine_id,
@@ -202,8 +316,8 @@ const CreateInvoiceScreen: React.FC = () => {
     const invoiceData: CreateInvoiceRequest = {
       branch_id: branchId,
       items: apiItems,
-      discount: 0,
-      tax_rate: 0,
+      discount: appliedDiscount,
+      tax_rate: taxRate,
       payment_method: paymentMethod,
       customer_name: customerName.trim(),
       customer_phone: customerPhone.trim(),
@@ -439,6 +553,79 @@ const CreateInvoiceScreen: React.FC = () => {
             </View>
           </View>
 
+          {/* Discount Section */}
+          <View style={styles.discountSection}>
+            <Text style={styles.label}>Chiết khấu</Text>
+            {customerId && maxDiscountEligible > 0 && (
+              <Text style={styles.discountInfo}>
+                Chiết khấu tối đa: {maxDiscountEligible.toLocaleString('vi-VN')}
+                ₫
+                {maxDiscountEligible > 0 && (
+                  <Text style={styles.discountInfoSmall}>
+                    {'\n'}(Khách hàng đã chi tiêu:{' '}
+                    {customers
+                      .find((c: any) => c._id === customerId)
+                      ?.total_spent?.toLocaleString('vi-VN') || 0}
+                    ₫)
+                  </Text>
+                )}
+              </Text>
+            )}
+            {!customerId && (
+              <Text style={styles.discountInfo}>
+                Vui lòng chọn khách hàng để áp dụng chiết khấu
+              </Text>
+            )}
+            {customerId && maxDiscountEligible === 0 && (
+              <Text style={styles.discountInfo}>
+                Khách hàng này chưa đủ điều kiện để nhận chiết khấu
+              </Text>
+            )}
+            <TextInput
+              style={[
+                styles.input,
+                discountError && styles.inputError, // Thêm style lỗi
+              ]}
+              placeholder="Nhập số tiền chiết khấu (tối thiểu 1,000₫)"
+              value={discount.toString()}
+              onChangeText={text => {
+                const value = text.replace(/[^0-9]/g, '');
+                const numValue = value ? parseInt(value, 10) : 0;
+                setDiscount(numValue);
+
+                // Validate real-time
+                if (numValue > 0) {
+                  const error = validateDiscount(numValue);
+                  setDiscountError(error);
+                } else {
+                  setDiscountError(''); // Cho phép 0, không hiển thị lỗi
+                }
+              }}
+              keyboardType="numeric"
+              editable={!!customerId && maxDiscountEligible > 0}
+            />
+            {discountError ? (
+              <Text style={styles.errorText}>{discountError}</Text>
+            ) : null}
+          </View>
+
+          {/* Tax Rate Section */}
+          <View style={styles.taxSection}>
+            <Text style={styles.label}>Thuế suất (%)</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="Nhập thuế suất (0-100)"
+              value={taxRate.toString()}
+              onChangeText={text => {
+                const value = text.replace(/[^0-9.]/g, '');
+                const numValue = value ? parseFloat(value) : 0;
+                setTaxRate(numValue > 100 ? 100 : numValue);
+              }}
+              keyboardType="numeric"
+              editable={!isPending}
+            />
+          </View>
+
           <TextInput
             style={styles.noteInput}
             placeholder="Ghi chú"
@@ -457,6 +644,34 @@ const CreateInvoiceScreen: React.FC = () => {
               {subtotal.toLocaleString('vi-VN')}₫
             </Text>
           </View>
+          {appliedDiscount > 0 && (
+            <View style={styles.summaryRow}>
+              <Text style={styles.summaryLabel}>Chiết khấu:</Text>
+              <Text style={[styles.summaryValue, styles.discountValue]}>
+                -{appliedDiscount.toLocaleString('vi-VN')}₫
+              </Text>
+            </View>
+          )}
+          {appliedTaxRate > 0 && (
+            <>
+              <View style={styles.summaryRow}>
+                <Text style={styles.summaryLabel}>
+                  Tiền hàng sau chiết khấu:
+                </Text>
+                <Text style={styles.summaryValue}>
+                  {(subtotal - appliedDiscount).toLocaleString('vi-VN')}₫
+                </Text>
+              </View>
+              <View style={styles.summaryRow}>
+                <Text style={styles.summaryLabel}>
+                  Thuế ({appliedTaxRate}%):
+                </Text>
+                <Text style={styles.summaryValue}>
+                  {taxAmount.toLocaleString('vi-VN')}₫
+                </Text>
+              </View>
+            </>
+          )}
           <View style={[styles.summaryRow, styles.totalRow]}>
             <Text style={styles.totalLabel}>Tổng cộng:</Text>
             <Text style={styles.totalValue}>
@@ -925,6 +1140,38 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     color: '#999',
     padding: 20,
+  },
+  discountSection: {
+    marginTop: 16,
+    marginBottom: 12,
+  },
+  discountInfo: {
+    fontSize: 12,
+    color: '#0066CC',
+    marginBottom: 8,
+    fontWeight: '500',
+  },
+  discountInfoSmall: {
+    fontSize: 11,
+    color: '#666',
+    fontWeight: '400',
+  },
+  taxSection: {
+    marginTop: 12,
+    marginBottom: 12,
+  },
+  discountValue: {
+    color: '#00AA44',
+  },
+  inputError: {
+    borderColor: '#FF4444',
+    borderWidth: 2,
+  },
+  errorText: {
+    fontSize: 12,
+    color: '#FF4444',
+    marginTop: 4,
+    marginBottom: 4,
   },
 });
 
