@@ -60,6 +60,8 @@ import {
   CreateCustomerScreen,
   PaymentQRScreen,
   BarcodeScannerScreen,
+  CustomerListScreen,
+  CustomerDetailScreen,
 } from '@features/sales';
 import {
   WorkScheduleListScreen,
@@ -420,6 +422,16 @@ const MainAppNavigator = () => {
         name="BarcodeScanner"
         component={BarcodeScannerScreen}
         options={{ headerShown: true, title: 'Scan Barcode' }}
+      />
+      <MainStack.Screen
+        name={ROUTES.CUSTOMER_LIST}
+        component={CustomerListScreen}
+        options={{ headerShown: true, title: 'Danh sách khách hàng' }}
+      />
+      <MainStack.Screen
+        name={ROUTES.CUSTOMER_DETAIL}
+        component={CustomerDetailScreen}
+        options={{ headerShown: true, title: 'Chi tiết khách hàng' }}
       />
 
       {/* Payroll Routes */}
