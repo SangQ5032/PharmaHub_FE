@@ -14,6 +14,11 @@ import {
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { useGetBatches, useMedicineDetail } from '../hooks/useMedicines';
 import { useAuthStore } from '../../auth/stores/useAuthStore';
+import {
+  getValidUnits,
+  getUnitDisplayName,
+  getUnitMultiplier,
+} from '../../../utils/medicineUnits';
 
 const MedicineDetailScreen: React.FC = () => {
   const navigation = useNavigation<any>();
@@ -27,9 +32,7 @@ const MedicineDetailScreen: React.FC = () => {
   } = route.params || {};
 
   const [quantity, setQuantity] = useState('1');
-  const [selectedUnit, setSelectedUnit] = useState<
-    'box' | 'blister' | 'tablet'
-  >('tablet');
+  const [selectedUnit, setSelectedUnit] = useState<string>('tablet');
   const [selectedBatch, setSelectedBatch] = useState<any>(null);
   const [showBatchModal, setShowBatchModal] = useState(false);
   const [batchSearchQuery, setBatchSearchQuery] = useState('');
@@ -73,44 +76,43 @@ const MedicineDetailScreen: React.FC = () => {
   const totalQuantity =
     totalQuantityFromBatches || medicine?.total_quantity || 0;
 
+  // ✅ Lấy danh sách đơn vị hợp lệ từ package_structure
+  const validUnits = useMemo(() => {
+    return getValidUnits(medicine || {});
+  }, [medicine]);
+
   // ✅ Kiểm tra đơn vị nào có thể chọn được dựa trên số lượng tồn kho
   const isUnitAvailable = useMemo(() => {
-    if (!medicine?.units || !Array.isArray(medicine.units)) {
-      // Fallback: nếu không có units array, cho phép tất cả
-      return {
-        box: totalQuantity >= 100,
-        blister: totalQuantity >= 10,
-        tablet: totalQuantity > 0,
-      };
-    }
-
     const availability: Record<string, boolean> = {};
 
-    medicine.units.forEach((unitData: any) => {
-      const unit = unitData.unit;
-      const multiplier = unitData.multiplier || 1;
-
+    // Sử dụng validUnits từ package_structure
+    validUnits.forEach(unit => {
+      const multiplier = getUnitMultiplier(medicine || {}, unit);
       // Kiểm tra xem có đủ số lượng để bán ít nhất 1 đơn vị
       availability[unit] = totalQuantity >= multiplier;
     });
 
     return availability;
-  }, [medicine?.units, totalQuantity]);
+  }, [medicine, validUnits, totalQuantity]);
 
   // ✅ Tự động chuyển đơn vị nếu đơn vị hiện tại không còn đủ số lượng
   React.useEffect(() => {
     if (selectedUnit && isUnitAvailable[selectedUnit] === false) {
-      // Tìm đơn vị có sẵn đầu tiên (ưu tiên: tablet > blister > box)
-      const priorityOrder = ['tablet', 'blister', 'box'];
+      // Tìm đơn vị có sẵn đầu tiên (ưu tiên: base_unit > các đơn vị khác)
+      const baseUnit = medicine?.base_unit || 'tablet';
+      const priorityOrder = [
+        baseUnit,
+        ...validUnits.filter(u => u !== baseUnit),
+      ];
       const availableUnit = priorityOrder.find(
         unit => isUnitAvailable[unit] === true,
       );
 
       if (availableUnit) {
-        setSelectedUnit(availableUnit as 'box' | 'blister' | 'tablet');
+        setSelectedUnit(availableUnit);
       }
     }
-  }, [isUnitAvailable, selectedUnit]);
+  }, [isUnitAvailable, selectedUnit, medicine, validUnits]);
 
   // ✅ Get price based on selected unit từ units array trong medicine response
   const getUnitPrice = () => {
@@ -142,20 +144,10 @@ const MedicineDetailScreen: React.FC = () => {
   // ✅ Lấy base_unit từ medicine response
   const baseUnit = medicine?.base_unit || medicine?.unit || 'viên';
 
-  // ✅ Lấy multiplier của đơn vị đã chọn
-  const getUnitMultiplier = () => {
-    if (medicine?.units && Array.isArray(medicine.units)) {
-      const unitData = medicine.units.find((u: any) => u.unit === selectedUnit);
-      if (unitData?.multiplier) {
-        return unitData.multiplier;
-      }
-    }
-
-    // Fallback: giá trị mặc định nếu không tìm thấy
-    if (selectedUnit === 'box') return 100;
-    if (selectedUnit === 'blister') return 10;
-    return 1; // tablet
-  };
+  // ✅ Lấy multiplier của đơn vị đã chọn từ package_structure
+  const unitMultiplier = useMemo(() => {
+    return getUnitMultiplier(medicine || {}, selectedUnit);
+  }, [medicine, selectedUnit]);
 
   const handleAddMedicine = () => {
     if (!quantity || Number(quantity) <= 0) {
@@ -180,7 +172,6 @@ const MedicineDetailScreen: React.FC = () => {
     }
 
     // ✅ Kiểm tra số lượng tồn kho với đơn vị đã chọn
-    const unitMultiplier = getUnitMultiplier();
     const requestedQuantityInBaseUnit = Number(quantity) * unitMultiplier;
 
     // Nếu đã chọn batch (employee), kiểm tra số lượng của batch đó
@@ -189,12 +180,7 @@ const MedicineDetailScreen: React.FC = () => {
     const quantitySource = selectedBatch ? 'lô đã chọn' : 'tổng tồn kho';
 
     if (requestedQuantityInBaseUnit > availableQuantity) {
-      const unitName =
-        selectedUnit === 'box'
-          ? 'hộp'
-          : selectedUnit === 'blister'
-          ? 'vỉ'
-          : 'viên';
+      const unitName = getUnitDisplayName(selectedUnit).toLowerCase();
       const batchInfo = selectedBatch
         ? `\nLô: ${selectedBatch.batch_number}\n`
         : '';
@@ -332,26 +318,29 @@ const MedicineDetailScreen: React.FC = () => {
           </View>
         )}
 
-        {medicine.units &&
-          Array.isArray(medicine.units) &&
-          medicine.units.length > 0 && (
-            <View style={styles.infoRow}>
-              <Text style={styles.infoLabel}>Đơn vị bán:</Text>
-              <View style={styles.unitsInfoContainer}>
-                {medicine.units.map((unit: any, index: number) => (
+        {/* Hiển thị đơn vị bán từ package_structure */}
+        {validUnits.length > 0 && (
+          <View style={styles.infoRow}>
+            <Text style={styles.infoLabel}>Đơn vị bán:</Text>
+            <View style={styles.unitsInfoContainer}>
+              {validUnits.map((unit, index) => {
+                const unitPrice =
+                  medicine?.prices?.price_per_unit?.[unit] ||
+                  medicine?.prices?.unit_prices?.[unit] ||
+                  null;
+                const multiplier = getUnitMultiplier(medicine || {}, unit);
+                return (
                   <Text key={index} style={styles.unitsInfoText}>
-                    {unit.unit === 'box'
-                      ? 'Hộp'
-                      : unit.unit === 'blister'
-                      ? 'Vỉ'
-                      : 'Viên'}
-                    : {unit.multiplier} {baseUnit} ={' '}
-                    {Number(unit.price || 0).toLocaleString('vi-VN')}₫
+                    {getUnitDisplayName(unit)}: {multiplier} {baseUnit}
+                    {unitPrice
+                      ? ` = ${Number(unitPrice).toLocaleString('vi-VN')}₫`
+                      : ''}
                   </Text>
-                ))}
-              </View>
+                );
+              })}
             </View>
-          )}
+          </View>
+        )}
 
         {medicine.packaging && (
           <View style={styles.infoRow}>
@@ -393,26 +382,25 @@ const MedicineDetailScreen: React.FC = () => {
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Giá & Tồn kho</Text>
 
-        {/* Hiển thị giá theo từng đơn vị */}
-        {medicine.units &&
-        Array.isArray(medicine.units) &&
-        medicine.units.length > 0 ? (
-          medicine.units.map((unit: any, index: number) => (
-            <View key={index} style={styles.infoRow}>
-              <Text style={styles.infoLabel}>
-                Giá bán (
-                {unit.unit === 'box'
-                  ? 'Hộp'
-                  : unit.unit === 'blister'
-                  ? 'Vỉ'
-                  : 'Viên'}
-                ):
-              </Text>
-              <Text style={styles.priceValue}>
-                {Number(unit.price || 0).toLocaleString('vi-VN')}₫
-              </Text>
-            </View>
-          ))
+        {/* Hiển thị giá theo từng đơn vị từ package_structure */}
+        {validUnits.length > 0 ? (
+          validUnits.map((unit, index) => {
+            const unitPrice =
+              medicine?.prices?.price_per_unit?.[unit] ||
+              medicine?.prices?.unit_prices?.[unit] ||
+              null;
+            if (!unitPrice) return null;
+            return (
+              <View key={index} style={styles.infoRow}>
+                <Text style={styles.infoLabel}>
+                  Giá bán ({getUnitDisplayName(unit)}):
+                </Text>
+                <Text style={styles.priceValue}>
+                  {Number(unitPrice).toLocaleString('vi-VN')}₫
+                </Text>
+              </View>
+            );
+          })
         ) : (
           <View style={styles.infoRow}>
             <Text style={styles.infoLabel}>Giá bán lẻ:</Text>
@@ -602,139 +590,72 @@ const MedicineDetailScreen: React.FC = () => {
         <View style={styles.unitSelectionContainer}>
           <Text style={styles.label}>Đơn vị *</Text>
           <View style={styles.unitSelector}>
-            {/* Hiển thị các đơn vị từ units array trong medicine response */}
-            {medicine?.units &&
-            Array.isArray(medicine.units) &&
-            medicine.units.length > 0
-              ? medicine.units.map((unitData: any) => {
-                  const unit = unitData.unit as 'box' | 'blister' | 'tablet';
-                  const isAvailable = isUnitAvailable[unit] === true;
+            {/* Hiển thị các đơn vị từ package_structure */}
+            {validUnits.map(unit => {
+              const isAvailable = isUnitAvailable[unit] === true;
 
-                  // Chỉ hiển thị button nếu đơn vị có sẵn
-                  if (!isAvailable) {
-                    return null;
-                  }
+              // Chỉ hiển thị button nếu đơn vị có sẵn
+              if (!isAvailable) {
+                return null;
+              }
 
-                  return (
-                    <TouchableOpacity
-                      key={unit}
+              const unitPrice =
+                medicine?.prices?.price_per_unit?.[unit] ||
+                medicine?.prices?.unit_prices?.[unit] ||
+                null;
+              const multiplier = getUnitMultiplier(medicine || {}, unit);
+
+              return (
+                <TouchableOpacity
+                  key={unit}
+                  style={[
+                    styles.unitButton,
+                    selectedUnit === unit && styles.unitButtonActive,
+                  ]}
+                  onPress={() => setSelectedUnit(unit)}
+                >
+                  <Text
+                    style={[
+                      styles.unitButtonText,
+                      selectedUnit === unit && styles.unitButtonTextActive,
+                    ]}
+                  >
+                    {getUnitDisplayName(unit)}
+                  </Text>
+                  {unitPrice && (
+                    <Text
                       style={[
-                        styles.unitButton,
-                        selectedUnit === unit && styles.unitButtonActive,
+                        styles.unitPriceText,
+                        selectedUnit === unit && styles.unitPriceTextActive,
                       ]}
-                      onPress={() => setSelectedUnit(unit)}
                     >
-                      <Text
-                        style={[
-                          styles.unitButtonText,
-                          selectedUnit === unit && styles.unitButtonTextActive,
-                        ]}
-                      >
-                        {unit === 'box'
-                          ? 'Hộp'
-                          : unit === 'blister'
-                          ? 'Vỉ'
-                          : 'Viên'}
-                      </Text>
-                      {unitData.price && (
-                        <Text
-                          style={[
-                            styles.unitPriceText,
-                            selectedUnit === unit && styles.unitPriceTextActive,
-                          ]}
-                        >
-                          {Number(unitData.price).toLocaleString('vi-VN')}₫
-                        </Text>
-                      )}
-                      {unitData.multiplier && (
-                        <Text
-                          style={[
-                            styles.unitMultiplierText,
-                            selectedUnit === unit &&
-                              styles.unitMultiplierTextActive,
-                          ]}
-                        >
-                          ({unitData.multiplier} {baseUnit})
-                        </Text>
-                      )}
-                    </TouchableOpacity>
-                  );
-                })
-              : // Fallback: hiển thị các đơn vị mặc định
-                (['box', 'blister', 'tablet'] as const).map(unit => {
-                  const isAvailable = isUnitAvailable[unit] === true;
-
-                  // Chỉ hiển thị button nếu đơn vị có sẵn
-                  if (!isAvailable) {
-                    return null;
-                  }
-
-                  return (
-                    <TouchableOpacity
-                      key={unit}
+                      {Number(unitPrice).toLocaleString('vi-VN')}₫
+                    </Text>
+                  )}
+                  {multiplier > 1 && (
+                    <Text
                       style={[
-                        styles.unitButton,
-                        selectedUnit === unit && styles.unitButtonActive,
+                        styles.unitMultiplierText,
+                        selectedUnit === unit &&
+                          styles.unitMultiplierTextActive,
                       ]}
-                      onPress={() => setSelectedUnit(unit)}
                     >
-                      <Text
-                        style={[
-                          styles.unitButtonText,
-                          selectedUnit === unit && styles.unitButtonTextActive,
-                        ]}
-                      >
-                        {unit === 'box'
-                          ? 'Hộp'
-                          : unit === 'blister'
-                          ? 'Vỉ'
-                          : 'Viên'}
-                      </Text>
-                      {medicine?.prices?.price_per_unit?.[unit] && (
-                        <Text
-                          style={[
-                            styles.unitPriceText,
-                            selectedUnit === unit && styles.unitPriceTextActive,
-                          ]}
-                        >
-                          {Number(
-                            medicine.prices.price_per_unit[unit],
-                          ).toLocaleString('vi-VN')}
-                          ₫
-                        </Text>
-                      )}
-                    </TouchableOpacity>
-                  );
-                })}
+                      ({multiplier} {baseUnit})
+                    </Text>
+                  )}
+                </TouchableOpacity>
+              );
+            })}
           </View>
           {/* Hiển thị thông báo cho các đơn vị không đủ số lượng */}
           {(() => {
             const unavailableUnits: string[] = [];
 
-            if (
-              medicine?.units &&
-              Array.isArray(medicine.units) &&
-              medicine.units.length > 0
-            ) {
-              // Trường hợp có units array
-              medicine.units.forEach((unitData: any) => {
-                const unit = unitData.unit;
-                if (isUnitAvailable[unit] === false) {
-                  unavailableUnits.push(
-                    unit === 'box' ? 'Hộp' : unit === 'blister' ? 'Vỉ' : 'Viên',
-                  );
-                }
-              });
-            } else {
-              // Trường hợp fallback (không có units array)
-              (['box', 'blister', 'tablet'] as const).forEach(unit => {
-                if (isUnitAvailable[unit] === false) {
-                  unavailableUnits.push(
-                    unit === 'box' ? 'Hộp' : unit === 'blister' ? 'Vỉ' : 'Viên',
-                  );
-                }
-              });
-            }
+            validUnits.forEach(unit => {
+              if (isUnitAvailable[unit] === false) {
+                unavailableUnits.push(getUnitDisplayName(unit));
+              }
+            });
 
             if (unavailableUnits.length > 0) {
               return (
@@ -809,23 +730,13 @@ const MedicineDetailScreen: React.FC = () => {
               </TouchableOpacity>
             </View>
             <Text style={styles.quantityNote}>
-              {selectedUnit === 'box'
-                ? 'Hộp'
-                : selectedUnit === 'blister'
-                ? 'Vỉ'
-                : 'Viên'}
+              {getUnitDisplayName(selectedUnit)}
             </Text>
           </View>
 
           <View style={[styles.inputContainer, styles.priceInputContainer]}>
             <Text style={styles.label}>
-              Giá bán (₫/
-              {selectedUnit === 'box'
-                ? 'hộp'
-                : selectedUnit === 'blister'
-                ? 'vỉ'
-                : 'viên'}
-              )
+              Giá bán (₫/{getUnitDisplayName(selectedUnit).toLowerCase()})
             </Text>
             <Text style={styles.priceDisplay}>
               {Number(price).toLocaleString('vi-VN')}

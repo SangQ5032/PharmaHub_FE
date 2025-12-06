@@ -13,15 +13,34 @@ const formatPrice = (p?: number | null) => {
 };
 
 const getBasePrice = (medicine: Medicine) => {
-  if (!medicine.units || medicine.units.length === 0) return '-';
-  // Tìm unit có multiplier = 1 (base unit)
-  const baseUnit = medicine.units.find(u => u.multiplier === 1);
-  if (baseUnit) {
-    return formatPrice(baseUnit.price);
+  // Ưu tiên lấy từ prices object (cấu trúc mới)
+  if (medicine.prices) {
+    const basePrice = medicine.prices.base_unit_price;
+    if (basePrice && basePrice > 0) {
+      return formatPrice(basePrice);
+    }
+    // Fallback về price_per_unit.tablet
+    const tabletPrice = medicine.prices.price_per_unit?.tablet;
+    if (tabletPrice && tabletPrice > 0) {
+      return formatPrice(tabletPrice);
+    }
   }
-  // Nếu không có, lấy giá nhỏ nhất
-  const minPrice = Math.min(...medicine.units.map(u => u.price));
-  return formatPrice(minPrice);
+
+  // Fallback về units array (legacy support)
+  if (
+    medicine.units &&
+    Array.isArray(medicine.units) &&
+    medicine.units.length > 0
+  ) {
+    const baseUnit = medicine.units.find(u => u.multiplier === 1);
+    if (baseUnit) {
+      return formatPrice(baseUnit.price);
+    }
+    const minPrice = Math.min(...medicine.units.map(u => u.price));
+    return formatPrice(minPrice);
+  }
+
+  return '-';
 };
 
 interface MedicineItemReadOnlyProps {

@@ -80,6 +80,9 @@ export async function fetchMedicines(
 
 // Lấy chi tiết thuốc
 export async function fetchMedicineDetail(id: string): Promise<Medicine> {
+  if (!id) {
+    throw new Error('Medicine ID is required');
+  }
   const url = `/medicines/${id}`;
   try {
     console.log('[medicineService] GET', url);
@@ -148,6 +151,9 @@ export async function fetchMedicineInventoryAllBranches(
   medicineId: string,
   sortBy: 'branch_name' | 'total_quantity' | 'low_quantity' = 'branch_name',
 ): Promise<InventoryAllBranches> {
+  if (!medicineId) {
+    throw new Error('Medicine ID is required');
+  }
   const url = `/medicines/${medicineId}/inventory-all-branches`;
   try {
     console.log('[medicineService] GET', url, 'sortBy:', sortBy);

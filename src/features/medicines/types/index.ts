@@ -4,34 +4,48 @@ export type Category = {
   description: string;
 };
 
-export type Unit = {
-  unit: string;
-  multiplier: number;
-  price: number;
+// PackageStructure linh hoạt - hỗ trợ bất kỳ đơn vị nào
+export type PackageStructure = {
+  [key: string]: {
+    contains: number;
+    child: string | null;
+  };
+};
+
+// MedicinePrices linh hoạt - hỗ trợ bất kỳ đơn vị nào
+export type MedicinePrices = {
+  base_unit_price: number;
+  price_per_unit: {
+    [key: string]: number | null | undefined;
+  };
+  unit_prices?: {
+    [key: string]: number | null | undefined;
+  };
 };
 
 export type Medicine = {
   _id: string;
   name: string;
-  generic_name: string;
-  brand_name: string;
-  dosage_form: string;
-  strength: string;
+  generic_name?: string;
+  brand_name?: string;
+  dosage_form?: string;
+  strength?: string;
   base_unit: string;
-  packaging: string;
+  packaging?: string;
   category_id: Category | null;
   prescription_required: boolean;
   is_controlled: boolean;
-  units: Unit[];
-  manufacturer: string;
-  country_of_origin: string;
-  indications: string;
-  contraindications: string;
-  side_effects: string;
-  usage_instructions: string;
-  storage_conditions: string;
-  registration_number: string;
-  barcode: string;
+  package_structure?: PackageStructure;
+  prices?: MedicinePrices;
+  manufacturer?: string;
+  country_of_origin?: string;
+  indications?: string;
+  contraindications?: string;
+  side_effects?: string;
+  usage_instructions?: string;
+  storage_conditions?: string;
+  registration_number?: string;
+  barcode?: string;
   alert_threshold: number;
   status: 'active' | 'inactive';
   createdAt: string;

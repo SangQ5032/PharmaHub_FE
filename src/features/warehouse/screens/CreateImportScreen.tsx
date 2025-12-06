@@ -18,11 +18,15 @@ import { MedicineSearchModal } from '@features/warehouse/components/MedicineSear
 import { Medicine } from '@features/warehouse/types/medicine.types';
 import { Supplier } from '@features/warehouse/types/supplier.types';
 import { useAuthStore } from '@features/auth';
+import {
+  getValidUnits,
+  getUnitDisplayName,
+} from '../../../utils/medicineUnits';
 
 interface ImportItem {
   medicine: Medicine;
   quantity: number;
-  unit: 'box' | 'blister' | 'tablet';
+  unit: string; // Linh hoạt với bất kỳ đơn vị nào từ package_structure
   unit_price: number;
   batch_number: string;
   expiry_date: string;
@@ -58,13 +62,17 @@ export default function CreateImportScreen() {
       return;
     }
 
+    // Lấy đơn vị mặc định từ base_unit của thuốc
+    const validUnits = getValidUnits(medicine);
+    const defaultUnit = medicine.base_unit || validUnits[0] || 'tablet';
+
     // Add new item with default values
     setItems([
       ...items,
       {
         medicine,
         quantity: 1,
-        unit: 'tablet', // Default to tablet (base unit)
+        unit: defaultUnit,
         unit_price: medicine.retail_price || 0,
         batch_number: '',
         expiry_date: '',
@@ -117,10 +125,7 @@ export default function CreateImportScreen() {
   };
 
   // Handle update unit
-  const handleUpdateUnit = (
-    medicineId: string,
-    unit: 'box' | 'blister' | 'tablet',
-  ) => {
+  const handleUpdateUnit = (medicineId: string, unit: string) => {
     setItems(
       items.map(item =>
         item.medicine._id === medicineId ? { ...item, unit } : item,
@@ -322,31 +327,32 @@ export default function CreateImportScreen() {
                   <View style={styles.inputGroup}>
                     <Text style={styles.inputLabel}>Đơn vị *</Text>
                     <View style={styles.unitSelector}>
-                      {(['box', 'blister', 'tablet'] as const).map(unit => (
-                        <TouchableOpacity
-                          key={unit}
-                          style={[
-                            styles.unitButton,
-                            item.unit === unit && styles.unitButtonActive,
-                          ]}
-                          onPress={() =>
-                            handleUpdateUnit(item.medicine._id, unit)
-                          }
-                        >
-                          <Text
+                      {(() => {
+                        // Lấy danh sách đơn vị hợp lệ từ medicine (đã loại bỏ trùng lặp)
+                        const validUnits = getValidUnits(item.medicine);
+                        return validUnits.map(unit => (
+                          <TouchableOpacity
+                            key={`${item.medicine._id}-${unit}`}
                             style={[
-                              styles.unitButtonText,
-                              item.unit === unit && styles.unitButtonTextActive,
+                              styles.unitButton,
+                              item.unit === unit && styles.unitButtonActive,
                             ]}
+                            onPress={() =>
+                              handleUpdateUnit(item.medicine._id, unit)
+                            }
                           >
-                            {unit === 'box'
-                              ? 'Hộp'
-                              : unit === 'blister'
-                              ? 'Vỉ'
-                              : 'Viên'}
-                          </Text>
-                        </TouchableOpacity>
-                      ))}
+                            <Text
+                              style={[
+                                styles.unitButtonText,
+                                item.unit === unit &&
+                                  styles.unitButtonTextActive,
+                              ]}
+                            >
+                              {getUnitDisplayName(unit)}
+                            </Text>
+                          </TouchableOpacity>
+                        ));
+                      })()}
                     </View>
                   </View>
 
@@ -369,13 +375,7 @@ export default function CreateImportScreen() {
                 <View style={styles.medicineInputs}>
                   <View style={styles.inputGroup}>
                     <Text style={styles.inputLabel}>
-                      Đơn giá (
-                      {item.unit === 'box'
-                        ? 'hộp'
-                        : item.unit === 'blister'
-                        ? 'vỉ'
-                        : 'viên'}
-                      )
+                      Đơn giá ({getUnitDisplayName(item.unit).toLowerCase()})
                     </Text>
                     <TextInput
                       style={styles.input}

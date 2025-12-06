@@ -19,6 +19,9 @@ const AddCategoryScreen: React.FC = () => {
     useRoute<RouteProp<MainStackParamList, typeof ROUTES.ADD_CATEGORY>>();
   const mode = (route.params as any)?.mode as 'edit' | undefined;
   const editingItem = (route.params as any)?.item;
+  const fromAddMedicine = (route.params as any)?.fromAddMedicine as
+    | boolean
+    | undefined;
 
   const [initialValues, setInitialValues] = useState<
     CategoryFormValues | undefined
@@ -42,7 +45,16 @@ const AddCategoryScreen: React.FC = () => {
       } else {
         await createCategory(values);
       }
-      navigation.goBack();
+
+      // If coming from AddMedicine screen, navigate back and reset stack
+      if (fromAddMedicine) {
+        navigation.reset({
+          index: 0,
+          routes: [{ name: ROUTES.ADD_MEDICINE }],
+        });
+      } else {
+        navigation.goBack();
+      }
     } catch (e: any) {
       const status = e?.response?.status;
       const serverMsg = e?.response?.data?.message || e?.response?.data?.error;

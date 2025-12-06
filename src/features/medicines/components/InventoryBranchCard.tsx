@@ -24,7 +24,8 @@ const formatDate = (dateString: string) => {
   }
 };
 
-const formatPrice = (price: number) => {
+const formatPrice = (price?: number | null) => {
+  if (price == null) return '-';
   return price.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.');
 };
 

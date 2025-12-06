@@ -64,7 +64,7 @@ const MedicineDetailScreen: React.FC = () => {
 
   // Get item from route params (fallback for offline viewing)
   const itemFromParams: Medicine | any = (route.params as any)?.item ?? {};
-  const medicineId = itemFromParams._id;
+  const medicineId = itemFromParams?._id;
 
   // Use hook to fetch fresh data from API
   const { medicine, loading, error, refresh } = useMedicineDetail(medicineId);
@@ -80,7 +80,7 @@ const MedicineDetailScreen: React.FC = () => {
     sortBy,
     setSortBy,
     refresh: refreshInventory,
-  } = useMedicineInventory(medicineId);
+  } = useMedicineInventory(medicineId || '');
 
   const [activeTab, setActiveTab] = useState<'info' | 'inventory'>('info');
 
@@ -174,8 +174,25 @@ const MedicineDetailScreen: React.FC = () => {
                 <Row label="Tên thương mại" value={item.brand_name} />
                 <Row label="Dạng liều" value={item.dosage_form} />
                 <Row label="Hàm lượng" value={item.strength} />
-                <Row label="Đơn vị" value={item.unit} />
+                <Row label="Đơn vị cơ sở" value={item.base_unit || item.unit} />
                 <Row label="Đóng gói" value={item.packaging} />
+                {item.package_structure && (
+                  <View style={styles.textRow}>
+                    <Text style={styles.textLabel}>Cấu trúc đóng gói:</Text>
+                    <Text style={styles.textValue}>
+                      {item.package_structure.box?.contains
+                        ? `1 hộp = ${item.package_structure.box.contains} ${
+                            item.package_structure.box.child || 'vỉ'
+                          }`
+                        : ''}
+                      {item.package_structure.blister?.contains
+                        ? `\n1 vỉ = ${
+                            item.package_structure.blister.contains
+                          } ${item.package_structure.blister.child || 'viên'}`
+                        : ''}
+                    </Text>
+                  </View>
+                )}
               </View>
 
               {/* Phân loại */}
@@ -193,7 +210,45 @@ const MedicineDetailScreen: React.FC = () => {
               {/* Giá cả */}
               <View style={styles.card}>
                 <SectionTitle title="Giá cả" />
-                {item.units && item.units.length > 0 ? (
+                {item.prices ? (
+                  <>
+                    {item.prices.base_unit_price > 0 && (
+                      <Row
+                        label={`Giá đơn vị cơ sở (${
+                          item.base_unit || 'tablet'
+                        })`}
+                        value={`${formatPrice(item.prices.base_unit_price)} đ`}
+                      />
+                    )}
+                    {item.prices.price_per_unit?.tablet && (
+                      <Row
+                        label="Giá mỗi viên"
+                        value={`${formatPrice(
+                          item.prices.price_per_unit.tablet,
+                        )} đ`}
+                      />
+                    )}
+                    {item.prices.price_per_unit?.blister &&
+                      item.package_structure?.blister && (
+                        <Row
+                          label={`Giá mỗi vỉ (${item.package_structure.blister.contains} viên)`}
+                          value={`${formatPrice(
+                            item.prices.price_per_unit.blister,
+                          )} đ`}
+                        />
+                      )}
+                    {item.prices.price_per_unit?.box &&
+                      item.package_structure?.box && (
+                        <Row
+                          label={`Giá mỗi hộp (${item.package_structure.box.contains} vỉ)`}
+                          value={`${formatPrice(
+                            item.prices.price_per_unit.box,
+                          )} đ`}
+                        />
+                      )}
+                  </>
+                ) : item.units && item.units.length > 0 ? (
+                  // Fallback về units array (legacy support)
                   item.units.map((unit: any, index: number) => (
                     <Row
                       key={index}

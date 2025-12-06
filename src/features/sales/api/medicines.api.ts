@@ -14,6 +14,25 @@ export type Batch = {
   createdAt: string;
 };
 
+// PackageStructure linh hoạt - hỗ trợ bất kỳ đơn vị nào
+export type PackageStructure = {
+  [key: string]: {
+    contains: number;
+    child: string | null;
+  };
+};
+
+// MedicinePrices linh hoạt - hỗ trợ bất kỳ đơn vị nào
+export type MedicinePrices = {
+  base_unit_price: number;
+  price_per_unit: {
+    [key: string]: number | null | undefined;
+  };
+  unit_prices?: {
+    [key: string]: number | null | undefined;
+  };
+};
+
 export type Medicine = {
   _id: string;
   name: string;
@@ -21,12 +40,15 @@ export type Medicine = {
   brand_name?: string;
   dosage_form?: string;
   strength?: string;
+  base_unit?: string;
   unit?: string;
   packaging?: string;
   category_name?: string;
   category_id?: string;
   prescription_required?: boolean;
   is_controlled?: boolean;
+  package_structure?: PackageStructure;
+  prices?: MedicinePrices;
   retail_price?: number;
   minimum_price?: number;
   max_price?: number;
@@ -52,6 +74,12 @@ export type Medicine = {
   side_effects?: string;
   usage_instructions?: string;
   storage_conditions?: string;
+  // Legacy field for backward compatibility - sẽ được chuyển đổi từ prices
+  units?: Array<{
+    unit: string;
+    multiplier: number;
+    price: number;
+  }>;
 };
 
 export type MedicineWithBatches = {
