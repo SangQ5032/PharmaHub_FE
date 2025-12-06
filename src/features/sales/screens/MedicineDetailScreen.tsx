@@ -73,6 +73,45 @@ const MedicineDetailScreen: React.FC = () => {
   const totalQuantity =
     totalQuantityFromBatches || medicine?.total_quantity || 0;
 
+  // ✅ Kiểm tra đơn vị nào có thể chọn được dựa trên số lượng tồn kho
+  const isUnitAvailable = useMemo(() => {
+    if (!medicine?.units || !Array.isArray(medicine.units)) {
+      // Fallback: nếu không có units array, cho phép tất cả
+      return {
+        box: totalQuantity >= 100,
+        blister: totalQuantity >= 10,
+        tablet: totalQuantity > 0,
+      };
+    }
+
+    const availability: Record<string, boolean> = {};
+
+    medicine.units.forEach((unitData: any) => {
+      const unit = unitData.unit;
+      const multiplier = unitData.multiplier || 1;
+
+      // Kiểm tra xem có đủ số lượng để bán ít nhất 1 đơn vị
+      availability[unit] = totalQuantity >= multiplier;
+    });
+
+    return availability;
+  }, [medicine?.units, totalQuantity]);
+
+  // ✅ Tự động chuyển đơn vị nếu đơn vị hiện tại không còn đủ số lượng
+  React.useEffect(() => {
+    if (selectedUnit && isUnitAvailable[selectedUnit] === false) {
+      // Tìm đơn vị có sẵn đầu tiên (ưu tiên: tablet > blister > box)
+      const priorityOrder = ['tablet', 'blister', 'box'];
+      const availableUnit = priorityOrder.find(
+        unit => isUnitAvailable[unit] === true,
+      );
+
+      if (availableUnit) {
+        setSelectedUnit(availableUnit as 'box' | 'blister' | 'tablet');
+      }
+    }
+  }, [isUnitAvailable, selectedUnit]);
+
   // ✅ Get price based on selected unit từ units array trong medicine response
   const getUnitPrice = () => {
     // Ưu tiên lấy từ units array trong medicine response
@@ -103,6 +142,21 @@ const MedicineDetailScreen: React.FC = () => {
   // ✅ Lấy base_unit từ medicine response
   const baseUnit = medicine?.base_unit || medicine?.unit || 'viên';
 
+  // ✅ Lấy multiplier của đơn vị đã chọn
+  const getUnitMultiplier = () => {
+    if (medicine?.units && Array.isArray(medicine.units)) {
+      const unitData = medicine.units.find((u: any) => u.unit === selectedUnit);
+      if (unitData?.multiplier) {
+        return unitData.multiplier;
+      }
+    }
+
+    // Fallback: giá trị mặc định nếu không tìm thấy
+    if (selectedUnit === 'box') return 100;
+    if (selectedUnit === 'blister') return 10;
+    return 1; // tablet
+  };
+
   const handleAddMedicine = () => {
     if (!quantity || Number(quantity) <= 0) {
       Alert.alert('Lỗi', 'Số lượng không hợp lệ');
@@ -123,6 +177,42 @@ const MedicineDetailScreen: React.FC = () => {
         );
         return;
       }
+    }
+
+    // ✅ Kiểm tra số lượng tồn kho với đơn vị đã chọn
+    const unitMultiplier = getUnitMultiplier();
+    const requestedQuantityInBaseUnit = Number(quantity) * unitMultiplier;
+
+    // Nếu đã chọn batch (employee), kiểm tra số lượng của batch đó
+    // Nếu không, kiểm tra tổng tồn kho
+    const availableQuantity = selectedBatch?.quantity || totalQuantity;
+    const quantitySource = selectedBatch ? 'lô đã chọn' : 'tổng tồn kho';
+
+    if (requestedQuantityInBaseUnit > availableQuantity) {
+      const unitName =
+        selectedUnit === 'box'
+          ? 'hộp'
+          : selectedUnit === 'blister'
+          ? 'vỉ'
+          : 'viên';
+      const batchInfo = selectedBatch
+        ? `\nLô: ${selectedBatch.batch_number}\n`
+        : '';
+      Alert.alert(
+        'Lỗi',
+        `Số lượng tồn kho không đủ!\n\n` +
+          `Bạn muốn mua: ${Number(
+            quantity,
+          )} ${unitName} (${requestedQuantityInBaseUnit} ${baseUnit})` +
+          batchInfo +
+          `${
+            quantitySource.charAt(0).toUpperCase() + quantitySource.slice(1)
+          }: ${availableQuantity} ${baseUnit}\n` +
+          `Thiếu: ${
+            requestedQuantityInBaseUnit - availableQuantity
+          } ${baseUnit}`,
+      );
+      return;
     }
 
     // ✅ Gọi callback TRƯỚC Alert để callback execute (navigate về CreateInvoice)
@@ -518,6 +608,13 @@ const MedicineDetailScreen: React.FC = () => {
             medicine.units.length > 0
               ? medicine.units.map((unitData: any) => {
                   const unit = unitData.unit as 'box' | 'blister' | 'tablet';
+                  const isAvailable = isUnitAvailable[unit] === true;
+
+                  // Chỉ hiển thị button nếu đơn vị có sẵn
+                  if (!isAvailable) {
+                    return null;
+                  }
+
                   return (
                     <TouchableOpacity
                       key={unit}
@@ -564,43 +661,90 @@ const MedicineDetailScreen: React.FC = () => {
                   );
                 })
               : // Fallback: hiển thị các đơn vị mặc định
-                (['box', 'blister', 'tablet'] as const).map(unit => (
-                  <TouchableOpacity
-                    key={unit}
-                    style={[
-                      styles.unitButton,
-                      selectedUnit === unit && styles.unitButtonActive,
-                    ]}
-                    onPress={() => setSelectedUnit(unit)}
-                  >
-                    <Text
+                (['box', 'blister', 'tablet'] as const).map(unit => {
+                  const isAvailable = isUnitAvailable[unit] === true;
+
+                  // Chỉ hiển thị button nếu đơn vị có sẵn
+                  if (!isAvailable) {
+                    return null;
+                  }
+
+                  return (
+                    <TouchableOpacity
+                      key={unit}
                       style={[
-                        styles.unitButtonText,
-                        selectedUnit === unit && styles.unitButtonTextActive,
+                        styles.unitButton,
+                        selectedUnit === unit && styles.unitButtonActive,
                       ]}
+                      onPress={() => setSelectedUnit(unit)}
                     >
-                      {unit === 'box'
-                        ? 'Hộp'
-                        : unit === 'blister'
-                        ? 'Vỉ'
-                        : 'Viên'}
-                    </Text>
-                    {medicine?.prices?.price_per_unit?.[unit] && (
                       <Text
                         style={[
-                          styles.unitPriceText,
-                          selectedUnit === unit && styles.unitPriceTextActive,
+                          styles.unitButtonText,
+                          selectedUnit === unit && styles.unitButtonTextActive,
                         ]}
                       >
-                        {Number(
-                          medicine.prices.price_per_unit[unit],
-                        ).toLocaleString('vi-VN')}
-                        ₫
+                        {unit === 'box'
+                          ? 'Hộp'
+                          : unit === 'blister'
+                          ? 'Vỉ'
+                          : 'Viên'}
                       </Text>
-                    )}
-                  </TouchableOpacity>
-                ))}
+                      {medicine?.prices?.price_per_unit?.[unit] && (
+                        <Text
+                          style={[
+                            styles.unitPriceText,
+                            selectedUnit === unit && styles.unitPriceTextActive,
+                          ]}
+                        >
+                          {Number(
+                            medicine.prices.price_per_unit[unit],
+                          ).toLocaleString('vi-VN')}
+                          ₫
+                        </Text>
+                      )}
+                    </TouchableOpacity>
+                  );
+                })}
           </View>
+          {/* Hiển thị thông báo cho các đơn vị không đủ số lượng */}
+          {(() => {
+            const unavailableUnits: string[] = [];
+
+            if (
+              medicine?.units &&
+              Array.isArray(medicine.units) &&
+              medicine.units.length > 0
+            ) {
+              // Trường hợp có units array
+              medicine.units.forEach((unitData: any) => {
+                const unit = unitData.unit;
+                if (isUnitAvailable[unit] === false) {
+                  unavailableUnits.push(
+                    unit === 'box' ? 'Hộp' : unit === 'blister' ? 'Vỉ' : 'Viên',
+                  );
+                }
+              });
+            } else {
+              // Trường hợp fallback (không có units array)
+              (['box', 'blister', 'tablet'] as const).forEach(unit => {
+                if (isUnitAvailable[unit] === false) {
+                  unavailableUnits.push(
+                    unit === 'box' ? 'Hộp' : unit === 'blister' ? 'Vỉ' : 'Viên',
+                  );
+                }
+              });
+            }
+
+            if (unavailableUnits.length > 0) {
+              return (
+                <Text style={styles.unavailableUnitText}>
+                  ⚠️ {unavailableUnits.join(', ')}: Số lượng không đủ
+                </Text>
+              );
+            }
+            return null;
+          })()}
         </View>
 
         {/* Batch Selection - Chỉ hiển thị cho employee role */}
@@ -1213,6 +1357,12 @@ const styles = StyleSheet.create({
     color: '#FFF',
     fontSize: 14,
     fontWeight: '600',
+  },
+  unavailableUnitText: {
+    fontSize: 12,
+    color: '#DC3545',
+    marginTop: 8,
+    fontStyle: 'italic',
   },
 });
 

@@ -2,22 +2,20 @@ import { useQuery, useMutation } from '@tanstack/react-query';
 import {
   getCustomers,
   getCustomerById,
+  getCustomerInvoices,
   createCustomer,
   CreateCustomerRequest,
+  GetCustomersResponse,
+  GetCustomerByIdResponse,
+  GetCustomerInvoicesResponse,
 } from '../api/customers.api';
 
-// export const useGetCustomers = (page: number = 1, limit: number = 20, q?: string) => {
-//   return useQuery({
-//     queryKey: ['customers', page, limit, q],
-//     queryFn: () => getCustomers(page, limit, q),
-//   });
-// };
 export const useGetCustomers = (
   page: number = 1,
   limit: number = 20,
   q?: string,
 ) => {
-  return useQuery({
+  return useQuery<GetCustomersResponse>({
     queryKey: [
       'customers',
       page,
@@ -29,10 +27,22 @@ export const useGetCustomers = (
 };
 
 export const useGetCustomerById = (id: string) => {
-  return useQuery({
+  return useQuery<GetCustomerByIdResponse>({
     queryKey: ['customer', id],
     queryFn: () => getCustomerById(id),
     enabled: !!id,
+  });
+};
+
+export const useGetCustomerInvoices = (
+  customerId: string,
+  page: number = 1,
+  limit: number = 20,
+) => {
+  return useQuery<GetCustomerInvoicesResponse>({
+    queryKey: ['customerInvoices', customerId, page, limit],
+    queryFn: () => getCustomerInvoices(customerId, page, limit),
+    enabled: !!customerId,
   });
 };
 

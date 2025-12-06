@@ -50,6 +50,8 @@ export const ROUTES = {
   INVOICE_DETAIL: 'InvoiceDetail',
   INVOICE_LIST: 'InvoiceList',
   BRANCH_INVOICE_HISTORY: 'BranchInvoiceHistory',
+  CUSTOMER_LIST: 'CustomerList',
+  CUSTOMER_DETAIL: 'CustomerDetail',
   // Categories routes
   CATEGORIES: 'Categories',
   ADD_CATEGORY: 'AddCategory',
