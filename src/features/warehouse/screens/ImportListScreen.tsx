@@ -9,17 +9,14 @@ import {
   ActivityIndicator,
   RefreshControl,
   TouchableOpacity,
-  Alert,
   ScrollView,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
-import {
-  useGetImports,
-  useCancelImport,
-} from '@features/warehouse/hooks/useImports';
+import { useGetImportsByBranch } from '@features/warehouse/hooks/useImports';
 import { ImportCard } from '@features/warehouse/components/ImportCard';
 import { ImportRecord } from '@features/warehouse/types/import.types';
 import { ROUTES } from '@shared/constants/routes';
+import { useAuthStore } from '@features/auth/stores/useAuthStore';
 
 export default function ImportListScreen() {
   const navigation = useNavigation<any>();
@@ -29,16 +26,20 @@ export default function ImportListScreen() {
     'all' | 'pending' | 'completed' | 'cancelled'
   >('all');
 
-  // Fetch danh sách phiếu nhập
+  // Lấy thông tin user và branch_id
+  const user = useAuthStore(state => state.user);
+  const branchId = user?.branch_id || user?.branchId;
+
+  // Fetch danh sách phiếu nhập theo chi nhánh
   const queryParams = {
     page,
     limit: 20,
     ...(statusFilter !== 'all' && { status: statusFilter as any }),
   };
-  const { data, isLoading, error, refetch } = useGetImports(queryParams);
-
-  // Cancel import mutation
-  const cancelImportMutation = useCancelImport();
+  const { data, isLoading, error, refetch } = useGetImportsByBranch(
+    branchId || '',
+    queryParams,
+  );
 
   // Handle refresh
   const onRefresh = async () => {
@@ -53,46 +54,6 @@ export default function ImportListScreen() {
     navigation.navigate(ROUTES.IMPORT_DETAIL || 'ImportDetail', {
       id: importRecord._id,
     });
-  };
-
-  // Handle cancel import
-  const handleCancelImport = (importRecord: ImportRecord) => {
-    if (importRecord.status === 'cancelled') {
-      Alert.alert('Thông báo', 'Phiếu nhập này đã bị hủy');
-      return;
-    }
-
-    Alert.prompt(
-      'Hủy phiếu nhập',
-      'Vui lòng nhập lý do hủy phiếu nhập',
-      [
-        {
-          text: 'Hủy',
-          onPress: () => {},
-          style: 'cancel',
-        },
-        {
-          text: 'Xác nhận',
-          onPress: async (reason: string | undefined) => {
-            if (!reason || !reason.trim()) {
-              Alert.alert('Lỗi', 'Lý do hủy không được để trống');
-              return;
-            }
-
-            try {
-              await cancelImportMutation.mutateAsync({
-                id: importRecord._id,
-                body: { reason: reason.trim() },
-              });
-              Alert.alert('Thành công', 'Hủy phiếu nhập thành công');
-            } catch (err: any) {
-              Alert.alert('Lỗi', err.message || 'Không thể hủy phiếu nhập');
-            }
-          },
-        },
-      ],
-      'plain-text',
-    );
   };
 
   // Handle create new import
@@ -144,17 +105,6 @@ export default function ImportListScreen() {
   const renderItem = ({ item }: { item: ImportRecord }) => (
     <View style={styles.itemContainer}>
       <ImportCard import={item} onPress={() => handlePressCard(item)} />
-      {item.status !== 'cancelled' && (
-        <TouchableOpacity
-          style={styles.cancelButton}
-          onPress={() => handleCancelImport(item)}
-          disabled={cancelImportMutation.isPending}
-        >
-          <Text style={styles.cancelButtonText}>
-            {cancelImportMutation.isPending ? 'Đang xử lý...' : 'Hủy phiếu'}
-          </Text>
-        </TouchableOpacity>
-      )}
     </View>
   );
 
@@ -171,7 +121,17 @@ export default function ImportListScreen() {
     </View>
   );
 
-  // Render error
+  // Render error hoặc khi không có branchId
+  if (!branchId) {
+    return (
+      <View style={styles.centerContainer}>
+        <Text style={styles.errorText}>
+          Không tìm thấy thông tin chi nhánh. Vui lòng đăng nhập lại.
+        </Text>
+      </View>
+    );
+  }
+
   if (error) {
     return (
       <View style={styles.centerContainer}>
@@ -296,19 +256,6 @@ const styles = StyleSheet.create({
   itemContainer: {
     marginHorizontal: 12,
     marginVertical: 4,
-  },
-  cancelButton: {
-    backgroundColor: '#F44336',
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    borderRadius: 6,
-    marginTop: 8,
-    alignItems: 'center',
-  },
-  cancelButtonText: {
-    color: '#FFFFFF',
-    fontSize: 14,
-    fontWeight: '600',
   },
   centerContainer: {
     flex: 1,

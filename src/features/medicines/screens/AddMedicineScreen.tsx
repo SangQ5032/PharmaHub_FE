@@ -214,11 +214,49 @@ const AddMedicineScreen: React.FC = () => {
 
   const handleUnitMultiplierChange = (index: number, multiplier: string) => {
     const updated = [...units];
-    updated[index] = { ...updated[index], multiplier: Number(multiplier) || 1 };
+    // Cho phép nhập số bất kỳ > 0
+    // Lọc chỉ lấy số từ input để tránh ký tự không hợp lệ
+    const trimmed = multiplier.trim();
+
+    if (trimmed === '') {
+      // Khi xóa hết, cho phép rỗng tạm thời (không reset về 1 ngay)
+      // Sẽ validate khi blur
+      updated[index] = { ...updated[index], multiplier: 0 }; // Dùng 0 làm flag cho empty
+    } else {
+      // Lọc chỉ lấy số (bao gồm số thập phân)
+      const numericOnly = trimmed.replace(/[^\d.]/g, '');
+      if (numericOnly === '') {
+        // Không còn số nào, cho phép rỗng tạm thời
+        updated[index] = { ...updated[index], multiplier: 0 };
+      } else {
+        const parsed = Number(numericOnly);
+        // Cho phép nhập số bất kỳ > 0
+        if (!isNaN(parsed) && parsed > 0) {
+          updated[index] = { ...updated[index], multiplier: parsed };
+        } else {
+          // Nếu <= 0, giữ giá trị cũ
+          return;
+        }
+      }
+    }
+
     setUnits(updated);
     // Tự động tạo lại package_structure nếu bật auto
     if (autoGenerateStructure) {
       generatePackageStructure(updated);
+    }
+  };
+
+  // Validate và set giá trị mặc định khi blur
+  const handleUnitMultiplierBlur = (index: number) => {
+    const updated = [...units];
+    if (updated[index].multiplier === 0 || updated[index].multiplier <= 0) {
+      // Nếu rỗng hoặc <= 0, set về 1
+      updated[index] = { ...updated[index], multiplier: 1 };
+      setUnits(updated);
+      if (autoGenerateStructure) {
+        generatePackageStructure(updated);
+      }
     }
   };
 
@@ -229,8 +267,15 @@ const AddMedicineScreen: React.FC = () => {
       return;
     }
 
+    // Lọc bỏ các unit có multiplier <= 0 (đang nhập)
+    const validUnits = unitsArray.filter(u => u.multiplier > 0);
+    if (validUnits.length === 0) {
+      setPackageStructure(null);
+      return;
+    }
+
     // Sắp xếp units theo multiplier (từ nhỏ đến lớn)
-    const sortedUnits = [...unitsArray].sort(
+    const sortedUnits = [...validUnits].sort(
       (a, b) => a.multiplier - b.multiplier,
     );
 
@@ -520,10 +565,11 @@ const AddMedicineScreen: React.FC = () => {
                   </Text>
                   <TextInput
                     style={styles.unitInput}
-                    value={String(unit.multiplier)}
+                    value={unit.multiplier > 0 ? String(unit.multiplier) : ''}
                     onChangeText={text =>
                       handleUnitMultiplierChange(index, text)
                     }
+                    onBlur={() => handleUnitMultiplierBlur(index)}
                     keyboardType="numeric"
                     placeholder="VD: 1, 10, 100"
                   />

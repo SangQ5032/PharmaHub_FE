@@ -53,6 +53,51 @@ export default function CreateImportScreen() {
   // Create import mutation
   const createImportMutation = useCreateImport();
 
+  // Hàm tự động sinh mã lô hàng
+  const generateBatchNumber = (
+    medicineName: string,
+    branchId?: string,
+  ): string => {
+    // Lấy tên thuốc: loại bỏ dấu, viết hoa, lấy 10 ký tự đầu
+    const removeVietnameseTones = (str: string): string => {
+      return str
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .replace(/đ/g, 'd')
+        .replace(/Đ/g, 'D')
+        .toUpperCase()
+        .replace(/[^A-Z0-9]/g, '');
+    };
+
+    const medicineCode =
+      removeVietnameseTones(medicineName).substring(0, 10) || 'MED';
+
+    // Lấy thời gian hiện tại: YYYYMMDDHHmm
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const day = String(now.getDate()).padStart(2, '0');
+    const hour = String(now.getHours()).padStart(2, '0');
+    const minute = String(now.getMinutes()).padStart(2, '0');
+    const timeCode = `${year}${month}${day}${hour}${minute}`;
+
+    // Lấy mã chi nhánh: lấy 4 ký tự cuối của branch_id hoặc "BR01"
+    let branchCode = 'BR01';
+    if (branchId) {
+      const branchIdStr = String(branchId);
+      if (branchIdStr.length >= 4) {
+        branchCode = branchIdStr
+          .substring(branchIdStr.length - 4)
+          .toUpperCase();
+      } else {
+        branchCode = branchIdStr.toUpperCase().padStart(4, '0');
+      }
+    }
+
+    // Format: TENTHUOC-YYYYMMDDHHmm-BRANCH
+    return `${medicineCode}-${timeCode}-${branchCode}`;
+  };
+
   // Handle add medicine
   const handleAddMedicine = (medicine: Medicine) => {
     // Check if medicine already exists
@@ -66,6 +111,9 @@ export default function CreateImportScreen() {
     const validUnits = getValidUnits(medicine);
     const defaultUnit = medicine.base_unit || validUnits[0] || 'tablet';
 
+    // Tự động sinh mã lô hàng
+    const autoBatchNumber = generateBatchNumber(medicine.name, user.branch_id);
+
     // Add new item with default values
     setItems([
       ...items,
@@ -74,7 +122,7 @@ export default function CreateImportScreen() {
         quantity: 1,
         unit: defaultUnit,
         unit_price: medicine.retail_price || 0,
-        batch_number: '',
+        batch_number: autoBatchNumber,
         expiry_date: '',
       },
     ]);

@@ -199,7 +199,35 @@ export const branchStatisticsApi = {
       `/statistics/branch/${branchId}/imports`,
       { params },
     );
-    return response.data.data;
+    // Response structure: { success, message, total, data: [...] }
+    const apiResponse = response.data;
+    const apiData = apiResponse.data || []; // Mảng các ImportRecord
+
+    // Transform dữ liệu để đảm bảo batchNumber luôn có ở root level
+    // Response đã có batchNumber ở root, nhưng cũng có thể có trong _id
+    const transformedData = apiData.map((item: any) => {
+      // Đảm bảo batchNumber luôn có ở root level (ưu tiên root, fallback về _id)
+      const batchNumber = item.batchNumber || item._id?.batchNumber || '';
+
+      // Giữ nguyên tất cả các trường khác từ response
+      return {
+        ...item,
+        batchNumber, // Đảm bảo batchNumber luôn có ở root level
+        // Các trường khác giữ nguyên từ response
+        medicineName: item.medicineName,
+        quantity: item.quantity,
+        unitPrice: item.unitPrice,
+        totalCost: item.totalCost,
+        supplierName: item.supplierName,
+        expiryDate: item.expiryDate,
+        createdAt: item.createdAt,
+      };
+    });
+
+    return {
+      total: apiResponse.total || transformedData.length,
+      data: transformedData,
+    };
   },
 
   /**
@@ -212,7 +240,83 @@ export const branchStatisticsApi = {
     const response = await apiClient.get(
       `/statistics/branch/${branchId}/batch-status`,
     );
-    return response.data.data;
+    const data = response.data.data;
+
+    // Hàm tính toán trạng thái hết hạn chính xác
+    const calculateExpiryStatus = (expiryDate: string) => {
+      if (!expiryDate) {
+        return { isExpired: false, expiryStatus: 'Không rõ' };
+      }
+
+      const expiry = new Date(expiryDate);
+      const now = new Date();
+
+      // Reset time về 00:00:00 để so sánh chỉ theo ngày
+      expiry.setHours(0, 0, 0, 0);
+      now.setHours(0, 0, 0, 0);
+
+      const isExpired = expiry < now;
+      const daysDiff = Math.ceil(
+        (expiry.getTime() - now.getTime()) / (1000 * 60 * 60 * 24),
+      );
+
+      let expiryStatus: string;
+      if (isExpired) {
+        expiryStatus = 'Hết hạn';
+      } else if (daysDiff <= 30) {
+        expiryStatus = 'Sắp hết hạn';
+      } else {
+        expiryStatus = 'Còn hạn';
+      }
+
+      return { isExpired, expiryStatus, daysDiff };
+    };
+
+    // Transform dữ liệu để đảm bảo batchNumber và tính lại trạng thái hết hạn
+    const transformedDetails = (data.details || []).map((item: any) => {
+      // Tìm batchNumber từ nhiều nguồn có thể
+      const batchNumber =
+        item.batchNumber ||
+        item.batch_number ||
+        item._id?.batchNumber ||
+        item._id?.batch_number ||
+        '';
+
+      // Tìm expiryDate từ nhiều nguồn có thể
+      const expiryDate = item.expiryDate || item.expiry_date || null;
+
+      // Tính toán trạng thái hết hạn
+      const expiryInfo = calculateExpiryStatus(expiryDate);
+
+      return {
+        ...item,
+        batchNumber,
+        expiryDate,
+        isExpired: expiryInfo.isExpired,
+        expiryStatus: expiryInfo.expiryStatus,
+      };
+    });
+
+    // Tính lại summary dựa trên dữ liệu đã transform
+    const summary = {
+      total: transformedDetails.length,
+      outOfStock: transformedDetails.filter((item: any) => item.quantity === 0)
+        .length,
+      inStock: transformedDetails.filter((item: any) => item.quantity > 0)
+        .length,
+      expired: transformedDetails.filter((item: any) => item.isExpired).length,
+      expiringSoon: transformedDetails.filter(
+        (item: any) => !item.isExpired && item.expiryStatus === 'Sắp hết hạn',
+      ).length,
+      valid: transformedDetails.filter(
+        (item: any) => !item.isExpired && item.expiryStatus === 'Còn hạn',
+      ).length,
+    };
+
+    return {
+      summary,
+      details: transformedDetails,
+    };
   },
 
   /**

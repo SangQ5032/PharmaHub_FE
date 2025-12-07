@@ -66,15 +66,6 @@ export const MedicineSearchModal: React.FC<MedicineSearchModalProps> = ({
           <Text style={styles.medicineCategory}>{item.category_id.name}</Text>
         )}
       </View>
-      <View style={styles.medicinePrice}>
-        <Text style={styles.priceText}>
-          {new Intl.NumberFormat('vi-VN', {
-            style: 'currency',
-            currency: 'VND',
-          }).format(item.retail_price)}
-        </Text>
-        <Text style={styles.unitText}>/{item.unit}</Text>
-      </View>
     </TouchableOpacity>
   );
 
@@ -207,19 +198,6 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: '#2196F3',
     fontWeight: '500',
-  },
-  medicinePrice: {
-    alignItems: 'flex-end',
-    marginLeft: 12,
-  },
-  priceText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#4CAF50',
-  },
-  unitText: {
-    fontSize: 12,
-    color: '#757575',
   },
   loadingContainer: {
     flex: 1,

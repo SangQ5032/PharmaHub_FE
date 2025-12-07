@@ -87,6 +87,9 @@ export interface Batch {
   import_price?: number;
   quantity?: number;
   initial_quantity?: number;
+  // Các trường mới từ server - tự động đồng bộ với quantity và initial_quantity
+  quantity_in_base_unit?: number;
+  initial_quantity_in_base_unit?: number;
   supplier_id?: string | Supplier;
   supplier?: Supplier; // Populated data
   status?: 'active' | 'expired' | 'discontinued' | 'sold_out';

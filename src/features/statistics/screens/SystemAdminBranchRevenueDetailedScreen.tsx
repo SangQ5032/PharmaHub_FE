@@ -6,7 +6,6 @@ import React, { useState } from 'react';
 import {
   View,
   Text,
-  ScrollView,
   SafeAreaView,
   ActivityIndicator,
   StyleSheet,
@@ -360,9 +359,8 @@ const SystemAdminBranchRevenueDetailedScreen: React.FC<
             </View>
           </TouchableOpacity>
         )}
-        scrollEnabled={false}
         contentContainerStyle={styles.listContent}
-        showsVerticalScrollIndicator={false}
+        showsVerticalScrollIndicator={true}
       />
 
       {filteredBranches.length === 0 && (

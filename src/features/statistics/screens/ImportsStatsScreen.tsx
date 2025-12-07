@@ -88,10 +88,10 @@ export const ImportsStatsScreen: React.FC = () => {
           <ActivityIndicator size="large" />
           <Text style={styles.loadingText}>Đang tải dữ liệu...</Text>
         </View>
-      ) : data && data.length > 0 ? (
+      ) : data && data.data && data.data.length > 0 ? (
         <StatsSection title={`Lịch Sử Nhập Hàng`}>
           <StatTable
-            data={data}
+            data={data.data}
             columns={columns}
             emptyMessage="Không có dữ liệu nhập hàng"
             pageSize={10}
