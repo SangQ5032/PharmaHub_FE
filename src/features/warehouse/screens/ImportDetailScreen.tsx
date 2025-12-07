@@ -330,7 +330,15 @@ export default function ImportDetailScreen() {
                 <View style={styles.detailRow}>
                   <Text style={styles.detailLabel}>Số lượng:</Text>
                   <Text style={styles.detailValue}>
-                    {item.quantity} {item.medicine_id?.unit || 'N/A'}
+                    {item.quantity}{' '}
+                    {item.unit || item.medicine_id?.unit || 'N/A'}
+                    {item.quantity_in_base_unit &&
+                      item.quantity_in_base_unit !== item.quantity && (
+                        <Text style={styles.detailSubValue}>
+                          {' '}
+                          ({item.quantity_in_base_unit} đơn vị cơ bản)
+                        </Text>
+                      )}
                   </Text>
                 </View>
 
@@ -570,6 +578,11 @@ const styles = StyleSheet.create({
     flex: 1,
     textAlign: 'right',
     fontWeight: '500',
+  },
+  detailSubValue: {
+    fontSize: 12,
+    color: '#757575',
+    fontStyle: 'italic',
   },
   detailRowTotal: {
     flexDirection: 'row',

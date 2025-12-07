@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   View,
   ScrollView,
@@ -9,31 +9,79 @@ import {
   Alert,
   TouchableOpacity,
 } from 'react-native';
+import { useRoute } from '@react-navigation/native';
 import { StatsSection } from '../components/StatCard';
 import { FilterDateRange } from '../components/FilterDateRange';
 import { StatTable, TableColumn } from '../components/StatTable';
 import { useRevenueByPeriodStats } from '../hooks/useBranchStatistics';
+import { useSystemAdminRevenueByPeriod } from '../hooks/useSystemAdminStats';
+import { ROUTES } from '@shared/constants/routes';
 
-type GroupByType = 'day' | 'week' | 'month' | 'year';
+type GroupByType = 'day' | 'month' | 'year';
 
 /**
  * Màn hình thống kê doanh thu theo thời gian
+ * Hỗ trợ cả branch và system admin
  */
 export const RevenueByPeriodStatsScreen: React.FC = () => {
+  const route = useRoute();
+  const isSystemAdmin =
+    route.name === ROUTES.SYSTEM_ADMIN_REVENUE_BY_PERIOD ||
+    route.name === 'SystemAdminRevenueByPeriod';
+
   const [startDate, setStartDate] = useState<string | null>(null);
   const [endDate, setEndDate] = useState<string | null>(null);
   const [groupBy, setGroupBy] = useState<GroupByType>('month');
   const [error, setError] = useState<string>('');
 
+  // Hook cho branch
   const {
-    data,
-    isLoading,
-    error: queryError,
+    data: branchData,
+    isLoading: branchLoading,
+    error: branchError,
   } = useRevenueByPeriodStats({
     startDate: startDate || undefined,
     endDate: endDate || undefined,
     groupBy,
   });
+
+  // Hook cho system admin
+  const {
+    data: systemAdminData,
+    isLoading: systemAdminLoading,
+    error: systemAdminError,
+  } = useSystemAdminRevenueByPeriod({
+    startDate: startDate || undefined,
+    endDate: endDate || undefined,
+    groupBy,
+  });
+
+  // Chọn dữ liệu và loading state dựa trên context
+  const { data, isLoading, queryError } = useMemo(() => {
+    if (isSystemAdmin) {
+      // System admin response có cấu trúc { success, message, data: [...] }
+      return {
+        data: systemAdminData?.data || [],
+        isLoading: systemAdminLoading,
+        queryError: systemAdminError,
+      };
+    } else {
+      // Branch response có cấu trúc { data: [...] }
+      return {
+        data: branchData?.data || [],
+        isLoading: branchLoading,
+        queryError: branchError,
+      };
+    }
+  }, [
+    isSystemAdmin,
+    branchData,
+    systemAdminData,
+    branchLoading,
+    systemAdminLoading,
+    branchError,
+    systemAdminError,
+  ]);
 
   const handleFilterChange = (start: string | null, end: string | null) => {
     setStartDate(start);
@@ -44,8 +92,6 @@ export const RevenueByPeriodStatsScreen: React.FC = () => {
     switch (groupBy) {
       case 'day':
         return 'Kỳ/Ngày';
-      case 'week':
-        return 'Kỳ/Tuần';
       case 'month':
         return 'Kỳ/Tháng';
       case 'year':
@@ -98,7 +144,7 @@ export const RevenueByPeriodStatsScreen: React.FC = () => {
 
       <StatsSection title="Nhóm Theo">
         <View style={styles.groupByButtons}>
-          {(['day', 'week', 'month', 'year'] as const).map(period => (
+          {(['day', 'month', 'year'] as const).map(period => (
             <TouchableOpacity
               key={period}
               style={[
@@ -114,7 +160,6 @@ export const RevenueByPeriodStatsScreen: React.FC = () => {
                 ]}
               >
                 {period === 'day' && 'Ngày'}
-                {period === 'week' && 'Tuần'}
                 {period === 'month' && 'Tháng'}
                 {period === 'year' && 'Năm'}
               </Text>
@@ -131,13 +176,7 @@ export const RevenueByPeriodStatsScreen: React.FC = () => {
       ) : data && data.length > 0 ? (
         <StatsSection
           title={`Doanh Thu Theo ${
-            groupBy === 'day'
-              ? 'Ngày'
-              : groupBy === 'week'
-              ? 'Tuần'
-              : groupBy === 'month'
-              ? 'Tháng'
-              : 'Năm'
+            groupBy === 'day' ? 'Ngày' : groupBy === 'month' ? 'Tháng' : 'Năm'
           }`}
         >
           <StatTable
@@ -158,7 +197,9 @@ export const RevenueByPeriodStatsScreen: React.FC = () => {
       {(queryError || error) && (
         <View style={styles.errorContainer}>
           <Text style={styles.errorText}>
-            {queryError || error || 'Lỗi tải dữ liệu'}
+            {typeof queryError === 'string'
+              ? queryError
+              : queryError?.message || error || 'Lỗi tải dữ liệu'}
           </Text>
         </View>
       )}

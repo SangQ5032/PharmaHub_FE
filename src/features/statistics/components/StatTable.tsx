@@ -48,9 +48,18 @@ export const StatTable: React.FC<StatTableProps> = ({
       case 'number':
         return formatNumber(Number(value));
       case 'date':
-        return new Date(value).toLocaleDateString('vi-VN');
+        if (!value) return 'N/A';
+        try {
+          const date = new Date(value);
+          if (isNaN(date.getTime())) {
+            return 'N/A';
+          }
+          return date.toLocaleDateString('vi-VN');
+        } catch (error) {
+          return 'N/A';
+        }
       default:
-        return String(value);
+        return value !== null && value !== undefined ? String(value) : '';
     }
   };
 

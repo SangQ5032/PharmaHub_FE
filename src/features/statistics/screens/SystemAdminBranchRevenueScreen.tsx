@@ -6,7 +6,6 @@ import React, { useState, useMemo } from 'react';
 import {
   View,
   Text,
-  ScrollView,
   SafeAreaView,
   ActivityIndicator,
   StyleSheet,
@@ -279,15 +278,9 @@ const SystemAdminBranchRevenueScreen: React.FC<BranchRevenueScreenProps> = ({
             </View>
           </View>
         )}
-        scrollEnabled={false}
         contentContainerStyle={styles.listContent}
-        showsVerticalScrollIndicator={false}
+        showsVerticalScrollIndicator={true}
       />
-
-      {/* Scrollable container for the list */}
-      <View style={{ flex: 1 }}>
-        <ScrollView showsVerticalScrollIndicator={false} />
-      </View>
 
       {/* Date Pickers */}
       {showStartPicker && (
