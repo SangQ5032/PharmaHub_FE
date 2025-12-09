@@ -23,21 +23,53 @@ export type MedicinePrices = {
   };
 };
 
+// Unit type mới từ API
+export type MedicineUnit = {
+  _id: string;
+  name: string;
+  short_name: string;
+  ratio_to_base: number;
+};
+
+// Pharmaceutical info type mới từ API
+export type PharmaceuticalInfo = {
+  active_ingredient?: string;
+  indication?: string;
+  usage?: string;
+  contraindication?: string;
+  dosage?: string;
+  administration?: string;
+  side_effects?: string;
+  drug_interactions?: string;
+  other_info?: string;
+};
+
 export type Medicine = {
   _id: string;
   name: string;
+  description?: string;
+  image_url?: string;
+  // Base unit mới - là object
+  base_unit: MedicineUnit | string;
+  // Units mới - là array
+  units?: MedicineUnit[];
+  is_active?: boolean;
+  manufacturer?: string;
+  pharmaceutical_info?: PharmaceuticalInfo;
+  default_import_price?: number;
+  default_retail_price?: number;
+  default_expiry_duration_months?: number;
+  // Legacy fields (giữ lại để backward compatibility)
   generic_name?: string;
   brand_name?: string;
   dosage_form?: string;
   strength?: string;
-  base_unit: string;
   packaging?: string;
-  category_id: Category | null;
-  prescription_required: boolean;
-  is_controlled: boolean;
+  category_id?: Category | null;
+  prescription_required?: boolean;
+  is_controlled?: boolean;
   package_structure?: PackageStructure;
   prices?: MedicinePrices;
-  manufacturer?: string;
   country_of_origin?: string;
   indications?: string;
   contraindications?: string;
@@ -46,8 +78,8 @@ export type Medicine = {
   storage_conditions?: string;
   registration_number?: string;
   barcode?: string;
-  alert_threshold: number;
-  status: 'active' | 'inactive';
+  alert_threshold?: number;
+  status?: 'active' | 'inactive';
   createdAt: string;
   updatedAt: string;
 };
@@ -99,4 +131,18 @@ export type InventoryResponse = {
   success: boolean;
   message: string;
   data: InventoryAllBranches;
+};
+
+export type ImportMedicinesResponse = {
+  success: boolean;
+  message: string;
+  data?: {
+    total: number;
+    success: number;
+    failed: number;
+    errors?: Array<{
+      row: number;
+      message: string;
+    }>;
+  };
 };

@@ -1,5 +1,5 @@
 /* eslint-disable react-native/no-inline-styles */
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -7,11 +7,28 @@ import {
   TouchableOpacity,
   Alert,
   Modal,
+  Image,
 } from 'react-native';
 import { Medicine } from '../types';
 import { useNavigation } from '@react-navigation/native';
 import { ROUTES } from '@shared/constants/routes';
 import { deleteMedicine } from '../services/medicineService';
+
+// Helper function để đảm bảo giá trị là string
+const ensureString = (value: any, fallback: string = '-'): string => {
+  if (value == null) return fallback;
+  if (typeof value === 'string') return value;
+  if (typeof value === 'number' || typeof value === 'boolean')
+    return String(value);
+  if (typeof value === 'object') {
+    // Nếu là object, thử lấy các field thường dùng
+    if ('name' in value && typeof value.name === 'string') return value.name;
+    if ('_id' in value && typeof value._id === 'string') return value._id;
+    if ('short_name' in value && typeof value.short_name === 'string')
+      return value.short_name;
+  }
+  return fallback;
+};
 
 const formatPrice = (p?: number | null) => {
   if (p == null) return '-';
@@ -21,7 +38,12 @@ const formatPrice = (p?: number | null) => {
 };
 
 const getBasePrice = (medicine: Medicine) => {
-  // Ưu tiên lấy từ prices object (cấu trúc mới)
+  // Ưu tiên lấy từ default_retail_price (cấu trúc mới)
+  if (medicine.default_retail_price != null) {
+    return formatPrice(medicine.default_retail_price);
+  }
+
+  // Fallback về prices object (legacy support)
   if (medicine.prices) {
     const basePrice = medicine.prices.base_unit_price;
     if (basePrice && basePrice > 0) {
@@ -40,14 +62,37 @@ const getBasePrice = (medicine: Medicine) => {
     Array.isArray(medicine.units) &&
     medicine.units.length > 0
   ) {
-    const baseUnit = medicine.units.find(u => u.multiplier === 1);
+    const baseUnit = medicine.units.find((u: any) => u.multiplier === 1);
     if (baseUnit) {
-      return formatPrice(baseUnit.price);
+      return formatPrice((baseUnit as any).price);
     }
-    const minPrice = Math.min(...medicine.units.map(u => u.price));
+    const minPrice = Math.min(
+      ...medicine.units.map((u: any) => (u as any).price),
+    );
     return formatPrice(minPrice);
   }
 
+  return '-';
+};
+
+const getBaseUnitName = (medicine: Medicine) => {
+  // Cấu trúc mới: base_unit là object
+  if (typeof medicine.base_unit === 'object' && medicine.base_unit !== null) {
+    const name = medicine.base_unit.name || medicine.base_unit.short_name;
+    // Đảm bảo name là string, không phải object
+    if (typeof name === 'string') {
+      return name;
+    }
+    if (typeof name === 'object' && name !== null) {
+      // Nếu name là object, lấy name từ object đó
+      return (name as any).name || (name as any)._id || '-';
+    }
+    return '-';
+  }
+  // Legacy: base_unit là string
+  if (typeof medicine.base_unit === 'string') {
+    return medicine.base_unit;
+  }
   return '-';
 };
 
@@ -57,6 +102,12 @@ const MedicineItem: React.FC<{ item: Medicine; onUpdated?: () => void }> = ({
 }) => {
   const navigation = useNavigation<any>();
   const [actionsVisible, setActionsVisible] = useState(false);
+  const [imageError, setImageError] = useState(false);
+
+  // Reset image error when item changes
+  useEffect(() => {
+    setImageError(false);
+  }, [item.image_url]);
 
   const handleEdit = () => {
     navigation.navigate(ROUTES.ADD_MEDICINE, { mode: 'edit', item });
@@ -105,38 +156,63 @@ const MedicineItem: React.FC<{ item: Medicine; onUpdated?: () => void }> = ({
       <TouchableOpacity onPress={openActions} activeOpacity={0.8}>
         <View style={styles.card}>
           <View style={styles.row}>
-            {/* Name (30%) */}
-            <View style={[styles.cell, { flex: 30 }]}>
+            {/* Image - fixed width */}
+            <View style={styles.imageCell}>
+              {item.image_url && !imageError ? (
+                <Image
+                  source={{ uri: item.image_url }}
+                  style={styles.medicineImage}
+                  resizeMode="cover"
+                  onError={() => setImageError(true)}
+                />
+              ) : (
+                <Image
+                  source={require('@shared/assets/columbina.png')}
+                  style={styles.medicineImage}
+                  resizeMode="cover"
+                />
+              )}
+            </View>
+            {/* Name (35%) */}
+            <View style={[styles.cell, { flex: 35 }]}>
               <Text style={[styles.cellText, styles.left]} numberOfLines={1}>
-                {item.name || '-'}
+                {ensureString(item.name)}
               </Text>
+              {item.description && (
+                <Text
+                  style={[styles.cellSubText, styles.left]}
+                  numberOfLines={1}
+                >
+                  {ensureString(item.description, '')}
+                </Text>
+              )}
             </View>
 
-            {/* Dosage Form (20%) */}
+            {/* Manufacturer (20%) */}
             <View style={[styles.cell, { flex: 20 }]}>
-              <Text style={[styles.cellText, styles.center]} numberOfLines={1}>
-                {item.dosage_form || '-'}
+              <Text style={[styles.cellText, styles.center]} numberOfLines={2}>
+                {ensureString(item.manufacturer)}
               </Text>
             </View>
 
-            {/* Strength (15%) */}
+            {/* Base Unit (15%) */}
             <View style={[styles.cell, { flex: 15 }]}>
               <Text style={[styles.cellText, styles.center]} numberOfLines={1}>
-                {item.strength || '-'}
+                {getBaseUnitName(item)}
               </Text>
             </View>
 
-            {/* Price (20%) */}
-            <View style={[styles.cell, { flex: 20 }]}>
+            {/* Price (15%) */}
+            <View style={[styles.cell, { flex: 15 }]}>
               <Text style={[styles.cellText, styles.center]}>
-                {getBasePrice(item)}
+                {getBasePrice(item)} đ
               </Text>
             </View>
 
             {/* Status (15%) */}
             <View style={[styles.cell, { flex: 15 }]}>
               <Text style={[styles.cellText, styles.center]}>
-                {item.status === 'active' ? '✓' : '✗'}
+                {item.is_active !== false ? '✓' : '✗'}
               </Text>
             </View>
           </View>
@@ -211,9 +287,26 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: '#222',
   },
+  cellSubText: {
+    fontSize: 11,
+    color: '#666',
+    marginTop: 2,
+  },
   left: { textAlign: 'left' },
   center: { textAlign: 'center' },
   right: { textAlign: 'right' },
+  imageCell: {
+    width: 50,
+    marginRight: 8,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  medicineImage: {
+    width: 50,
+    height: 50,
+    borderRadius: 8,
+    backgroundColor: '#f0f0f0',
+  },
   // modal styles
   modalBackdrop: {
     position: 'absolute',

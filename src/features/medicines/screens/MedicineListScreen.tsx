@@ -8,21 +8,24 @@ import {
   TouchableOpacity,
   TextInput,
   Modal,
+  Alert,
+  ActivityIndicator,
   ScrollView,
 } from 'react-native';
 import { useMedicines } from '../hooks/useMedicines';
 import MedicineItem from '../components/MedicineItem';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { ROUTES } from '@shared/constants/routes';
+import { importMedicines } from '../services/medicineService';
+import { pick } from '@react-native-documents/picker';
 
 const MedicineListScreen: React.FC = () => {
   const { medicines, loading, error, refresh, search, setSearch } =
     useMedicines();
   const navigation = useNavigation<any>();
-
-  // ----- Filters state -----
-  const [filterVisible, setFilterVisible] = useState(false);
-  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
+  const [importing, setImporting] = useState(false);
+  const [importResult, setImportResult] = useState<any>(null);
+  const [showImportModal, setShowImportModal] = useState(false);
 
   useFocusEffect(
     useCallback(() => {
@@ -30,43 +33,117 @@ const MedicineListScreen: React.FC = () => {
     }, [refresh]),
   );
 
-  // ----- Derived helpers -----
-  const categories = useMemo(() => {
-    const set = new Set<string>();
-    medicines.forEach(m => {
-      const c = m.category_id?.name;
-      if (typeof c === 'string' && c.trim()) set.add(c.trim());
-    });
-    return Array.from(set).sort((a, b) => a.localeCompare(b));
-  }, [medicines]);
-
+  // Filter medicines by search query
   const filteredMedicines = useMemo(() => {
+    if (!search.trim()) {
+      return medicines;
+    }
+    const query = search.toLowerCase().trim();
     return medicines.filter(m => {
-      // category filter (multi)
-      if (selectedCategories.length > 0) {
-        const c = m.category_id?.name?.trim();
-        if (!c || !selectedCategories.includes(c)) return false;
-      }
-      return true;
+      const nameMatch = m.name?.toLowerCase().includes(query);
+      const descMatch = m.description?.toLowerCase().includes(query);
+      const manufacturerMatch = m.manufacturer?.toLowerCase().includes(query);
+      return nameMatch || descMatch || manufacturerMatch;
     });
-  }, [medicines, selectedCategories]);
+  }, [medicines, search]);
 
-  const clearAllFilters = () => {
-    setSelectedCategories([]);
+  // Handle import Excel file
+  const handleImportExcel = async () => {
+    try {
+      // Chọn file Excel
+      const result = await pick({
+        type: [
+          'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+          'application/vnd.ms-excel',
+          'text/csv',
+        ],
+        allowMultiSelection: false,
+      });
+
+      console.log('[MedicineListScreen] Document picker result:', result);
+
+      if (result && result.length > 0) {
+        const file = result[0];
+
+        console.log('[MedicineListScreen] Selected file:', {
+          uri: file.uri,
+          name: file.name,
+          type: file.type,
+          size: file.size,
+        });
+
+        // Kiểm tra định dạng file
+        const fileName = file.name || '';
+        const validExtensions = ['.xlsx', '.xls', '.csv'];
+        const isValidFile = validExtensions.some(ext =>
+          fileName.toLowerCase().endsWith(ext),
+        );
+
+        if (!isValidFile) {
+          Alert.alert(
+            'Lỗi',
+            'Vui lòng chọn file Excel (.xlsx, .xls) hoặc CSV (.csv)',
+          );
+          return;
+        }
+
+        // Xác định MIME type dựa trên extension nếu không có
+        let mimeType = file.type;
+        if (!mimeType) {
+          if (fileName.toLowerCase().endsWith('.xlsx')) {
+            mimeType =
+              'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+          } else if (fileName.toLowerCase().endsWith('.xls')) {
+            mimeType = 'application/vnd.ms-excel';
+          } else if (fileName.toLowerCase().endsWith('.csv')) {
+            mimeType = 'text/csv';
+          } else {
+            mimeType =
+              'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+          }
+        }
+
+        setImporting(true);
+        setShowImportModal(true);
+
+        // Gọi API import
+        const response = await importMedicines(
+          file.uri,
+          file.name || 'import.xlsx',
+          mimeType,
+        );
+
+        setImportResult(response);
+
+        // Nếu thành công, refresh danh sách thuốc
+        if (response.success) {
+          refresh();
+        }
+      }
+    } catch (err: any) {
+      // User cancelled the picker
+      if (
+        err?.code === 'DOCUMENT_PICKER_CANCELED' ||
+        err?.message?.includes('cancel')
+      ) {
+        return;
+      }
+
+      console.error('Import error:', err);
+      Alert.alert(
+        'Lỗi',
+        err?.message || 'Không thể import file. Vui lòng thử lại.',
+      );
+      setShowImportModal(false);
+    } finally {
+      setImporting(false);
+    }
   };
 
-  const selectedChips = useMemo(() => {
-    const chips: { key: string; label: string; onRemove: () => void }[] = [];
-    selectedCategories.forEach(c =>
-      chips.push({
-        key: `cat:${c}`,
-        label: c,
-        onRemove: () =>
-          setSelectedCategories(prev => prev.filter(x => x !== c)),
-      }),
-    );
-    return chips;
-  }, [selectedCategories]);
+  const closeImportModal = () => {
+    setShowImportModal(false);
+    setImportResult(null);
+  };
 
   return (
     <>
@@ -80,7 +157,7 @@ const MedicineListScreen: React.FC = () => {
           <TextInput
             value={search}
             onChangeText={setSearch}
-            placeholder="Tìm theo tên thuốc..."
+            placeholder="Tìm theo tên, mô tả hoặc nhà sản xuất..."
             style={styles.searchInput}
             returnKeyType="search"
             autoCorrect={false}
@@ -88,51 +165,18 @@ const MedicineListScreen: React.FC = () => {
           />
         </View>
 
-        {/* Filters row */}
-        <View style={styles.filtersRow}>
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.chipsContainer}
-          >
-            {selectedChips.length === 0 ? (
-              <Text style={styles.chipsPlaceholder}>Chưa chọn bộ lọc</Text>
-            ) : (
-              selectedChips.map(chip => (
-                <View key={chip.key} style={styles.chip}>
-                  <Text style={styles.chipText}>{chip.label}</Text>
-                  <TouchableOpacity
-                    onPress={chip.onRemove}
-                    style={styles.chipRemove}
-                  >
-                    <Text style={styles.chipRemoveText}>×</Text>
-                  </TouchableOpacity>
-                </View>
-              ))
-            )}
-          </ScrollView>
-
-          <TouchableOpacity
-            style={styles.filterButton}
-            onPress={() => setFilterVisible(true)}
-            activeOpacity={0.8}
-          >
-            <Text style={styles.filterButtonText}>Lọc</Text>
-          </TouchableOpacity>
-        </View>
-
         {/* Header row */}
         <View style={styles.headerRow}>
-          <View style={[styles.headerCell, { flex: 30 }]}>
+          <View style={[styles.headerCell, { flex: 35 }]}>
             <Text style={[styles.headerText, styles.left]}>TÊN THUỐC</Text>
           </View>
           <View style={[styles.headerCell, { flex: 20 }]}>
-            <Text style={[styles.headerText, styles.center]}>DẠNG BÁO CHỈ</Text>
+            <Text style={[styles.headerText, styles.center]}>NHÀ SẢN XUẤT</Text>
           </View>
           <View style={[styles.headerCell, { flex: 15 }]}>
-            <Text style={[styles.headerText, styles.center]}>ĐỘ MẠNH</Text>
+            <Text style={[styles.headerText, styles.center]}>ĐƠN VỊ</Text>
           </View>
-          <View style={[styles.headerCell, { flex: 20 }]}>
+          <View style={[styles.headerCell, { flex: 15 }]}>
             <Text style={[styles.headerText, styles.center]}>GIÁ</Text>
           </View>
           <View style={[styles.headerCell, { flex: 15 }]}>
@@ -170,6 +214,16 @@ const MedicineListScreen: React.FC = () => {
 
         <View style={styles.bottomBar}>
           <TouchableOpacity
+            style={[styles.pillButton, styles.importButton]}
+            onPress={handleImportExcel}
+            activeOpacity={0.8}
+            disabled={importing}
+          >
+            <Text style={styles.pillButtonText}>
+              {importing ? 'Đang import...' : '📥 Import Excel'}
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
             style={styles.pillButton}
             onPress={() => navigation.navigate(ROUTES.ADD_MEDICINE)}
             activeOpacity={0.8}
@@ -179,72 +233,105 @@ const MedicineListScreen: React.FC = () => {
         </View>
       </View>
 
-      {/* Filter Modal */}
+      {/* Import Result Modal */}
       <Modal
-        visible={filterVisible}
+        visible={showImportModal}
         transparent
-        animationType="fade"
-        onRequestClose={() => setFilterVisible(false)}
+        animationType="slide"
+        onRequestClose={closeImportModal}
       >
-        <View style={styles.modalBackdrop}>
-          <View style={styles.modalCard}>
-            <Text style={styles.modalTitle}>Bộ lọc</Text>
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Kết quả import</Text>
+              <TouchableOpacity onPress={closeImportModal}>
+                <Text style={styles.modalClose}>✕</Text>
+              </TouchableOpacity>
+            </View>
 
-            {/* Category */}
-            <Text style={styles.sectionTitle}>Nhóm thuốc</Text>
-            <View style={styles.optionsWrap}>
-              {categories.length === 0 ? (
-                <Text style={styles.muted}>Không có nhóm thuốc</Text>
-              ) : (
-                categories.map(c => {
-                  const selected = selectedCategories.includes(c);
-                  return (
-                    <TouchableOpacity
-                      key={c}
-                      style={[
-                        styles.optionPill,
-                        selected && styles.optionPillSelected,
-                      ]}
-                      onPress={() =>
-                        setSelectedCategories(prev =>
-                          prev.includes(c)
-                            ? prev.filter(x => x !== c)
-                            : [...prev, c],
-                        )
-                      }
-                    >
-                      <Text
-                        style={[
-                          styles.optionPillText,
-                          selected && styles.optionPillTextSelected,
-                        ]}
-                      >
-                        {c}
+            {importing ? (
+              <View style={styles.loadingContainer}>
+                <ActivityIndicator size="large" color="#2EB872" />
+                <Text style={styles.loadingText}>Đang xử lý file...</Text>
+              </View>
+            ) : importResult ? (
+              <ScrollView style={styles.resultContainer}>
+                <View
+                  style={[
+                    styles.resultStatus,
+                    importResult.success
+                      ? styles.resultSuccess
+                      : styles.resultError,
+                  ]}
+                >
+                  <Text
+                    style={[
+                      styles.resultStatusText,
+                      importResult.success
+                        ? styles.resultSuccessText
+                        : styles.resultErrorText,
+                    ]}
+                  >
+                    {importResult.success ? '✓ Thành công' : '✗ Thất bại'}
+                  </Text>
+                </View>
+
+                <Text style={styles.resultMessage}>
+                  {typeof importResult.message === 'string'
+                    ? importResult.message
+                    : String(importResult.message || 'Hoàn thành')}
+                </Text>
+
+                {importResult.data && (
+                  <View style={styles.resultStats}>
+                    <View style={styles.statItem}>
+                      <Text style={styles.statLabel}>Tổng số:</Text>
+                      <Text style={styles.statValue}>
+                        {importResult.data.total || 0}
                       </Text>
-                    </TouchableOpacity>
-                  );
-                })
-              )}
-            </View>
+                    </View>
+                    <View style={styles.statItem}>
+                      <Text style={styles.statLabel}>Thành công:</Text>
+                      <Text style={[styles.statValue, styles.statSuccess]}>
+                        {importResult.data.success || 0}
+                      </Text>
+                    </View>
+                    <View style={styles.statItem}>
+                      <Text style={styles.statLabel}>Thất bại:</Text>
+                      <Text style={[styles.statValue, styles.statError]}>
+                        {importResult.data.failed || 0}
+                      </Text>
+                    </View>
+                  </View>
+                )}
 
-            <View style={styles.modalActions}>
-              <TouchableOpacity
-                style={[styles.modalButton, styles.btnGhost]}
-                onPress={clearAllFilters}
-              >
-                <Text style={[styles.modalButtonText, styles.btnGhostText]}>
-                  Bỏ tất cả lựa chọn
-                </Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.modalButton, styles.btnPrimary]}
-                onPress={() => setFilterVisible(false)}
-              >
-                <Text style={[styles.modalButtonText, styles.btnPrimaryText]}>
-                  Áp dụng
-                </Text>
-              </TouchableOpacity>
-            </View>
+                {importResult.data?.errors &&
+                  importResult.data.errors.length > 0 && (
+                    <View style={styles.errorsContainer}>
+                      <Text style={styles.errorsTitle}>Chi tiết lỗi:</Text>
+                      {importResult.data.errors.map(
+                        (error: any, index: number) => (
+                          <View key={index} style={styles.errorItem}>
+                            <Text style={styles.errorText}>
+                              Dòng {error.row}:{' '}
+                              {typeof error.message === 'string'
+                                ? error.message
+                                : String(error.message || 'Lỗi không xác định')}
+                            </Text>
+                          </View>
+                        ),
+                      )}
+                    </View>
+                  )}
+
+                <TouchableOpacity
+                  style={styles.modalButton}
+                  onPress={closeImportModal}
+                >
+                  <Text style={styles.modalButtonText}>Đóng</Text>
+                </TouchableOpacity>
+              </ScrollView>
+            ) : null}
           </View>
         </View>
       </Modal>
@@ -277,47 +364,6 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
   },
 
-  // filters
-  filtersRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    marginHorizontal: 12,
-    marginBottom: 8,
-    backgroundColor: '#F9FBFA',
-    borderWidth: 1,
-    borderColor: '#E0E0E0',
-    borderRadius: 16,
-  },
-  chipsContainer: {
-    flexGrow: 1,
-    alignItems: 'center',
-    paddingRight: 8,
-  },
-  chipsPlaceholder: { color: '#888' },
-  chip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#FFFFFF',
-    borderColor: '#E6E6E6',
-    borderWidth: 1,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 999,
-    marginRight: 8,
-  },
-  chipText: { color: '#2E7D32', fontWeight: '600' },
-  chipRemove: { marginLeft: 6 },
-  chipRemoveText: { color: '#888', fontSize: 16, lineHeight: 16 },
-  filterButton: {
-    backgroundColor: '#2EB872',
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderRadius: 10,
-  },
-  filterButtonText: { color: '#fff', fontWeight: '700' },
-
   headerRow: {
     flexDirection: 'row',
     paddingVertical: 8,
@@ -338,7 +384,10 @@ const styles = StyleSheet.create({
     color: '#333',
   },
 
-  bottomBar: { padding: 12 },
+  bottomBar: {
+    padding: 12,
+    gap: 8,
+  },
   pillButton: {
     width: '100%',
     backgroundColor: '#2EB872',
@@ -347,6 +396,9 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     elevation: 4,
+  },
+  importButton: {
+    backgroundColor: '#2196F3',
   },
   pillButtonText: { color: '#fff', fontSize: 16, fontWeight: '700' },
 
@@ -366,60 +418,135 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   retryText: { color: '#fff', fontWeight: '700' },
-
-  // modal
-  modalBackdrop: {
+  // Modal styles
+  modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.3)',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
     justifyContent: 'center',
-    padding: 16,
+    alignItems: 'center',
   },
-  modalCard: {
+  modalContent: {
     backgroundColor: '#fff',
     borderRadius: 12,
-    padding: 16,
+    width: '90%',
+    maxWidth: 500,
+    maxHeight: '80%',
+    padding: 20,
   },
-  modalTitle: { fontSize: 18, fontWeight: '700', marginBottom: 8 },
-  sectionTitle: {
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#222',
+  },
+  modalClose: {
+    fontSize: 24,
+    color: '#999',
+    fontWeight: '300',
+  },
+  loadingContainer: {
+    padding: 40,
+    alignItems: 'center',
+  },
+  loadingText: {
     marginTop: 12,
-    marginBottom: 6,
+    fontSize: 14,
+    color: '#666',
+  },
+  resultContainer: {
+    maxHeight: 400,
+  },
+  resultStatus: {
+    padding: 12,
+    borderRadius: 8,
+    marginBottom: 12,
+    alignItems: 'center',
+  },
+  resultSuccess: {
+    backgroundColor: '#E8F5E9',
+  },
+  resultError: {
+    backgroundColor: '#FFEBEE',
+  },
+  resultStatusText: {
+    fontSize: 16,
+    fontWeight: '700',
+  },
+  resultSuccessText: {
+    color: '#2E7D32',
+  },
+  resultErrorText: {
+    color: '#C62828',
+  },
+  resultMessage: {
+    fontSize: 14,
+    color: '#333',
+    marginBottom: 16,
+    textAlign: 'center',
+  },
+  resultStats: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    marginBottom: 16,
+    paddingVertical: 12,
+    backgroundColor: '#f5f5f5',
+    borderRadius: 8,
+  },
+  statItem: {
+    alignItems: 'center',
+  },
+  statLabel: {
+    fontSize: 12,
+    color: '#666',
+    marginBottom: 4,
+  },
+  statValue: {
+    fontSize: 18,
     fontWeight: '700',
     color: '#333',
   },
-  optionsWrap: { flexDirection: 'row', flexWrap: 'wrap' },
-  optionPill: {
-    borderWidth: 1,
-    borderColor: '#E0E0E0',
-    paddingHorizontal: 10,
-    paddingVertical: 8,
-    borderRadius: 999,
-    marginRight: 8,
+  statSuccess: {
+    color: '#2E7D32',
+  },
+  statError: {
+    color: '#C62828',
+  },
+  errorsContainer: {
+    marginBottom: 16,
+  },
+  errorsTitle: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#333',
     marginBottom: 8,
-    backgroundColor: '#fff',
   },
-  optionPillSelected: {
-    backgroundColor: '#2EB872',
-    borderColor: '#2EB872',
+  errorItem: {
+    padding: 8,
+    backgroundColor: '#FFF3E0',
+    borderRadius: 4,
+    marginBottom: 4,
   },
-  optionPillText: { color: '#333', fontWeight: '600' },
-  optionPillTextSelected: { color: '#fff' },
-  muted: { color: '#888' },
-  modalActions: {
-    flexDirection: 'row',
-    justifyContent: 'flex-end',
-    marginTop: 12,
+  errorText: {
+    fontSize: 12,
+    color: '#E65100',
   },
   modalButton: {
-    paddingHorizontal: 14,
-    paddingVertical: 10,
+    backgroundColor: '#2EB872',
+    paddingVertical: 12,
     borderRadius: 8,
-    marginLeft: 8,
+    alignItems: 'center',
+    marginTop: 8,
   },
-  modalButtonText: { fontWeight: '700' },
-  btnPrimary: { backgroundColor: '#2EB872' },
-  btnPrimaryText: { color: '#fff', fontWeight: '700' },
-  btnGhost: { backgroundColor: '#fff', borderWidth: 1, borderColor: '#E0E0E0' },
-  btnGhostText: { color: '#333', fontWeight: '600' },
+  modalButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '700',
+  },
 });
 
 export default MedicineListScreen;

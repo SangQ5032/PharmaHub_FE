@@ -19,8 +19,9 @@ const api: AxiosInstance = axios.create({
   baseURL: API_URL,
   timeout: 10000,
   headers: {
-    'Content-Type': 'application/json',
     Accept: 'application/json',
+    // KHÔNG set Content-Type mặc định ở đây
+    // Sẽ được set động trong interceptor tùy vào loại data
   },
 });
 
@@ -28,6 +29,20 @@ const api: AxiosInstance = axios.create({
 api.interceptors.request.use(
   async config => {
     try {
+      // Xử lý FormData đặc biệt cho React Native
+      if (config.data instanceof FormData) {
+        // Xóa Content-Type để browser tự động set với boundary
+        delete config.headers['Content-Type'];
+        delete config.headers['content-type'];
+        // Giữ lại Accept header
+        config.headers.Accept = 'application/json';
+      } else {
+        // Với JSON data, set Content-Type
+        if (!config.headers['Content-Type']) {
+          config.headers['Content-Type'] = 'application/json';
+        }
+      }
+
       // Thử lấy token từ AsyncStorage trước
       let token = await AsyncStorage.getItem('accessToken');
 
