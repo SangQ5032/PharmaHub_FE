@@ -1,4 +1,6 @@
 import apiClient from '@shared/services/api';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Platform } from 'react-native';
 import {
   Medicine,
   MedicinesResponse,
@@ -179,5 +181,116 @@ export async function fetchMedicineInventoryAllBranches(
       console.error('[medicineService] response data:', err.response.data);
     }
     throw err;
+  }
+}
+
+// Import thuốc từ file Excel
+export interface ImportMedicinesResponse {
+  success: boolean;
+  message: string;
+  data?: {
+    total: number;
+    success: number;
+    failed: number;
+    errors?: Array<{
+      row: number;
+      message: string;
+    }>;
+  };
+}
+
+export async function importMedicines(
+  fileUri: string,
+  fileName: string,
+  fileType: string,
+): Promise<ImportMedicinesResponse> {
+  const url = '/medicines/import';
+  try {
+    console.log('[medicineService] POST', url);
+    console.log('[medicineService] File info:', {
+      uri: fileUri,
+      name: fileName,
+      type: fileType,
+    });
+
+    // Tạo FormData để upload file
+    // Format cho React Native: { uri, name, type }
+    // LƯU Ý: Phải dùng object literal, không dùng class instance
+    const fileData = {
+      uri: fileUri,
+      name: fileName,
+      type:
+        fileType ||
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    };
+
+    const formData = new FormData();
+    // Field name phải là 'file' để khớp với server multer config
+    formData.append('file', fileData as any);
+
+    console.log('[medicineService] FormData created');
+    console.log('[medicineService] FormData type:', typeof formData);
+    console.log(
+      '[medicineService] FormData is FormData:',
+      formData instanceof FormData,
+    );
+
+    // Sử dụng fetch API trực tiếp thay vì axios để đảm bảo FormData được xử lý đúng
+    // Vì axios trong React Native có thể không serialize FormData đúng cách
+    const token = await AsyncStorage.getItem('accessToken');
+
+    // Lấy baseURL từ apiClient hoặc tạo trực tiếp
+    const baseURL =
+      apiClient.defaults.baseURL ||
+      (Platform.OS === 'android'
+        ? 'http://10.0.2.2:8080/api'
+        : 'http://localhost:8080/api');
+    const fullUrl = `${baseURL}${url}`;
+    console.log('[medicineService] Full URL:', fullUrl);
+
+    const response = await fetch(fullUrl, {
+      method: 'POST',
+      headers: {
+        Authorization: token ? `Bearer ${token}` : '',
+        Accept: 'application/json',
+        // KHÔNG set Content-Type, browser sẽ tự động set multipart/form-data với boundary
+      },
+      body: formData,
+    });
+
+    console.log('[medicineService] Fetch response status:', response.status);
+    console.log('[medicineService] Fetch response headers:', response.headers);
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      console.error('[medicineService] Error response:', errorData);
+
+      const errorMessage =
+        errorData?.message ||
+        errorData?.error ||
+        `Server error: ${response.status} ${response.statusText}`;
+      throw new Error(errorMessage);
+    }
+
+    const data: ImportMedicinesResponse = await response.json();
+    console.log('[medicineService] import success');
+    console.log('[medicineService] response:', data);
+
+    return data;
+  } catch (err: any) {
+    console.error('[medicineService] importMedicines failed');
+    console.error('[medicineService] Error message:', err?.message);
+    console.error('[medicineService] Error stack:', err?.stack);
+
+    // Nếu đã là Error object, throw lại
+    if (err instanceof Error) {
+      throw err;
+    }
+
+    // Network error hoặc timeout
+    throw new Error(
+      err?.message ||
+        'Không thể kết nối đến server. Vui lòng kiểm tra kết nối mạng.',
+    );
   }
 }

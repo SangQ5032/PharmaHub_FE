@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import {
   View,
   Text,
@@ -6,6 +6,7 @@ import {
   ScrollView,
   TouchableOpacity,
   FlatList,
+  Image,
 } from 'react-native';
 import { RouteProp, useNavigation, useRoute } from '@react-navigation/native';
 import { ROUTES } from '@shared/constants/routes';
@@ -61,6 +62,7 @@ const MedicineDetailScreen: React.FC = () => {
   const route =
     useRoute<RouteProp<MainStackParamList, typeof ROUTES.MEDICINE_DETAIL>>();
   const { user } = useAuth();
+  const [imageError, setImageError] = useState(false);
 
   // Get item from route params (fallback for offline viewing)
   const itemFromParams: Medicine | any = (route.params as any)?.item ?? {};
@@ -70,7 +72,13 @@ const MedicineDetailScreen: React.FC = () => {
   const { medicine, loading, error, refresh } = useMedicineDetail(medicineId);
 
   // Use medicine from API if available, otherwise use params data
-  const item = medicine || itemFromParams;
+  // Ensure item is always an object to prevent undefined errors
+  const item = medicine || itemFromParams || {};
+
+  // Reset image error when item changes
+  useEffect(() => {
+    setImageError(false);
+  }, [item?.image_url]);
 
   // Inventory hook
   const {
@@ -169,154 +177,274 @@ const MedicineDetailScreen: React.FC = () => {
               {/* Thông tin cơ bản */}
               <View style={styles.card}>
                 <SectionTitle title="Thông tin cơ bản" />
-                <Row label="Tên thuốc" value={item.name} />
-                <Row label="Hoạt chất" value={item.generic_name} />
-                <Row label="Tên thương mại" value={item.brand_name} />
-                <Row label="Dạng liều" value={item.dosage_form} />
-                <Row label="Hàm lượng" value={item.strength} />
-                <Row label="Đơn vị cơ sở" value={item.base_unit || item.unit} />
-                <Row label="Đóng gói" value={item.packaging} />
-                {item.package_structure && (
+                <View style={styles.imageContainer}>
+                  {item?.image_url && !imageError ? (
+                    <Image
+                      source={{ uri: item.image_url }}
+                      style={styles.medicineImage}
+                      resizeMode="cover"
+                      onError={() => setImageError(true)}
+                    />
+                  ) : (
+                    <Image
+                      source={require('@shared/assets/columbina.png')}
+                      style={styles.medicineImage}
+                      resizeMode="cover"
+                    />
+                  )}
+                </View>
+                <Row label="Tên thuốc" value={item?.name} />
+                {item.description && (
                   <View style={styles.textRow}>
-                    <Text style={styles.textLabel}>Cấu trúc đóng gói:</Text>
+                    <Text style={styles.textLabel}>Mô tả:</Text>
+                    <Text style={styles.textValue}>{item.description}</Text>
+                  </View>
+                )}
+                <Row
+                  label="Đơn vị cơ sở"
+                  value={
+                    typeof item.base_unit === 'object' &&
+                    item.base_unit !== null
+                      ? `${item.base_unit.name} (${item.base_unit.short_name})`
+                      : item.base_unit || '-'
+                  }
+                />
+                {item.units && item.units.length > 0 && (
+                  <View style={styles.textRow}>
+                    <Text style={styles.textLabel}>Các đơn vị khác:</Text>
                     <Text style={styles.textValue}>
-                      {item.package_structure.box?.contains
-                        ? `1 hộp = ${item.package_structure.box.contains} ${
-                            item.package_structure.box.child || 'vỉ'
-                          }`
-                        : ''}
-                      {item.package_structure.blister?.contains
-                        ? `\n1 vỉ = ${
-                            item.package_structure.blister.contains
-                          } ${item.package_structure.blister.child || 'viên'}`
-                        : ''}
+                      {item.units
+                        .map(
+                          (u: any) =>
+                            `${u.name} (${u.short_name}) - Tỷ lệ: ${u.ratio_to_base}`,
+                        )
+                        .join('\n')}
                     </Text>
                   </View>
                 )}
-              </View>
-
-              {/* Phân loại */}
-              <View style={styles.card}>
-                <SectionTitle title="Phân loại" />
-                <Row label="Nhóm thuốc" value={item.category_id?.name} />
-                <Row label="Yêu cầu đơn" value={item.prescription_required} />
-                <Row label="Thuốc kiểm soát" value={item.is_controlled} />
+                <Row label="Nhà sản xuất" value={item?.manufacturer} />
                 <Row
                   label="Trạng thái"
-                  value={item.status === 'active' ? 'Hoạt động' : 'Vô hiệu hóa'}
+                  value={
+                    item?.is_active !== false ? 'Hoạt động' : 'Vô hiệu hóa'
+                  }
                 />
+                {/* Legacy fields - chỉ hiển thị nếu có */}
+                {item.generic_name && (
+                  <Row label="Hoạt chất" value={item.generic_name} />
+                )}
+                {item.brand_name && (
+                  <Row label="Tên thương mại" value={item.brand_name} />
+                )}
+                {item.dosage_form && (
+                  <Row label="Dạng liều" value={item.dosage_form} />
+                )}
+                {item.strength && (
+                  <Row label="Hàm lượng" value={item.strength} />
+                )}
               </View>
 
               {/* Giá cả */}
               <View style={styles.card}>
                 <SectionTitle title="Giá cả" />
-                {item.prices ? (
-                  <>
-                    {item.prices.base_unit_price > 0 && (
-                      <Row
-                        label={`Giá đơn vị cơ sở (${
-                          item.base_unit || 'tablet'
-                        })`}
-                        value={`${formatPrice(item.prices.base_unit_price)} đ`}
-                      />
-                    )}
-                    {item.prices.price_per_unit?.tablet && (
-                      <Row
-                        label="Giá mỗi viên"
-                        value={`${formatPrice(
-                          item.prices.price_per_unit.tablet,
-                        )} đ`}
-                      />
-                    )}
-                    {item.prices.price_per_unit?.blister &&
-                      item.package_structure?.blister && (
-                        <Row
-                          label={`Giá mỗi vỉ (${item.package_structure.blister.contains} viên)`}
-                          value={`${formatPrice(
-                            item.prices.price_per_unit.blister,
-                          )} đ`}
-                        />
-                      )}
-                    {item.prices.price_per_unit?.box &&
-                      item.package_structure?.box && (
-                        <Row
-                          label={`Giá mỗi hộp (${item.package_structure.box.contains} vỉ)`}
-                          value={`${formatPrice(
-                            item.prices.price_per_unit.box,
-                          )} đ`}
-                        />
-                      )}
-                  </>
-                ) : item.units && item.units.length > 0 ? (
-                  // Fallback về units array (legacy support)
-                  item.units.map((unit: any, index: number) => (
-                    <Row
-                      key={index}
-                      label={`${unit.unit} (x${unit.multiplier})`}
-                      value={`${formatPrice(unit.price)} đ`}
-                    />
-                  ))
-                ) : (
-                  <Row label="Đơn vị giá" value="-" />
+                {item.default_retail_price != null && (
+                  <Row
+                    label="Giá bán lẻ mặc định"
+                    value={`${formatPrice(item.default_retail_price)} đ`}
+                  />
                 )}
+                {item.default_import_price != null && (
+                  <Row
+                    label="Giá nhập mặc định"
+                    value={`${formatPrice(item.default_import_price)} đ`}
+                  />
+                )}
+                {item.default_expiry_duration_months != null && (
+                  <Row
+                    label="Thời hạn sử dụng mặc định"
+                    value={`${item.default_expiry_duration_months} tháng`}
+                  />
+                )}
+                {/* Legacy support - chỉ hiển thị nếu không có giá mới */}
+                {!item.default_retail_price &&
+                  !item.default_import_price &&
+                  item.prices && (
+                    <>
+                      {item.prices.base_unit_price > 0 && (
+                        <Row
+                          label={`Giá đơn vị cơ sở (${
+                            typeof item.base_unit === 'object' &&
+                            item.base_unit !== null
+                              ? item.base_unit.name
+                              : item.base_unit || 'tablet'
+                          })`}
+                          value={`${formatPrice(
+                            item.prices.base_unit_price,
+                          )} đ`}
+                        />
+                      )}
+                    </>
+                  )}
               </View>
 
-              {/* Thông tin sản xuất */}
-              <View style={styles.card}>
-                <SectionTitle title="Thông tin sản xuất" />
-                <Row label="Nhà sản xuất" value={item.manufacturer} />
-                <Row label="Nước sản xuất" value={item.country_of_origin} />
-                <Row label="Số đăng ký" value={item.registration_number} />
-                <Row label="Mã vạch" value={item.barcode} />
-              </View>
+              {/* Thông tin dược phẩm */}
+              {item.pharmaceutical_info && (
+                <View style={styles.card}>
+                  <SectionTitle title="Thông tin dược phẩm" />
+                  {item.pharmaceutical_info.active_ingredient && (
+                    <View style={styles.textRow}>
+                      <Text style={styles.textLabel}>Hoạt chất:</Text>
+                      <Text style={styles.textValue}>
+                        {item.pharmaceutical_info.active_ingredient}
+                      </Text>
+                    </View>
+                  )}
+                  {item.pharmaceutical_info.indication && (
+                    <View style={styles.textRow}>
+                      <Text style={styles.textLabel}>Chỉ định:</Text>
+                      <Text style={styles.textValue}>
+                        {item.pharmaceutical_info.indication}
+                      </Text>
+                    </View>
+                  )}
+                  {item.pharmaceutical_info.usage && (
+                    <View style={styles.textRow}>
+                      <Text style={styles.textLabel}>Công dụng:</Text>
+                      <Text style={styles.textValue}>
+                        {item.pharmaceutical_info.usage}
+                      </Text>
+                    </View>
+                  )}
+                  {item.pharmaceutical_info.contraindication && (
+                    <View style={styles.textRow}>
+                      <Text style={styles.textLabel}>Chống chỉ định:</Text>
+                      <Text style={styles.textValue}>
+                        {item.pharmaceutical_info.contraindication}
+                      </Text>
+                    </View>
+                  )}
+                  {item.pharmaceutical_info.dosage && (
+                    <View style={styles.textRow}>
+                      <Text style={styles.textLabel}>Liều dùng:</Text>
+                      <Text style={styles.textValue}>
+                        {item.pharmaceutical_info.dosage}
+                      </Text>
+                    </View>
+                  )}
+                  {item.pharmaceutical_info.administration && (
+                    <View style={styles.textRow}>
+                      <Text style={styles.textLabel}>Cách dùng:</Text>
+                      <Text style={styles.textValue}>
+                        {item.pharmaceutical_info.administration}
+                      </Text>
+                    </View>
+                  )}
+                  {item.pharmaceutical_info.side_effects && (
+                    <View style={styles.textRow}>
+                      <Text style={styles.textLabel}>Tác dụng phụ:</Text>
+                      <Text style={styles.textValue}>
+                        {item.pharmaceutical_info.side_effects}
+                      </Text>
+                    </View>
+                  )}
+                  {item.pharmaceutical_info.drug_interactions && (
+                    <View style={styles.textRow}>
+                      <Text style={styles.textLabel}>Tương tác thuốc:</Text>
+                      <Text style={styles.textValue}>
+                        {item.pharmaceutical_info.drug_interactions}
+                      </Text>
+                    </View>
+                  )}
+                  {item.pharmaceutical_info.other_info && (
+                    <View style={styles.textRow}>
+                      <Text style={styles.textLabel}>Thông tin khác:</Text>
+                      <Text style={styles.textValue}>
+                        {item.pharmaceutical_info.other_info}
+                      </Text>
+                    </View>
+                  )}
+                </View>
+              )}
 
-              {/* Chỉ định & Chống chỉ định */}
-              <View style={styles.card}>
-                <SectionTitle title="Chỉ định & Chống chỉ định" />
-                <View style={styles.textRow}>
-                  <Text style={styles.textLabel}>Chỉ định:</Text>
-                  <Text style={styles.textValue}>
-                    {item.indications || '-'}
-                  </Text>
+              {/* Thông tin sản xuất (legacy support) */}
+              {(item.country_of_origin ||
+                item.registration_number ||
+                item.barcode) && (
+                <View style={styles.card}>
+                  <SectionTitle title="Thông tin sản xuất" />
+                  {item.country_of_origin && (
+                    <Row label="Nước sản xuất" value={item.country_of_origin} />
+                  )}
+                  {item.registration_number && (
+                    <Row label="Số đăng ký" value={item.registration_number} />
+                  )}
+                  {item.barcode && <Row label="Mã vạch" value={item.barcode} />}
                 </View>
-                <View style={styles.textRow}>
-                  <Text style={styles.textLabel}>Chống chỉ định:</Text>
-                  <Text style={styles.textValue}>
-                    {item.contraindications || '-'}
-                  </Text>
-                </View>
-                <View style={styles.textRow}>
-                  <Text style={styles.textLabel}>Tác dụng phụ:</Text>
-                  <Text style={styles.textValue}>
-                    {item.side_effects || '-'}
-                  </Text>
-                </View>
-              </View>
+              )}
 
-              {/* Hướng dẫn sử dụng & Bảo quản */}
-              <View style={styles.card}>
-                <SectionTitle title="Hướng dẫn sử dụng & Bảo quản" />
-                <View style={styles.textRow}>
-                  <Text style={styles.textLabel}>Cách dùng:</Text>
-                  <Text style={styles.textValue}>
-                    {item.usage_instructions || '-'}
-                  </Text>
+              {/* Chỉ định & Chống chỉ định (legacy support) */}
+              {(item.indications ||
+                item.contraindications ||
+                item.side_effects) && (
+                <View style={styles.card}>
+                  <SectionTitle title="Chỉ định & Chống chỉ định" />
+                  {item.indications && (
+                    <View style={styles.textRow}>
+                      <Text style={styles.textLabel}>Chỉ định:</Text>
+                      <Text style={styles.textValue}>{item.indications}</Text>
+                    </View>
+                  )}
+                  {item.contraindications && (
+                    <View style={styles.textRow}>
+                      <Text style={styles.textLabel}>Chống chỉ định:</Text>
+                      <Text style={styles.textValue}>
+                        {item.contraindications}
+                      </Text>
+                    </View>
+                  )}
+                  {item.side_effects && (
+                    <View style={styles.textRow}>
+                      <Text style={styles.textLabel}>Tác dụng phụ:</Text>
+                      <Text style={styles.textValue}>{item.side_effects}</Text>
+                    </View>
+                  )}
                 </View>
-                <View style={styles.textRow}>
-                  <Text style={styles.textLabel}>Bảo quản:</Text>
-                  <Text style={styles.textValue}>
-                    {item.storage_conditions || '-'}
-                  </Text>
+              )}
+
+              {/* Hướng dẫn sử dụng & Bảo quản (legacy support) */}
+              {(item.usage_instructions ||
+                item.storage_conditions ||
+                item.alert_threshold) && (
+                <View style={styles.card}>
+                  <SectionTitle title="Hướng dẫn sử dụng & Bảo quản" />
+                  {item.usage_instructions && (
+                    <View style={styles.textRow}>
+                      <Text style={styles.textLabel}>Cách dùng:</Text>
+                      <Text style={styles.textValue}>
+                        {item.usage_instructions}
+                      </Text>
+                    </View>
+                  )}
+                  {item.storage_conditions && (
+                    <View style={styles.textRow}>
+                      <Text style={styles.textLabel}>Bảo quản:</Text>
+                      <Text style={styles.textValue}>
+                        {item.storage_conditions}
+                      </Text>
+                    </View>
+                  )}
+                  {item.alert_threshold != null && (
+                    <Row label="Ngưỡng cảnh báo" value={item.alert_threshold} />
+                  )}
                 </View>
-                <Row label="Ngưỡng cảnh báo" value={item.alert_threshold} />
-              </View>
+              )}
 
               {/* Thông tin hệ thống */}
               <View style={styles.card}>
                 <SectionTitle title="Thông tin hệ thống" />
-                <Row label="ID" value={item._id} />
-                <Row label="Tạo lúc" value={formatDate(item.createdAt)} />
-                <Row label="Cập nhật" value={formatDate(item.updatedAt)} />
+                <Row label="ID" value={item?._id} />
+                <Row label="Tạo lúc" value={formatDate(item?.createdAt)} />
+                <Row label="Cập nhật" value={formatDate(item?.updatedAt)} />
               </View>
             </ScrollView>
           )}
@@ -544,6 +672,16 @@ const styles = StyleSheet.create({
   },
   textLabel: { color: '#333', fontWeight: '600', marginBottom: 6 },
   textValue: { color: '#555', lineHeight: 20 },
+  imageContainer: {
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  medicineImage: {
+    width: 200,
+    height: 200,
+    borderRadius: 12,
+    backgroundColor: '#f0f0f0',
+  },
   errorContainer: {
     backgroundColor: '#FFEBEE',
     borderColor: '#FFCDD2',
