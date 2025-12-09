@@ -99,7 +99,20 @@ const MedicineDetailScreen: React.FC = () => {
   React.useEffect(() => {
     if (selectedUnit && isUnitAvailable[selectedUnit] === false) {
       // Tìm đơn vị có sẵn đầu tiên (ưu tiên: base_unit > các đơn vị khác)
-      const baseUnit = medicine?.base_unit || 'tablet';
+      let baseUnit = 'tablet';
+      if (medicine?.base_unit) {
+        if (typeof medicine.base_unit === 'string') {
+          baseUnit = medicine.base_unit;
+        } else if (
+          typeof medicine.base_unit === 'object' &&
+          medicine.base_unit !== null
+        ) {
+          baseUnit =
+            medicine.base_unit.short_name ||
+            medicine.base_unit.name ||
+            'tablet';
+        }
+      }
       const priorityOrder = [
         baseUnit,
         ...validUnits.filter(u => u !== baseUnit),
@@ -114,35 +127,64 @@ const MedicineDetailScreen: React.FC = () => {
     }
   }, [isUnitAvailable, selectedUnit, medicine, validUnits]);
 
-  // ✅ Get price based on selected unit từ units array trong medicine response
-  const getUnitPrice = () => {
-    // Ưu tiên lấy từ units array trong medicine response
-    if (medicine?.units && Array.isArray(medicine.units)) {
-      const unitData = medicine.units.find((u: any) => u.unit === selectedUnit);
-      if (unitData?.price) {
-        return unitData.price;
+  // ✅ Get price based on selected unit và batch (nếu có)
+  // Ưu tiên: retail_price từ batch > retail_price từ medicine
+  // Sau đó tính giá theo đơn vị đã chọn = retail_price * unitMultiplier
+  const getUnitPrice = useMemo(() => {
+    // Lấy retail_price: ưu tiên từ batch đã chọn, sau đó từ medicine
+    const baseRetailPrice =
+      selectedBatch?.retail_price ||
+      medicine?.default_retail_price ||
+      medicine?.retail_price ||
+      medicine?.price ||
+      0;
+
+    if (baseRetailPrice === 0) {
+      // Nếu không có retail_price, thử lấy từ units array hoặc prices object
+      if (medicine?.units && Array.isArray(medicine.units)) {
+        const unitData = medicine.units.find((u: any) => {
+          const unitName = u.short_name || u.name || u.unit;
+          return unitName === selectedUnit;
+        });
+        if (unitData?.price) {
+          return unitData.price;
+        }
       }
+
+      // Fallback về prices object
+      if (medicine?.prices?.price_per_unit?.[selectedUnit]) {
+        return medicine.prices.price_per_unit[selectedUnit];
+      }
+      if (medicine?.prices?.unit_prices?.[selectedUnit]) {
+        return medicine.prices.unit_prices[selectedUnit];
+      }
+
+      return 0;
     }
 
-    // Fallback về prices object
-    if (medicine?.prices?.price_per_unit?.[selectedUnit]) {
-      return medicine.prices.price_per_unit[selectedUnit];
-    }
-    if (medicine?.prices?.unit_prices?.[selectedUnit]) {
-      return medicine.prices.unit_prices[selectedUnit];
-    }
+    // Tính giá theo đơn vị đã chọn = retail_price (base unit) * multiplier
+    const multiplier = getUnitMultiplier(medicine || {}, selectedUnit);
+    return baseRetailPrice * multiplier;
+  }, [selectedBatch, medicine, selectedUnit]);
 
-    // Fallback to retail_price for tablet
-    if (selectedUnit === 'tablet') {
-      return medicine?.retail_price || medicine?.price || 0;
-    }
-    return 0;
-  };
-
-  const price = getUnitPrice();
+  const price = getUnitPrice;
 
   // ✅ Lấy base_unit từ medicine response
-  const baseUnit = medicine?.base_unit || medicine?.unit || 'viên';
+  const baseUnit = useMemo(() => {
+    if (medicine?.base_unit) {
+      if (typeof medicine.base_unit === 'string') {
+        return medicine.base_unit;
+      } else if (
+        typeof medicine.base_unit === 'object' &&
+        medicine.base_unit !== null
+      ) {
+        return (
+          medicine.base_unit.short_name || medicine.base_unit.name || 'viên'
+        );
+      }
+    }
+    return medicine?.unit || 'viên';
+  }, [medicine?.base_unit, medicine?.unit]);
 
   // ✅ Lấy multiplier của đơn vị đã chọn từ package_structure
   const unitMultiplier = useMemo(() => {
@@ -180,9 +222,13 @@ const MedicineDetailScreen: React.FC = () => {
     const quantitySource = selectedBatch ? 'lô đã chọn' : 'tổng tồn kho';
 
     if (requestedQuantityInBaseUnit > availableQuantity) {
-      const unitName = getUnitDisplayName(selectedUnit).toLowerCase();
+      const unitName = selectedUnit
+        ? getUnitDisplayName(selectedUnit).toLowerCase()
+        : 'đơn vị';
       const batchInfo = selectedBatch
-        ? `\nLô: ${selectedBatch.batch_number}\n`
+        ? `\nLô: ${
+            selectedBatch.batch_number || selectedBatch.batch_code || 'N/A'
+          }\n`
         : '';
       Alert.alert(
         'Lỗi',
@@ -209,7 +255,7 @@ const MedicineDetailScreen: React.FC = () => {
         selectedUnit,
         price,
         selectedBatch?._id, // Truyền batch_id nếu có
-        selectedBatch?.batch_number, // Truyền batch_number để hiển thị
+        selectedBatch?.batch_number || selectedBatch?.batch_code, // Truyền batch_number để hiển thị
       );
     }
 
@@ -313,7 +359,23 @@ const MedicineDetailScreen: React.FC = () => {
           <View style={styles.infoRow}>
             <Text style={styles.infoLabel}>Đơn vị cơ bản:</Text>
             <Text style={styles.infoValue}>
-              {medicine.base_unit || medicine.unit}
+              {(() => {
+                if (medicine.base_unit) {
+                  if (typeof medicine.base_unit === 'string') {
+                    return medicine.base_unit;
+                  } else if (
+                    typeof medicine.base_unit === 'object' &&
+                    medicine.base_unit !== null
+                  ) {
+                    return (
+                      medicine.base_unit.name ||
+                      medicine.base_unit.short_name ||
+                      '-'
+                    );
+                  }
+                }
+                return medicine.unit || '-';
+              })()}
             </Text>
           </View>
         )}
@@ -523,14 +585,16 @@ const MedicineDetailScreen: React.FC = () => {
               <View style={styles.batchHeader}>
                 <Text style={styles.batchNumber}>Lô {index + 1}</Text>
                 <Text style={styles.batchNumberValue}>
-                  {batch.batch_number}
+                  {batch.batch_number || batch.batch_code}
                 </Text>
               </View>
 
               <View style={styles.batchInfo}>
                 <View style={styles.batchRow}>
                   <Text style={styles.batchLabel}>Số lô:</Text>
-                  <Text style={styles.batchValue}>{batch.batch_number}</Text>
+                  <Text style={styles.batchValue}>
+                    {batch.batch_number || batch.batch_code}
+                  </Text>
                 </View>
 
                 <View style={styles.batchRow}>
@@ -686,7 +750,9 @@ const MedicineDetailScreen: React.FC = () => {
                 ]}
               >
                 {selectedBatch
-                  ? `Lô: ${selectedBatch.batch_number} | HSD: ${new Date(
+                  ? `Lô: ${
+                      selectedBatch.batch_number || selectedBatch.batch_code
+                    } | HSD: ${new Date(
                       selectedBatch.expiry_date,
                     ).toLocaleDateString('vi-VN')} | Còn: ${
                       selectedBatch.quantity
@@ -736,7 +802,11 @@ const MedicineDetailScreen: React.FC = () => {
 
           <View style={[styles.inputContainer, styles.priceInputContainer]}>
             <Text style={styles.label}>
-              Giá bán (₫/{getUnitDisplayName(selectedUnit).toLowerCase()})
+              Giá bán (₫/
+              {selectedUnit
+                ? getUnitDisplayName(selectedUnit).toLowerCase()
+                : 'đơn vị'}
+              )
             </Text>
             <Text style={styles.priceDisplay}>
               {Number(price).toLocaleString('vi-VN')}
@@ -780,11 +850,17 @@ const MedicineDetailScreen: React.FC = () => {
             />
 
             <FlatList
-              data={batches.filter((batch: any) =>
-                batch.batch_number
+              data={batches.filter((batch: any) => {
+                // Hỗ trợ cả batch_code và batch_number
+                const batchNumber = batch.batch_number || batch.batch_code;
+                if (!batchNumber || typeof batchNumber !== 'string')
+                  return false;
+                if (!batchSearchQuery || typeof batchSearchQuery !== 'string')
+                  return true;
+                return batchNumber
                   .toLowerCase()
-                  .includes(batchSearchQuery.toLowerCase()),
-              )}
+                  .includes(batchSearchQuery.toLowerCase());
+              })}
               keyExtractor={item => item._id}
               renderItem={({ item }) => (
                 <TouchableOpacity
@@ -801,7 +877,7 @@ const MedicineDetailScreen: React.FC = () => {
                 >
                   <View>
                     <Text style={styles.batchListBatchNumber}>
-                      Lô: {item.batch_number}
+                      Lô: {item.batch_number || item.batch_code}
                     </Text>
                     <Text style={styles.batchListInfo}>
                       HSD:{' '}
@@ -812,6 +888,12 @@ const MedicineDetailScreen: React.FC = () => {
                       Giá nhập:{' '}
                       {Number(item.import_price).toLocaleString('vi-VN')}₫
                     </Text>
+                    {item.retail_price !== undefined && (
+                      <Text style={styles.batchListRetailPrice}>
+                        Giá bán lẻ:{' '}
+                        {Number(item.retail_price).toLocaleString('vi-VN')}₫
+                      </Text>
+                    )}
                   </View>
                 </TouchableOpacity>
               )}
@@ -1229,6 +1311,13 @@ const styles = StyleSheet.create({
   batchListInfo: {
     fontSize: 12,
     color: '#666',
+    marginBottom: 2,
+  },
+  batchListRetailPrice: {
+    fontSize: 12,
+    color: '#0066CC',
+    fontWeight: '600',
+    marginTop: 4,
     marginBottom: 2,
   },
   emptyText: {

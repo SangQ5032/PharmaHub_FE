@@ -10,6 +10,7 @@ import {
   FlatList,
   TouchableOpacity,
   ActivityIndicator,
+  Image,
 } from 'react-native';
 import { useGetMedicines } from '@features/warehouse/hooks/useMedicines';
 import { Medicine } from '@features/warehouse/types/medicine.types';
@@ -47,6 +48,13 @@ export const MedicineSearchModal: React.FC<MedicineSearchModalProps> = ({
       onPress={() => handleSelect(item)}
       activeOpacity={0.7}
     >
+      {(item as any).image_url && (
+        <Image
+          source={{ uri: (item as any).image_url }}
+          style={styles.medicineImage}
+          resizeMode="cover"
+        />
+      )}
       <View style={styles.medicineInfo}>
         <Text style={styles.medicineName} numberOfLines={2}>
           {item.name}
@@ -62,6 +70,11 @@ export const MedicineSearchModal: React.FC<MedicineSearchModalProps> = ({
             <Text style={styles.medicineDetail}>• {item.strength}</Text>
           )}
         </View>
+        {(item as any).manufacturer && (
+          <Text style={styles.medicineManufacturer}>
+            {(item as any).manufacturer}
+          </Text>
+        )}
         {item.category_id && (
           <Text style={styles.medicineCategory}>{item.category_id.name}</Text>
         )}
@@ -175,8 +188,20 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: '#F0F0F0',
   },
+  medicineImage: {
+    width: 60,
+    height: 60,
+    borderRadius: 8,
+    marginRight: 12,
+    backgroundColor: '#F0F0F0',
+  },
   medicineInfo: {
     flex: 1,
+  },
+  medicineManufacturer: {
+    fontSize: 12,
+    color: '#9E9E9E',
+    marginTop: 2,
   },
   medicineName: {
     fontSize: 16,

@@ -37,6 +37,35 @@ const formatPrice = (p?: number | null) => {
   return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.');
 };
 
+const formatDate = (d?: string | any) => {
+  // Đảm bảo d là string trước khi xử lý
+  if (!d) return '-';
+  if (typeof d !== 'string') {
+    // Nếu là object, thử lấy string từ các field thường dùng
+    if (typeof d === 'object' && d !== null) {
+      // Nếu có toString và không phải [object Object]
+      if (typeof d.toString === 'function') {
+        const str = d.toString();
+        if (str && str !== '[object Object]') {
+          d = str;
+        } else {
+          return '-';
+        }
+      } else {
+        return '-';
+      }
+    } else {
+      d = String(d);
+    }
+  }
+  const dt = new Date(d);
+  if (Number.isNaN(dt.getTime())) return '-';
+  const dd = String(dt.getDate()).padStart(2, '0');
+  const mm = String(dt.getMonth() + 1).padStart(2, '0');
+  const yyyy = dt.getFullYear();
+  return `${dd}/${mm}/${yyyy}`;
+};
+
 const getBasePrice = (medicine: Medicine) => {
   // Ưu tiên lấy từ default_retail_price (cấu trúc mới)
   if (medicine.default_retail_price != null) {
@@ -78,22 +107,17 @@ const getBasePrice = (medicine: Medicine) => {
 const getBaseUnitName = (medicine: Medicine) => {
   // Cấu trúc mới: base_unit là object
   if (typeof medicine.base_unit === 'object' && medicine.base_unit !== null) {
+    // Lấy name hoặc short_name, đảm bảo xử lý cả trường hợp là object
     const name = medicine.base_unit.name || medicine.base_unit.short_name;
-    // Đảm bảo name là string, không phải object
-    if (typeof name === 'string') {
-      return name;
-    }
-    if (typeof name === 'object' && name !== null) {
-      // Nếu name là object, lấy name từ object đó
-      return (name as any).name || (name as any)._id || '-';
-    }
-    return '-';
+    // Sử dụng ensureString để đảm bảo luôn trả về string
+    return ensureString(name, '-');
   }
   // Legacy: base_unit là string
   if (typeof medicine.base_unit === 'string') {
     return medicine.base_unit;
   }
-  return '-';
+  // Fallback: nếu base_unit là bất kỳ giá trị nào khác, convert sang string
+  return ensureString(medicine.base_unit, '-');
 };
 
 const MedicineItem: React.FC<{ item: Medicine; onUpdated?: () => void }> = ({
@@ -184,6 +208,19 @@ const MedicineItem: React.FC<{ item: Medicine; onUpdated?: () => void }> = ({
                   numberOfLines={1}
                 >
                   {ensureString(item.description, '')}
+                </Text>
+              )}
+              {item.manufacturing_date && (
+                <Text
+                  style={[styles.cellSubText, styles.left]}
+                  numberOfLines={1}
+                >
+                  Hạn SX:{' '}
+                  {formatDate(
+                    typeof item.manufacturing_date === 'string'
+                      ? item.manufacturing_date
+                      : ensureString(item.manufacturing_date),
+                  )}
                 </Text>
               )}
             </View>

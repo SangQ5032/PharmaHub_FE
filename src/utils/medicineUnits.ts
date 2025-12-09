@@ -10,13 +10,103 @@ export type PackageStructure = {
   };
 };
 
+// MedicineUnit type mới từ API
+export type MedicineUnit = {
+  _id: string;
+  name: string;
+  short_name: string;
+  ratio_to_base: number;
+};
+
 /**
- * Lấy danh sách đơn vị hợp lệ từ package_structure và base_unit
+ * Helper function để lấy tên đơn vị từ base_unit (có thể là object hoặc string)
+ */
+const getBaseUnitName = (
+  baseUnit: MedicineUnit | string | undefined,
+): string | null => {
+  if (!baseUnit) {
+    return null;
+  }
+
+  // Nếu là object (MedicineUnit)
+  if (typeof baseUnit === 'object' && baseUnit !== null) {
+    return baseUnit.short_name || baseUnit.name || null;
+  }
+
+  // Nếu là string
+  if (typeof baseUnit === 'string') {
+    return baseUnit;
+  }
+
+  return null;
+};
+
+/**
+ * Lấy short_name của unit từ medicine object
+ * Ưu tiên short_name từ units array, sau đó mới dùng name hoặc unit gốc
+ * @param medicine - Medicine object với units array
+ * @param unit - Unit name (có thể là short_name, name, hoặc key từ package_structure)
+ * @returns short_name của unit (hoặc unit gốc nếu không tìm thấy)
+ */
+export const getUnitShortName = (
+  medicine: {
+    base_unit?: MedicineUnit | string;
+    units?: MedicineUnit[];
+    package_structure?: PackageStructure;
+  },
+  unit: string,
+): string => {
+  if (!medicine || !unit || typeof unit !== 'string') {
+    return unit || '';
+  }
+
+  const normalizeUnit = (u: string | undefined | null) => {
+    if (!u || typeof u !== 'string') return '';
+    return u.toLowerCase().trim();
+  };
+  const normalizedUnit = normalizeUnit(unit);
+  if (!normalizedUnit) {
+    return unit;
+  }
+
+  // Tìm trong units array
+  if (medicine.units && Array.isArray(medicine.units)) {
+    const foundUnit = medicine.units.find(u => {
+      if (!u || typeof u !== 'object') return false;
+      const unitName = u.short_name || u.name || '';
+      if (!unitName || typeof unitName !== 'string') return false;
+      return normalizeUnit(unitName) === normalizedUnit;
+    });
+
+    if (foundUnit && foundUnit.short_name) {
+      return foundUnit.short_name;
+    }
+  }
+
+  // Kiểm tra base_unit
+  const baseUnitName = getBaseUnitName(medicine.base_unit);
+  if (baseUnitName && normalizeUnit(baseUnitName) === normalizedUnit) {
+    // Nếu base_unit là object, lấy short_name
+    if (typeof medicine.base_unit === 'object' && medicine.base_unit !== null) {
+      return (
+        medicine.base_unit.short_name || medicine.base_unit.name || baseUnitName
+      );
+    }
+    return baseUnitName;
+  }
+
+  // Nếu không tìm thấy, trả về unit gốc
+  return unit;
+};
+
+/**
+ * Lấy danh sách đơn vị hợp lệ từ package_structure, base_unit và units array
  * @param medicine - Medicine object với package_structure
  * @returns Array of valid unit names
  */
 export const getValidUnits = (medicine: {
-  base_unit?: string;
+  base_unit?: MedicineUnit | string;
+  units?: MedicineUnit[];
   package_structure?: PackageStructure;
 }): string[] => {
   if (!medicine) {
@@ -24,9 +114,30 @@ export const getValidUnits = (medicine: {
   }
 
   const units: string[] = [];
-  const baseUnit = medicine.base_unit;
 
-  // Lấy tất cả đơn vị từ package_structure
+  // Xử lý units array (cấu trúc mới từ API)
+  if (medicine.units && Array.isArray(medicine.units)) {
+    medicine.units.forEach(unit => {
+      if (unit && typeof unit === 'object') {
+        const unitName = unit.short_name || unit.name;
+        if (
+          unitName &&
+          typeof unitName === 'string' &&
+          !units.includes(unitName)
+        ) {
+          units.push(unitName);
+        }
+      }
+    });
+  }
+
+  // Lấy base_unit name
+  const baseUnitName = getBaseUnitName(medicine.base_unit);
+  if (baseUnitName && !units.includes(baseUnitName)) {
+    units.push(baseUnitName);
+  }
+
+  // Lấy tất cả đơn vị từ package_structure (legacy)
   if (
     medicine.package_structure &&
     typeof medicine.package_structure === 'object'
@@ -38,12 +149,7 @@ export const getValidUnits = (medicine: {
     });
   }
 
-  // Nếu có base_unit và chưa có trong danh sách, thêm vào
-  if (baseUnit && !units.includes(baseUnit)) {
-    units.push(baseUnit);
-  }
-
-  // Nếu không có đơn vị nào, trả về mảng rỗng thay vì fallback hardcode
+  // Nếu không có đơn vị nào, trả về mảng rỗng
   return units;
 };
 
@@ -55,7 +161,8 @@ export const getValidUnits = (medicine: {
  */
 export const isValidUnit = (
   medicine: {
-    base_unit?: string;
+    base_unit?: MedicineUnit | string;
+    units?: MedicineUnit[];
     package_structure?: PackageStructure;
   },
   unit: string,
@@ -65,21 +172,39 @@ export const isValidUnit = (
   }
 
   const validUnits = getValidUnits(medicine);
+  if (!unit || typeof unit !== 'string') {
+    return false;
+  }
   const normalizedUnit = unit.toLowerCase().trim();
 
   // So sánh không phân biệt hoa thường
   return validUnits.some(
-    validUnit => validUnit.toLowerCase().trim() === normalizedUnit,
+    validUnit =>
+      validUnit &&
+      typeof validUnit === 'string' &&
+      validUnit.toLowerCase().trim() === normalizedUnit,
   );
 };
 
 /**
  * Lấy tên hiển thị của đơn vị (tiếng Việt)
- * @param unit - Unit name (box, blister, tablet, bottle, etc.)
+ * @param unit - Unit name (box, blister, tablet, bottle, etc.) hoặc MedicineUnit object
  * @returns Vietnamese name
  */
-export const getUnitDisplayName = (unit: string): string => {
+export const getUnitDisplayName = (
+  unit: string | MedicineUnit | undefined | null,
+): string => {
   if (!unit) {
+    return '';
+  }
+
+  // Nếu là MedicineUnit object
+  if (typeof unit === 'object' && unit !== null) {
+    return unit.name || unit.short_name || '';
+  }
+
+  // Nếu là string
+  if (typeof unit !== 'string' || !unit) {
     return '';
   }
 
@@ -132,15 +257,17 @@ export const getUnitDisplayName = (unit: string): string => {
 };
 
 /**
- * Tính multiplier từ đơn vị về base unit
- * @param medicine - Medicine object với package_structure
+ * Lấy ratio_to_base của một đơn vị
+ * Ưu tiên sử dụng unit_ratios nếu có, sau đó mới dùng ratio_to_base từ units array
+ * @param medicine - Medicine object với units array và unit_ratios
  * @param unit - Unit name
- * @returns Multiplier (số base units trong 1 unit)
+ * @returns ratio_to_base của đơn vị (1 nếu là base_unit hoặc không tìm thấy)
  */
-export const getUnitMultiplier = (
+export const getUnitRatioToBase = (
   medicine: {
-    base_unit?: string;
-    package_structure?: PackageStructure;
+    base_unit?: MedicineUnit | string;
+    units?: MedicineUnit[];
+    unit_ratios?: { [key: string]: number };
   },
   unit: string,
 ): number => {
@@ -148,15 +275,295 @@ export const getUnitMultiplier = (
     return 1;
   }
 
-  const baseUnit = medicine.base_unit;
-  if (!baseUnit) {
+  const normalizeUnit = (u: string | null | undefined) => {
+    if (!u || typeof u !== 'string') return '';
+    return u.toLowerCase().trim();
+  };
+  const normalizedUnit = normalizeUnit(unit);
+  if (!normalizedUnit) {
+    return 1;
+  }
+  const baseUnitName = getBaseUnitName(medicine.base_unit);
+
+  // Nếu là base_unit, ratio_to_base = 1
+  if (baseUnitName) {
+    const normalizedBaseUnit = normalizeUnit(baseUnitName);
+    if (normalizedBaseUnit && normalizedBaseUnit === normalizedUnit) {
+      // Kiểm tra xem base_unit có phải là object với ratio_to_base không
+      if (
+        typeof medicine.base_unit === 'object' &&
+        medicine.base_unit !== null
+      ) {
+        return medicine.base_unit.ratio_to_base || 1;
+      }
+      return 1;
+    }
+  }
+
+  // Tìm trong units array
+  if (medicine.units && Array.isArray(medicine.units)) {
+    const foundUnit = medicine.units.find(u => {
+      if (!u || typeof u !== 'object') return false;
+      const unitName = u.short_name || u.name || '';
+      if (!unitName || typeof unitName !== 'string') return false;
+      return unitName.toLowerCase().trim() === normalizedUnit;
+    });
+
+    if (foundUnit) {
+      // Ưu tiên sử dụng unit_ratios nếu có
+      if (medicine.unit_ratios && typeof medicine.unit_ratios === 'object') {
+        const ratio = medicine.unit_ratios[foundUnit._id];
+        if (ratio !== undefined && ratio !== null && ratio > 0) {
+          return ratio;
+        }
+      }
+
+      // Fallback về ratio_to_base từ units array
+      return foundUnit.ratio_to_base || 1;
+    }
+  }
+
+  return 1;
+};
+
+/**
+ * Tìm đơn vị ngay dưới một đơn vị (đơn vị nhỏ hơn gần nhất)
+ * Sử dụng multiplier để tính chính xác hơn
+ * @param medicine - Medicine object với units array
+ * @param unit - Unit name
+ * @returns Đơn vị ngay dưới hoặc base unit nếu không tìm thấy
+ */
+const getNextLowerUnit = (
+  medicine: {
+    base_unit?: MedicineUnit | string;
+    units?: MedicineUnit[];
+    package_structure?: PackageStructure;
+    unit_ratios?: { [key: string]: number };
+  },
+  unit: string,
+): string | null => {
+  if (!medicine || !unit) {
+    return null;
+  }
+
+  const normalizeUnit = (u: string | undefined | null) => {
+    if (!u || typeof u !== 'string') return '';
+    return u.toLowerCase().trim();
+  };
+  const normalizedUnit = normalizeUnit(unit);
+  if (!normalizedUnit) {
+    return null;
+  }
+  const baseUnitName = getBaseUnitName(medicine.base_unit);
+
+  if (!baseUnitName) {
+    return null;
+  }
+
+  const normalizedBaseUnit = normalizeUnit(baseUnitName);
+  if (!normalizedBaseUnit) {
+    return null;
+  }
+
+  // Nếu là base unit, không có đơn vị nhỏ hơn
+  if (normalizedUnit === normalizedBaseUnit) {
+    return null;
+  }
+
+  // Lấy multiplier của unit hiện tại (số base units trong 1 unit)
+  const currentMultiplier = getUnitMultiplier(medicine, unit);
+
+  if (currentMultiplier <= 1) {
+    return baseUnitName;
+  }
+
+  // Lấy tất cả các đơn vị hợp lệ
+  const validUnits = getValidUnits(medicine);
+
+  // Tìm đơn vị có multiplier nhỏ hơn nhưng gần nhất với currentMultiplier
+  let bestMatch: { unit: string; multiplier: number } | null = null;
+
+  for (const validUnit of validUnits) {
+    if (typeof validUnit !== 'string') continue;
+
+    const normalizedValidUnit = normalizeUnit(validUnit);
+
+    // Bỏ qua chính unit hiện tại
+    if (normalizedValidUnit === normalizedUnit) {
+      continue;
+    }
+
+    // Bỏ qua base unit (sẽ xử lý riêng)
+    if (normalizedValidUnit === normalizedBaseUnit) {
+      continue;
+    }
+
+    const unitMultiplier = getUnitMultiplier(medicine, validUnit);
+
+    // Tìm đơn vị có multiplier nhỏ hơn currentMultiplier nhưng lớn nhất
+    if (unitMultiplier > 0 && unitMultiplier < currentMultiplier) {
+      if (!bestMatch || unitMultiplier > bestMatch.multiplier) {
+        bestMatch = { unit: validUnit, multiplier: unitMultiplier };
+      }
+    }
+  }
+
+  // Nếu tìm thấy đơn vị phù hợp, trả về nó
+  if (bestMatch) {
+    return bestMatch.unit;
+  }
+
+  // Nếu không tìm thấy, trả về base unit
+  return baseUnitName;
+};
+
+/**
+ * Lấy thông tin hiển thị tỷ lệ chuyển đổi đơn vị
+ * @param medicine - Medicine object với units array
+ * @param unit - Unit name
+ * @returns Chuỗi hiển thị tỷ lệ (ví dụ: "1 Hộp = 10 Vỉ" hoặc "1 Vỉ = 10 Viên") hoặc null nếu là base unit
+ */
+export const getUnitConversionText = (
+  medicine: {
+    base_unit?: MedicineUnit | string;
+    units?: MedicineUnit[];
+    package_structure?: PackageStructure;
+    unit_ratios?: { [key: string]: number };
+  },
+  unit: string,
+): string | null => {
+  if (!medicine || !unit) {
+    return null;
+  }
+
+  const baseUnitName = getBaseUnitName(medicine.base_unit);
+  if (!baseUnitName) {
+    return null;
+  }
+
+  const normalizeUnit = (u: string) => u.toLowerCase().trim();
+  const normalizedUnit = normalizeUnit(unit);
+  const normalizedBaseUnit = normalizeUnit(baseUnitName);
+
+  // Nếu là base unit, không hiển thị tỷ lệ
+  if (normalizedUnit === normalizedBaseUnit) {
+    return null;
+  }
+
+  // Lấy multiplier của unit hiện tại (số base units trong 1 unit)
+  const currentMultiplier = getUnitMultiplier(medicine, unit);
+
+  if (currentMultiplier <= 1) {
+    return null;
+  }
+
+  // Tìm đơn vị ngay dưới
+  const nextLowerUnit = getNextLowerUnit(medicine, unit);
+  if (!nextLowerUnit) {
+    return null;
+  }
+
+  // Lấy multiplier của đơn vị ngay dưới
+  const lowerMultiplier = getUnitMultiplier(medicine, nextLowerUnit);
+
+  if (lowerMultiplier <= 0) {
+    return null;
+  }
+
+  // Tính tỷ lệ: số đơn vị nhỏ hơn trong 1 đơn vị lớn
+  const ratioToNext = currentMultiplier / lowerMultiplier;
+
+  if (ratioToNext <= 1) {
+    return null;
+  }
+
+  // Hiển thị: "1 [đơn vị lớn] = [ratio] [đơn vị nhỏ hơn]"
+  const unitDisplayName = getUnitDisplayName(unit);
+  const nextUnitDisplayName = getUnitDisplayName(nextLowerUnit);
+
+  return `1 ${unitDisplayName} = ${Math.round(
+    ratioToNext,
+  )} ${nextUnitDisplayName}`;
+};
+
+/**
+ * Tính multiplier từ đơn vị về base unit
+ * @param medicine - Medicine object với package_structure
+ * @param unit - Unit name
+ * @returns Multiplier (số base units trong 1 unit)
+ */
+export const getUnitMultiplier = (
+  medicine: {
+    base_unit?: MedicineUnit | string;
+    units?: MedicineUnit[];
+    package_structure?: PackageStructure;
+    unit_ratios?: { [key: string]: number };
+  },
+  unit: string,
+): number => {
+  if (!medicine || !unit) {
+    return 1;
+  }
+
+  // Xử lý units array (cấu trúc mới)
+  if (medicine.units && Array.isArray(medicine.units)) {
+    const baseUnitName = getBaseUnitName(medicine.base_unit);
+    if (baseUnitName) {
+      const normalizeUnit = (u: string | undefined | null) => {
+        if (!u || typeof u !== 'string') return '';
+        return u.toLowerCase().trim();
+      };
+      const normalizedUnit = normalizeUnit(unit);
+      if (!normalizedUnit) {
+        return 1;
+      }
+      const normalizedBaseUnit = normalizeUnit(baseUnitName);
+
+      // Nếu là base unit, multiplier = 1
+      if (normalizedUnit === normalizedBaseUnit) {
+        return 1;
+      }
+
+      // Tìm unit trong units array
+      const foundUnit = medicine.units.find(u => {
+        if (!u || typeof u !== 'object') return false;
+        const unitName = u.short_name || u.name || '';
+        if (!unitName || typeof unitName !== 'string') return false;
+        return unitName.toLowerCase().trim() === normalizedUnit;
+      });
+
+      if (foundUnit) {
+        // Ưu tiên sử dụng unit_ratios nếu có
+        if (medicine.unit_ratios && typeof medicine.unit_ratios === 'object') {
+          const ratio = medicine.unit_ratios[foundUnit._id];
+          if (ratio !== undefined && ratio !== null && ratio > 0) {
+            return ratio;
+          }
+        }
+
+        // Fallback về ratio_to_base từ units array
+        // ratio_to_base đã là tỷ lệ so với base unit
+        // Ví dụ: nếu ratio_to_base = 10, nghĩa là 1 unit này = 10 base units
+        return foundUnit.ratio_to_base || 1;
+      }
+    }
+  }
+
+  const baseUnitName = getBaseUnitName(medicine.base_unit);
+  if (!baseUnitName) {
     return 1;
   }
 
   // So sánh không phân biệt hoa thường
-  const normalizeUnit = (u: string) => u.toLowerCase().trim();
+  const normalizeUnit = (u: string | undefined | null) => {
+    if (!u || typeof u !== 'string') return '';
+    return u.toLowerCase().trim();
+  };
   const normalizedUnit = normalizeUnit(unit);
-  const normalizedBaseUnit = normalizeUnit(baseUnit);
+  if (!normalizedUnit) {
+    return 1;
+  }
+  const normalizedBaseUnit = normalizeUnit(baseUnitName);
 
   // Nếu là base unit, multiplier = 1
   if (normalizedUnit === normalizedBaseUnit) {
@@ -187,7 +594,7 @@ export const getUnitMultiplier = (
     // Tìm key trong structure (không phân biệt hoa thường)
     let unitKey: string | undefined;
     for (const key of Object.keys(structure)) {
-      if (normalizeUnit(key) === currentUnit) {
+      if (key && normalizeUnit(key) === currentUnit) {
         unitKey = key;
         break;
       }
@@ -210,7 +617,11 @@ export const getUnitMultiplier = (
       break;
     }
 
-    currentUnit = normalizeUnit(unitConfig.child);
+    if (unitConfig.child && typeof unitConfig.child === 'string') {
+      currentUnit = normalizeUnit(unitConfig.child);
+    } else {
+      break;
+    }
   }
 
   return multiplier;
@@ -224,7 +635,8 @@ export const getUnitMultiplier = (
  */
 export const calculateQuantitiesByUnit = (
   medicine: {
-    base_unit?: string;
+    base_unit?: MedicineUnit | string;
+    units?: MedicineUnit[];
     package_structure?: PackageStructure;
   },
   totalQuantityInBaseUnit: number,
@@ -233,13 +645,32 @@ export const calculateQuantitiesByUnit = (
     return {};
   }
 
-  const baseUnit = medicine.base_unit || 'tablet';
+  const baseUnitName = getBaseUnitName(medicine.base_unit) || 'tablet';
   const result: Record<string, number> = {};
 
   // Luôn có base unit
-  result[baseUnit] = totalQuantityInBaseUnit;
+  result[baseUnitName] = totalQuantityInBaseUnit;
 
-  // Tính toán cho các đơn vị khác từ package_structure
+  // Tính toán cho các đơn vị khác từ units array (cấu trúc mới)
+  if (medicine.units && Array.isArray(medicine.units)) {
+    medicine.units.forEach(unit => {
+      if (unit && typeof unit === 'object') {
+        const unitName = unit.short_name || unit.name;
+        if (
+          unitName &&
+          typeof unitName === 'string' &&
+          unitName !== baseUnitName
+        ) {
+          const multiplier = getUnitMultiplier(medicine, unitName);
+          if (multiplier > 0) {
+            result[unitName] = Math.floor(totalQuantityInBaseUnit / multiplier);
+          }
+        }
+      }
+    });
+  }
+
+  // Tính toán cho các đơn vị khác từ package_structure (legacy)
   if (
     medicine.package_structure &&
     typeof medicine.package_structure === 'object'
@@ -251,7 +682,7 @@ export const calculateQuantitiesByUnit = (
 
     // Tính toán số lượng cho mỗi đơn vị
     allUnits.forEach(unit => {
-      if (unit === baseUnit) {
+      if (unit === baseUnitName) {
         // Base unit đã được set ở trên
         return;
       }
@@ -271,15 +702,18 @@ export const calculateQuantitiesByUnit = (
  * @returns Array of units sorted from largest to smallest
  */
 export const getSortedUnits = (medicine: {
-  base_unit?: string;
+  base_unit?: MedicineUnit | string;
+  units?: MedicineUnit[];
   package_structure?: PackageStructure;
 }): string[] => {
   const units = getValidUnits(medicine);
 
   // Sắp xếp theo multiplier từ lớn đến nhỏ
-  return units.sort((a, b) => {
-    const multiplierA = getUnitMultiplier(medicine, a);
-    const multiplierB = getUnitMultiplier(medicine, b);
-    return multiplierB - multiplierA;
-  });
+  return units
+    .filter(u => typeof u === 'string')
+    .sort((a, b) => {
+      const multiplierA = getUnitMultiplier(medicine, a);
+      const multiplierB = getUnitMultiplier(medicine, b);
+      return multiplierB - multiplierA;
+    });
 };

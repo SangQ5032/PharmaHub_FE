@@ -5,11 +5,37 @@ import { Medicine } from '../types';
 import { useNavigation } from '@react-navigation/native';
 import { ROUTES } from '@shared/constants/routes';
 
+// Helper function để đảm bảo giá trị là string
+const ensureString = (value: any, fallback: string = '-'): string => {
+  if (value == null) return fallback;
+  if (typeof value === 'string') return value;
+  if (typeof value === 'number' || typeof value === 'boolean')
+    return String(value);
+  if (typeof value === 'object') {
+    // Nếu là object, thử lấy các field thường dùng
+    if ('name' in value && typeof value.name === 'string') return value.name;
+    if ('_id' in value && typeof value._id === 'string') return value._id;
+    if ('short_name' in value && typeof value.short_name === 'string')
+      return value.short_name;
+  }
+  return fallback;
+};
+
 const formatPrice = (p?: number | null) => {
   if (p == null) return '-';
   const num = typeof p === 'string' ? Number(p) : p;
   if (Number.isNaN(num)) return String(p);
   return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+};
+
+const formatDate = (d?: string) => {
+  if (!d) return '-';
+  const dt = new Date(d);
+  if (Number.isNaN(dt.getTime())) return '-';
+  const dd = String(dt.getDate()).padStart(2, '0');
+  const mm = String(dt.getMonth() + 1).padStart(2, '0');
+  const yyyy = dt.getFullYear();
+  return `${dd}/${mm}/${yyyy}`;
 };
 
 const getBasePrice = (medicine: Medicine) => {
@@ -63,21 +89,26 @@ const MedicineItemReadOnly: React.FC<MedicineItemReadOnlyProps> = ({
           {/* Name (30%) */}
           <View style={[styles.cell, { flex: 30 }]}>
             <Text style={[styles.cellText, styles.left]} numberOfLines={1}>
-              {item.name || '-'}
+              {ensureString(item.name)}
             </Text>
+            {item.manufacturing_date && (
+              <Text style={[styles.cellSubText, styles.left]} numberOfLines={1}>
+                Hạn SX: {formatDate(item.manufacturing_date)}
+              </Text>
+            )}
           </View>
 
           {/* Dosage Form (20%) */}
           <View style={[styles.cell, { flex: 20 }]}>
             <Text style={[styles.cellText, styles.center]} numberOfLines={1}>
-              {item.dosage_form || '-'}
+              {ensureString(item.dosage_form)}
             </Text>
           </View>
 
           {/* Strength (15%) */}
           <View style={[styles.cell, { flex: 15 }]}>
             <Text style={[styles.cellText, styles.center]} numberOfLines={1}>
-              {item.strength || '-'}
+              {ensureString(item.strength)}
             </Text>
           </View>
 
@@ -119,6 +150,11 @@ const styles = StyleSheet.create({
   cellText: {
     fontSize: 13,
     color: '#333',
+  },
+  cellSubText: {
+    fontSize: 11,
+    color: '#666',
+    marginTop: 2,
   },
   left: {
     textAlign: 'left',
