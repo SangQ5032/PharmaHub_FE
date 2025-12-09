@@ -1,10 +1,13 @@
-import { useQuery, useMutation } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   getCustomers,
   getCustomerById,
   getCustomerInvoices,
   createCustomer,
+  updateCustomer,
+  deleteCustomer,
   CreateCustomerRequest,
+  UpdateCustomerRequest,
   GetCustomersResponse,
   GetCustomerByIdResponse,
   GetCustomerInvoicesResponse,
@@ -47,7 +50,36 @@ export const useGetCustomerInvoices = (
 };
 
 export const useCreateCustomer = () => {
+  const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (data: CreateCustomerRequest) => createCustomer(data),
+    onSuccess: () => {
+      // Invalidate customers list to refetch
+      queryClient.invalidateQueries({ queryKey: ['customers'] });
+    },
+  });
+};
+
+export const useUpdateCustomer = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, data }: { id: string; data: UpdateCustomerRequest }) =>
+      updateCustomer(id, data),
+    onSuccess: (_, variables) => {
+      // Invalidate customer detail and customers list
+      queryClient.invalidateQueries({ queryKey: ['customer', variables.id] });
+      queryClient.invalidateQueries({ queryKey: ['customers'] });
+    },
+  });
+};
+
+export const useDeleteCustomer = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => deleteCustomer(id),
+    onSuccess: () => {
+      // Invalidate customers list to refetch
+      queryClient.invalidateQueries({ queryKey: ['customers'] });
+    },
   });
 };

@@ -14,27 +14,56 @@ import {
   RefreshControl,
 } from 'react-native';
 import { useTheme } from '@react-navigation/native';
-import { useFocusEffect, useNavigation } from '@react-navigation/native';
+import {
+  useFocusEffect,
+  useNavigation,
+  useRoute,
+} from '@react-navigation/native';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
-import { useMyWorkHistory } from '@features/work-schdule/hooks/useWorkScheduleHistory';
+import {
+  useMyWorkHistory,
+  useBranchEmployeesWorkHistory,
+} from '@features/work-schdule/hooks/useWorkScheduleHistory';
 import { WorkScheduleHistoryRecord } from '@features/work-schdule/types/workScheduleHistory.types';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { ROUTES } from '@shared/constants/routes';
+import { useAuthStore } from '@features/auth/stores/useAuthStore';
 
 type NavigationProp = NativeStackNavigationProp<any>;
 
 export const EmployeeWorkHistoryScreen: React.FC = () => {
   const { colors } = useTheme();
   const navigation = useNavigation<NavigationProp>();
+  const route = useRoute<any>();
+  const user = useAuthStore(state => state.user);
+  const { employeeId, employeeName } = route?.params || {};
+
   const [page, setPage] = useState(1);
   const [shift, setShift] = useState<'morning' | 'afternoon' | undefined>();
   const [refreshing, setRefreshing] = useState(false);
 
-  const { data, isLoading, isError, refetch } = useMyWorkHistory({
+  // Nếu có employeeId và user là branch-manager, dùng hook cho branch manager
+  // Nếu không, dùng hook cho employee (xem lịch sử của chính mình)
+  const isViewingOtherEmployee =
+    !!employeeId && user?.role === 'branch-manager';
+
+  const myWorkHistoryQuery = useMyWorkHistory({
     page,
     limit: 15,
     shift,
   });
+
+  const branchWorkHistoryQuery = useBranchEmployeesWorkHistory({
+    page,
+    limit: 15,
+    shift,
+    userId: employeeId,
+  });
+
+  const queryResult = isViewingOtherEmployee
+    ? branchWorkHistoryQuery
+    : myWorkHistoryQuery;
+  const { data, isLoading, isError, refetch } = queryResult;
 
   useFocusEffect(
     useCallback(() => {
@@ -158,7 +187,9 @@ export const EmployeeWorkHistoryScreen: React.FC = () => {
       ]}
     >
       <Text style={[styles.headerTitle, { color: colors.text }]}>
-        Lịch Sử Làm Việc
+        {employeeName
+          ? `Lịch Sử Làm Việc - ${employeeName}`
+          : 'Lịch Sử Làm Việc'}
       </Text>
 
       {/* Shift Filter Buttons */}

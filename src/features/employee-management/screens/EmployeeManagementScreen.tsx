@@ -33,24 +33,16 @@ const EmployeeManagementScreen: React.FC<{ navigation?: any }> = () => {
     'assign' | 'transfer' | null
   >(null);
   const [searchQuery, setSearchQuery] = React.useState('');
-  const [selectedBranchId, setSelectedBranchId] = React.useState<string>('');
 
   const { data: branchesData, isLoading: isLoadingBranches } = useBranches();
   const branches = useMemo(() => branchesData || [], [branchesData]);
-
-  // Set first branch as default
-  React.useEffect(() => {
-    if (branches.length > 0 && !selectedBranchId) {
-      setSelectedBranchId(branches[0]._id);
-    }
-  }, [branches, selectedBranchId]);
 
   const {
     employees,
     isLoadingEmployees,
     handleAssignBranch,
     handleTransferBranch,
-  } = useEmployeeManagement(selectedBranchId);
+  } = useEmployeeManagement();
 
   // Group employees by branch
   const groupedEmployees = useMemo(() => {
@@ -234,30 +226,6 @@ const EmployeeManagementScreen: React.FC<{ navigation?: any }> = () => {
 
   return (
     <View style={styles.container}>
-      {/* Branch Selector */}
-      <View style={styles.branchSelectorContainer}>
-        <Text style={styles.branchSelectorLabel}>Chi nhánh:</Text>
-        <TouchableOpacity
-          style={styles.branchDropdown}
-          onPress={() => {
-            // Simple branch selection - could be improved with a modal
-            if (branches.length > 1) {
-              const currentIndex = branches.findIndex(
-                (b: any) => b._id === selectedBranchId,
-              );
-              const nextIndex = (currentIndex + 1) % branches.length;
-              setSelectedBranchId(branches[nextIndex]._id);
-            }
-          }}
-        >
-          <Text style={styles.branchDropdownText}>
-            {branches.find((b: any) => b._id === selectedBranchId)?.name ||
-              'Chọn chi nhánh'}
-          </Text>
-          <Icon name="chevron-down" size={20} color="#333" />
-        </TouchableOpacity>
-      </View>
-
       {/* Search Bar */}
       <View style={styles.searchContainer}>
         <Icon name="magnify" size={20} color="#999" />
@@ -625,36 +593,6 @@ const styles = {
     fontSize: 16,
     fontWeight: '600',
     color: '#fff',
-  },
-  branchSelectorContainer: {
-    paddingHorizontal: 15,
-    paddingVertical: 12,
-    backgroundColor: '#fff',
-    borderBottomWidth: 1,
-    borderBottomColor: '#eee',
-    flexDirection: 'row' as const,
-    alignItems: 'center',
-    gap: 10,
-  },
-  branchSelectorLabel: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#333',
-  },
-  branchDropdown: {
-    flex: 1,
-    flexDirection: 'row' as const,
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    backgroundColor: '#f5f5f5',
-    borderRadius: 8,
-  },
-  branchDropdownText: {
-    fontSize: 14,
-    fontWeight: '500',
-    color: '#333',
   },
 } as const;
 

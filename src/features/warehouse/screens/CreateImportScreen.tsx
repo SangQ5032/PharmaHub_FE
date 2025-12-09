@@ -109,7 +109,23 @@ export default function CreateImportScreen() {
 
     // Lấy đơn vị mặc định từ base_unit của thuốc
     const validUnits = getValidUnits(medicine);
-    const defaultUnit = medicine.base_unit || validUnits[0] || 'tablet';
+    const defaultUnit = medicine.base_unit || validUnits[0];
+
+    // Kiểm tra xem có đơn vị hợp lệ không
+    if (!defaultUnit || validUnits.length === 0) {
+      Alert.alert('Lỗi', 'Thuốc này không có thông tin đơn vị hợp lệ');
+      return;
+    }
+
+    // Lấy giá mặc định từ prices.price_per_unit theo đơn vị, nếu không có thì dùng base_unit_price hoặc retail_price
+    let defaultPrice = 0;
+    if (medicine.prices?.price_per_unit?.[defaultUnit]) {
+      defaultPrice = medicine.prices.price_per_unit[defaultUnit];
+    } else if (medicine.prices?.base_unit_price) {
+      defaultPrice = medicine.prices.base_unit_price;
+    } else if (medicine.retail_price) {
+      defaultPrice = medicine.retail_price;
+    }
 
     // Tự động sinh mã lô hàng
     const autoBatchNumber = generateBatchNumber(medicine.name, user.branch_id);
@@ -121,7 +137,7 @@ export default function CreateImportScreen() {
         medicine,
         quantity: 1,
         unit: defaultUnit,
-        unit_price: medicine.retail_price || 0,
+        unit_price: defaultPrice,
         batch_number: autoBatchNumber,
         expiry_date: '',
       },
@@ -175,9 +191,25 @@ export default function CreateImportScreen() {
   // Handle update unit
   const handleUpdateUnit = (medicineId: string, unit: string) => {
     setItems(
-      items.map(item =>
-        item.medicine._id === medicineId ? { ...item, unit } : item,
-      ),
+      items.map(item => {
+        if (item.medicine._id === medicineId) {
+          // Khi đổi đơn vị, tự động cập nhật giá theo đơn vị mới
+          let newPrice = item.unit_price; // Giữ giá cũ làm mặc định
+
+          // Lấy giá từ prices.price_per_unit theo đơn vị mới
+          if (item.medicine.prices?.price_per_unit?.[unit]) {
+            newPrice = item.medicine.prices.price_per_unit[unit];
+          } else if (
+            item.medicine.prices?.base_unit_price &&
+            unit === item.medicine.base_unit
+          ) {
+            newPrice = item.medicine.prices.base_unit_price;
+          }
+
+          return { ...item, unit, unit_price: newPrice };
+        }
+        return item;
+      }),
     );
   };
 

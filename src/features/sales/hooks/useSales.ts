@@ -27,35 +27,43 @@ export const useScanBarcode = () => {
 /**
  * Lấy danh sách hoá đơn của toàn bộ chi nhánh hoặc chi nhánh chỉ định
  */
-export const useGetInvoicesByBranch = (params?: {
-  page?: number;
-  limit?: number;
-  branch_id?: string;
-  employee_id?: string;
-  customer_id?: string;
-  from_date?: string;
-  to_date?: string;
-  search?: string;
-}) => {
+export const useGetInvoicesByBranch = (
+  params?: {
+    page?: number;
+    limit?: number;
+    branch_id?: string;
+    employee_id?: string;
+    customer_id?: string;
+    from_date?: string;
+    to_date?: string;
+    search?: string;
+  },
+  options?: { enabled?: boolean },
+) => {
   return useQuery({
     queryKey: ['invoices-branch', params],
     queryFn: () => getInvoicesByBranch(params),
+    enabled: options?.enabled !== false,
   });
 };
 
 /**
  * Lấy danh sách hoá đơn của nhân viên hiện tại
  */
-export const useGetInvoicesByMe = (params?: {
-  page?: number;
-  limit?: number;
-  from_date?: string;
-  to_date?: string;
-  search?: string;
-}) => {
+export const useGetInvoicesByMe = (
+  params?: {
+    page?: number;
+    limit?: number;
+    from_date?: string;
+    to_date?: string;
+    search?: string;
+  },
+  options?: { enabled?: boolean },
+) => {
   return useQuery({
     queryKey: ['invoices-me', params],
     queryFn: () => getInvoicesByMe(params),
+    enabled: options?.enabled !== false,
   });
 };
 

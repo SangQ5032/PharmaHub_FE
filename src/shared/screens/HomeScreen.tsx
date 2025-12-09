@@ -112,6 +112,23 @@ const HomeScreen = () => {
       return;
     }
 
+    // Xử lý route Thông tin nhân viên - cần branchId từ user
+    if (item.route === ROUTES.BRANCH_EMPLOYEE_INFO_MENU) {
+      const branchId = user?.branch_id || user?.branchId;
+      if (!branchId) {
+        Alert.alert(
+          'Lỗi',
+          'Không tìm thấy thông tin chi nhánh. Vui lòng đăng nhập lại.',
+        );
+        return;
+      }
+      navigation.navigate(ROUTES.BRANCH_EMPLOYEE_INFO_MENU as never, {
+        branchId,
+        branchName: user?.branchName || undefined,
+      });
+      return;
+    }
+
     // Navigate bình thường cho các route khác
     navigation.navigate(item.route as never);
   };

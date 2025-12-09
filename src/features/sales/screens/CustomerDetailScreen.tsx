@@ -8,11 +8,14 @@ import {
   ScrollView,
   RefreshControl,
   FlatList,
+  Alert,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import {
   useGetCustomerById,
   useGetCustomerInvoices,
+  useUpdateCustomer,
+  useDeleteCustomer,
 } from '../hooks/useCustomers';
 import { Invoice } from '../api/customers.api';
 
@@ -29,7 +32,7 @@ type TabType = 'info' | 'invoices';
 
 const CustomerDetailScreen: React.FC<CustomerDetailScreenProps> = ({
   route,
-  navigation: _navigation,
+  navigation,
 }) => {
   const customerId = route.params?.customerId;
   const [activeTab, setActiveTab] = useState<TabType>('info');
@@ -45,6 +48,8 @@ const CustomerDetailScreen: React.FC<CustomerDetailScreenProps> = ({
     isLoading: isLoadingInvoices,
     refetch: refetchInvoices,
   } = useGetCustomerInvoices(customerId);
+  const { mutate: deleteCustomerMutation, isPending: isDeleting } =
+    useDeleteCustomer();
 
   const customer = useMemo(
     () => customerResponse?.data,
@@ -63,6 +68,48 @@ const CustomerDetailScreen: React.FC<CustomerDetailScreenProps> = ({
       setRefreshing(false);
     }
   }, [refetchCustomer, refetchInvoices]);
+
+  const handleEdit = () => {
+    if (!customer) return;
+    navigation?.navigate('CreateCustomer' as any, {
+      mode: 'edit',
+      customer,
+    });
+  };
+
+  const handleDelete = () => {
+    if (!customer?._id) return;
+    Alert.alert('Xác nhận', 'Bạn có chắc chắn muốn xóa khách hàng này?', [
+      {
+        text: 'Hủy',
+        style: 'cancel',
+      },
+      {
+        text: 'Xóa',
+        style: 'destructive',
+        onPress: () => {
+          deleteCustomerMutation(customer._id, {
+            onSuccess: () => {
+              Alert.alert('Thành công', 'Xóa khách hàng thành công', [
+                {
+                  text: 'OK',
+                  onPress: () => {
+                    navigation?.goBack();
+                  },
+                },
+              ]);
+            },
+            onError: (error: any) => {
+              Alert.alert(
+                'Lỗi',
+                error?.response?.data?.message || 'Xóa khách hàng thất bại',
+              );
+            },
+          });
+        },
+      },
+    ]);
+  };
 
   if (isLoadingCustomer) {
     return (
@@ -94,6 +141,27 @@ const CustomerDetailScreen: React.FC<CustomerDetailScreenProps> = ({
           <Text style={styles.customerPhone}>
             <Icon name="phone" size={14} color="#666" /> {customer.phone}
           </Text>
+        </View>
+        {/* Action Buttons */}
+        <View style={styles.headerActions}>
+          <TouchableOpacity
+            style={styles.editButton}
+            onPress={handleEdit}
+            disabled={isDeleting}
+          >
+            <Icon name="pencil" size={20} color="#4CAF50" />
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.deleteButton}
+            onPress={handleDelete}
+            disabled={isDeleting}
+          >
+            {isDeleting ? (
+              <ActivityIndicator size="small" color="#fff" />
+            ) : (
+              <Icon name="delete" size={20} color="#f44336" />
+            )}
+          </TouchableOpacity>
         </View>
       </View>
 
@@ -154,6 +222,31 @@ const CustomerDetailScreen: React.FC<CustomerDetailScreenProps> = ({
         {activeTab === 'info' && (
           <View style={styles.infoContainer}>
             <InfoTab customer={customer} />
+            {/* Action Buttons */}
+            <View style={styles.actionButtonsContainer}>
+              <TouchableOpacity
+                style={[styles.actionButton, styles.editActionButton]}
+                onPress={handleEdit}
+                disabled={isDeleting}
+              >
+                <Icon name="pencil" size={18} color="#4CAF50" />
+                <Text style={styles.editActionButtonText}>Chỉnh sửa</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.actionButton, styles.deleteActionButton]}
+                onPress={handleDelete}
+                disabled={isDeleting}
+              >
+                {isDeleting ? (
+                  <ActivityIndicator size="small" color="#fff" />
+                ) : (
+                  <>
+                    <Icon name="delete" size={18} color="#fff" />
+                    <Text style={styles.deleteActionButtonText}>Xóa</Text>
+                  </>
+                )}
+              </TouchableOpacity>
+            </View>
           </View>
         )}
 
@@ -441,6 +534,21 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#666',
   },
+  headerActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  editButton: {
+    padding: 8,
+    borderRadius: 6,
+    backgroundColor: '#f0f0f0',
+  },
+  deleteButton: {
+    padding: 8,
+    borderRadius: 6,
+    backgroundColor: '#ffebee',
+  },
   tabContainer: {
     flexDirection: 'row',
     backgroundColor: '#fff',
@@ -667,6 +775,41 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#999',
     marginTop: 12,
+  },
+  actionButtonsContainer: {
+    flexDirection: 'row',
+    gap: 12,
+    marginTop: 16,
+    marginHorizontal: 12,
+    marginBottom: 12,
+  },
+  actionButton: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    gap: 8,
+  },
+  editActionButton: {
+    backgroundColor: '#f0f0f0',
+    borderWidth: 1,
+    borderColor: '#4CAF50',
+  },
+  editActionButtonText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#4CAF50',
+  },
+  deleteActionButton: {
+    backgroundColor: '#f44336',
+  },
+  deleteActionButtonText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#fff',
   },
 });
 

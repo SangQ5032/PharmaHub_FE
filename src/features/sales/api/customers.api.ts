@@ -96,6 +96,26 @@ export type CreateCustomerResponse = {
   data: Customer;
 };
 
+export type UpdateCustomerRequest = {
+  name?: string;
+  phone?: string;
+  address?: string;
+  email?: string;
+  total_spent?: number;
+};
+
+export type UpdateCustomerResponse = {
+  success: boolean;
+  message: string;
+  data: Customer;
+};
+
+export type DeleteCustomerResponse = {
+  success: boolean;
+  message: string;
+  data: null;
+};
+
 export const getCustomers = async (
   page: number = 1,
   limit: number = 20,
@@ -146,4 +166,19 @@ export const createCustomer = async (
     data,
   );
   return response.data.data;
+};
+
+export const updateCustomer = async (
+  id: string,
+  data: UpdateCustomerRequest,
+): Promise<Customer> => {
+  const response = await api.put<UpdateCustomerResponse>(
+    `${CUSTOMERS_ENDPOINT}/${id}`,
+    data,
+  );
+  return response.data.data;
+};
+
+export const deleteCustomer = async (id: string): Promise<void> => {
+  await api.delete<DeleteCustomerResponse>(`${CUSTOMERS_ENDPOINT}/${id}`);
 };

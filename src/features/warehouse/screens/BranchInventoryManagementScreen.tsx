@@ -5,12 +5,11 @@ import {
   View,
   Text,
   StyleSheet,
-  FlatList,
   TouchableOpacity,
   ActivityIndicator,
   RefreshControl,
-  SectionList,
   SafeAreaView,
+  ScrollView,
 } from 'react-native';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import { useNavigation } from '@react-navigation/native';
@@ -35,9 +34,10 @@ const TABS: TabItem[] = [
   { id: 'imports', label: 'Lịch sử', icon: 'history' },
 ];
 
-export default function BranchInventoryManagementScreen() {
+export default function BranchInventoryManagementScreen({ route }: any) {
   const navigation = useNavigation<any>();
-  const [activeTab, setActiveTab] = useState<string>('inventory');
+  const initialTab = route?.params?.initialTab || 'inventory';
+  const [activeTab, setActiveTab] = useState<string>(initialTab);
   const [refreshing, setRefreshing] = useState(false);
 
   const user = useAuthStore(state => state.user);
@@ -92,11 +92,10 @@ export default function BranchInventoryManagementScreen() {
     }
 
     return (
-      <FlatList
-        data={data}
-        keyExtractor={item => item._id}
-        renderItem={({ item }) => (
+      <View style={styles.listContainer}>
+        {data.map(item => (
           <InventoryCard
+            key={item._id}
             item={item}
             onPress={() => {
               navigation.navigate(ROUTES.INVENTORY_DETAIL_WITH_BATCHES, {
@@ -105,10 +104,8 @@ export default function BranchInventoryManagementScreen() {
               });
             }}
           />
-        )}
-        contentContainerStyle={styles.listContainer}
-        scrollEnabled={false}
-      />
+        ))}
+      </View>
     );
   };
 
@@ -152,47 +149,51 @@ export default function BranchInventoryManagementScreen() {
     }));
 
     return (
-      <SectionList
-        sections={sections}
-        keyExtractor={item => item._id}
-        renderItem={({ item }) => {
-          console.log('BranchInventoryManagementScreen: batch item =', {
-            _id: item._id,
-            batch_number: item.batch_number,
-            fullItem: item,
-          });
-          return (
-            <BatchCard
-              batch={item}
-              onPress={() => {
-                console.log('BranchInventoryManagementScreen: onPress called', {
-                  _id: item._id,
-                  hasId: !!item._id,
-                });
-                if (item._id) {
-                  console.log(
-                    'BranchInventoryManagementScreen: navigating with id =',
-                    item._id,
-                  );
-                  navigation.navigate(ROUTES.BATCH_DETAIL, { id: item._id });
-                } else {
-                  console.error(
-                    'BranchInventoryManagementScreen: item._id is missing!',
-                    item,
-                  );
-                }
-              }}
-            />
-          );
-        }}
-        renderSectionHeader={({ section: { title } }) => (
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>{title}</Text>
+      <View style={styles.listContainer}>
+        {sections.map((section, sectionIndex) => (
+          <View key={sectionIndex}>
+            <View style={styles.sectionHeader}>
+              <Text style={styles.sectionTitle}>{section.title}</Text>
+            </View>
+            {section.data.map(item => {
+              console.log('BranchInventoryManagementScreen: batch item =', {
+                _id: item._id,
+                batch_number: item.batch_number,
+                fullItem: item,
+              });
+              return (
+                <BatchCard
+                  key={item._id}
+                  batch={item}
+                  onPress={() => {
+                    console.log(
+                      'BranchInventoryManagementScreen: onPress called',
+                      {
+                        _id: item._id,
+                        hasId: !!item._id,
+                      },
+                    );
+                    if (item._id) {
+                      console.log(
+                        'BranchInventoryManagementScreen: navigating with id =',
+                        item._id,
+                      );
+                      navigation.navigate(ROUTES.BATCH_DETAIL, {
+                        id: item._id,
+                      });
+                    } else {
+                      console.error(
+                        'BranchInventoryManagementScreen: item._id is missing!',
+                        item,
+                      );
+                    }
+                  }}
+                />
+              );
+            })}
           </View>
-        )}
-        contentContainerStyle={styles.listContainer}
-        scrollEnabled={false}
-      />
+        ))}
+      </View>
     );
   };
 
@@ -217,20 +218,17 @@ export default function BranchInventoryManagementScreen() {
     }
 
     return (
-      <FlatList
-        data={data}
-        keyExtractor={item => item._id}
-        renderItem={({ item }) => (
+      <View style={styles.listContainer}>
+        {data.map(item => (
           <ImportHistoryCard
+            key={item._id}
             import={item}
             onPress={() => {
               navigation.navigate(ROUTES.IMPORT_DETAIL, { id: item._id });
             }}
           />
-        )}
-        contentContainerStyle={styles.listContainer}
-        scrollEnabled={false}
-      />
+        ))}
+      </View>
     );
   };
 
@@ -264,16 +262,9 @@ export default function BranchInventoryManagementScreen() {
       </View>
 
       {/* Content */}
-      <FlatList
-        data={[{}]}
-        keyExtractor={(_, index) => index.toString()}
-        renderItem={() => (
-          <View>
-            {currentTab === 'inventory' && renderInventoryTab()}
-            {currentTab === 'batches' && renderBatchesTab()}
-            {currentTab === 'imports' && renderImportsTab()}
-          </View>
-        )}
+      <ScrollView
+        style={styles.scrollView}
+        contentContainerStyle={styles.scrollContent}
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
@@ -281,8 +272,11 @@ export default function BranchInventoryManagementScreen() {
             colors={['#4CAF50']}
           />
         }
-        scrollEnabled={false}
-      />
+      >
+        {currentTab === 'inventory' && renderInventoryTab()}
+        {currentTab === 'batches' && renderBatchesTab()}
+        {currentTab === 'imports' && renderImportsTab()}
+      </ScrollView>
     </SafeAreaView>
   );
 }
@@ -336,6 +330,12 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#9E9E9E',
     textAlign: 'center',
+  },
+  scrollView: {
+    flex: 1,
+  },
+  scrollContent: {
+    flexGrow: 1,
   },
   listContainer: {
     paddingVertical: 8,

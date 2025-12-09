@@ -1,6 +1,6 @@
 // src/features/warehouse/screens/InventoryDetailScreen.tsx
 
-import React from 'react';
+import React, { useMemo } from 'react';
 import {
   View,
   Text,
@@ -11,7 +11,13 @@ import {
 } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { useGetInventoryMedicineDetail } from '@features/warehouse/hooks/useInventory';
+import { useMedicineDetail } from '@features/medicines/hooks/useMedicineDetail';
 import { StatusBadge } from '@features/warehouse/components/StatusBadge';
+import {
+  calculateQuantitiesByUnit,
+  getSortedUnits,
+  getUnitDisplayName,
+} from '../../../utils/medicineUnits';
 
 export default function InventoryDetailScreen() {
   const navigation = useNavigation();
@@ -25,6 +31,14 @@ export default function InventoryDetailScreen() {
   const { data, isLoading, isError, error, refetch } =
     useGetInventoryMedicineDetail(branchId, medicineId);
 
+  // Fetch thông tin thuốc chi tiết từ API riêng
+  const {
+    medicine: medicineDetail,
+    loading: medicineLoading,
+    error: medicineError,
+    refresh: refreshMedicine,
+  } = useMedicineDetail(medicineId);
+
   // Get status based on quantity and warning threshold
   const getStatus = (): 'sufficient' | 'low' | 'low_stock' | 'out_of_stock' => {
     if (!data?.data) return 'sufficient';
@@ -34,11 +48,10 @@ export default function InventoryDetailScreen() {
       return item.status as 'sufficient' | 'low' | 'low_stock' | 'out_of_stock';
     }
 
-    if (item.total_quantity === 0) return 'out_of_stock';
-    if (
-      item.warning_threshold &&
-      item.total_quantity <= item.warning_threshold
-    ) {
+    const totalQuantity =
+      item.total_quantity_in_base_unit || item.total_quantity || 0;
+    if (totalQuantity === 0) return 'out_of_stock';
+    if (item.warning_threshold && totalQuantity <= item.warning_threshold) {
       return 'low';
     }
     return 'sufficient';
@@ -62,8 +75,31 @@ export default function InventoryDetailScreen() {
     }).format(amount);
   };
 
+  // Lấy item và medicine để sử dụng trong useMemo (xử lý null/undefined)
+  const item = data?.data;
+  const medicine = medicineDetail || item?.medicine;
+
+  // Tính toán số lượng tồn kho theo các đơn vị từ package_structure
+  // Phải đặt trước early return để tuân thủ Rules of Hooks
+  const quantitiesByUnit = useMemo(() => {
+    if (!medicine || !item?.total_quantity_in_base_unit) {
+      return {};
+    }
+    return calculateQuantitiesByUnit(
+      medicine,
+      item.total_quantity_in_base_unit || item.total_quantity || 0,
+    );
+  }, [medicine, item?.total_quantity_in_base_unit, item?.total_quantity]);
+
+  // Lấy danh sách đơn vị đã sắp xếp
+  // Phải đặt trước early return để tuân thủ Rules of Hooks
+  const sortedUnits = useMemo(() => {
+    if (!medicine) return [];
+    return getSortedUnits(medicine);
+  }, [medicine]);
+
   // Render loading
-  if (isLoading) {
+  if (isLoading || medicineLoading) {
     return (
       <View style={styles.container}>
         <View style={styles.header}>
@@ -98,7 +134,10 @@ export default function InventoryDetailScreen() {
           </Text>
           <TouchableOpacity
             style={styles.retryButton}
-            onPress={() => refetch()}
+            onPress={() => {
+              refetch();
+              refreshMedicine();
+            }}
           >
             <Text style={styles.retryButtonText}>Thử lại</Text>
           </TouchableOpacity>
@@ -107,7 +146,6 @@ export default function InventoryDetailScreen() {
     );
   }
 
-  const item = data.data;
   const status = getStatus();
 
   return (
@@ -131,131 +169,187 @@ export default function InventoryDetailScreen() {
 
           <View style={styles.infoRow}>
             <Text style={styles.label}>Tên thuốc:</Text>
-            <Text style={styles.value}>{item.medicine?.name || 'N/A'}</Text>
+            <Text style={styles.value}>{medicine?.name || 'N/A'}</Text>
           </View>
 
-          {item.medicine?.generic_name && (
+          {medicine?.generic_name && (
             <View style={styles.infoRow}>
               <Text style={styles.label}>Hoạt chất:</Text>
-              <Text style={styles.value}>{item.medicine.generic_name}</Text>
+              <Text style={styles.value}>{medicine.generic_name}</Text>
             </View>
           )}
 
-          {item.medicine?.brand_name && (
+          {medicine?.brand_name && (
             <View style={styles.infoRow}>
               <Text style={styles.label}>Tên thương hiệu:</Text>
-              <Text style={styles.value}>{item.medicine.brand_name}</Text>
+              <Text style={styles.value}>{medicine.brand_name}</Text>
             </View>
           )}
 
           <View style={styles.infoRow}>
-            <Text style={styles.label}>Đơn vị:</Text>
-            <Text style={styles.value}>{item.medicine?.unit || 'N/A'}</Text>
-          </View>
-
-          {item.medicine?.dosage_form && (
-            <View style={styles.infoRow}>
-              <Text style={styles.label}>Dạng bào chế:</Text>
-              <Text style={styles.value}>{item.medicine.dosage_form}</Text>
-            </View>
-          )}
-
-          {item.medicine?.strength && (
-            <View style={styles.infoRow}>
-              <Text style={styles.label}>Hàm lượng:</Text>
-              <Text style={styles.value}>{item.medicine.strength}</Text>
-            </View>
-          )}
-
-          <View style={styles.infoRow}>
-            <Text style={styles.label}>Giá bán lẻ:</Text>
-            <Text style={[styles.value, styles.priceValue]}>
-              {item.medicine?.retail_price
-                ? formatCurrency(item.medicine.retail_price)
-                : 'N/A'}
+            <Text style={styles.label}>Đơn vị cơ bản:</Text>
+            <Text style={styles.value}>
+              {medicine?.base_unit || medicine?.unit || 'N/A'}
             </Text>
           </View>
 
-          {item.medicine?.manufacturer && (
+          {medicine?.packaging && (
+            <View style={styles.infoRow}>
+              <Text style={styles.label}>Quy cách đóng gói:</Text>
+              <Text style={styles.value}>{medicine.packaging}</Text>
+            </View>
+          )}
+
+          {medicine?.category_id && (
+            <View style={styles.infoRow}>
+              <Text style={styles.label}>Danh mục:</Text>
+              <Text style={styles.value}>
+                {typeof medicine.category_id === 'object'
+                  ? medicine.category_id.name
+                  : medicine.category_id}
+              </Text>
+            </View>
+          )}
+
+          {medicine?.dosage_form && (
+            <View style={styles.infoRow}>
+              <Text style={styles.label}>Dạng bào chế:</Text>
+              <Text style={styles.value}>{medicine.dosage_form}</Text>
+            </View>
+          )}
+
+          {medicine?.strength && (
+            <View style={styles.infoRow}>
+              <Text style={styles.label}>Hàm lượng:</Text>
+              <Text style={styles.value}>{medicine.strength}</Text>
+            </View>
+          )}
+
+          {/* Giá theo đơn vị */}
+          {medicine?.prices && (
+            <View style={styles.infoRow}>
+              <Text style={styles.label}>Giá bán:</Text>
+              <View style={styles.priceContainer}>
+                {medicine.prices.price_per_unit &&
+                  Object.entries(medicine.prices.price_per_unit).map(
+                    ([unit, price]) => (
+                      <Text
+                        key={unit}
+                        style={[
+                          styles.value,
+                          styles.priceValue,
+                          styles.priceItem,
+                        ]}
+                      >
+                        {formatCurrency(price as number)}/
+                        {getUnitDisplayName(unit)}
+                      </Text>
+                    ),
+                  )}
+                {!medicine.prices.price_per_unit &&
+                  medicine.prices.base_unit_price && (
+                    <Text style={[styles.value, styles.priceValue]}>
+                      {formatCurrency(medicine.prices.base_unit_price)}/
+                      {getUnitDisplayName(medicine.base_unit || '')}
+                    </Text>
+                  )}
+              </View>
+            </View>
+          )}
+
+          {!medicine?.prices && medicine?.retail_price && (
+            <View style={styles.infoRow}>
+              <Text style={styles.label}>Giá bán lẻ:</Text>
+              <Text style={[styles.value, styles.priceValue]}>
+                {formatCurrency(medicine.retail_price)}
+              </Text>
+            </View>
+          )}
+
+          <View style={styles.infoRow}>
+            <Text style={styles.label}>Cần kê đơn:</Text>
+            <Text style={styles.value}>
+              {medicine?.prescription_required ? 'Có' : 'Không'}
+            </Text>
+          </View>
+
+          <View style={styles.infoRow}>
+            <Text style={styles.label}>Thuốc kiểm soát:</Text>
+            <Text style={styles.value}>
+              {medicine?.is_controlled ? 'Có' : 'Không'}
+            </Text>
+          </View>
+
+          {medicine?.manufacturer && (
             <View style={styles.infoRow}>
               <Text style={styles.label}>Nhà sản xuất:</Text>
-              <Text style={styles.value}>{item.medicine.manufacturer}</Text>
+              <Text style={styles.value}>{medicine.manufacturer}</Text>
             </View>
           )}
 
-          {item.medicine?.country_of_origin && (
+          {medicine?.country_of_origin && (
             <View style={styles.infoRow}>
               <Text style={styles.label}>Xuất xứ:</Text>
-              <Text style={styles.value}>
-                {item.medicine.country_of_origin}
-              </Text>
+              <Text style={styles.value}>{medicine.country_of_origin}</Text>
             </View>
           )}
 
-          {item.medicine?.registration_number && (
+          {medicine?.registration_number && (
             <View style={styles.infoRow}>
               <Text style={styles.label}>Số đăng ký:</Text>
-              <Text style={styles.value}>
-                {item.medicine.registration_number}
-              </Text>
+              <Text style={styles.value}>{medicine.registration_number}</Text>
             </View>
           )}
 
-          {item.medicine?.barcode && (
+          {medicine?.barcode && (
             <View style={styles.infoRow}>
               <Text style={styles.label}>Mã vạch:</Text>
-              <Text style={styles.value}>{item.medicine.barcode}</Text>
+              <Text style={styles.value}>{medicine.barcode}</Text>
             </View>
           )}
         </View>
 
         {/* Medical Details Card */}
-        {(item.medicine?.indications ||
-          item.medicine?.contraindications ||
-          item.medicine?.side_effects ||
-          item.medicine?.usage_instructions ||
-          item.medicine?.storage_conditions) && (
+        {(medicine?.indications ||
+          medicine?.contraindications ||
+          medicine?.side_effects ||
+          medicine?.usage_instructions ||
+          medicine?.storage_conditions) && (
           <View style={styles.card}>
             <Text style={styles.cardTitle}>Thông tin y học</Text>
 
-            {item.medicine?.indications && (
+            {medicine?.indications && (
               <View style={styles.infoRow}>
                 <Text style={styles.label}>Chỉ định:</Text>
-                <Text style={styles.value}>{item.medicine.indications}</Text>
+                <Text style={styles.value}>{medicine.indications}</Text>
               </View>
             )}
 
-            {item.medicine?.contraindications && (
+            {medicine?.contraindications && (
               <View style={styles.infoRow}>
                 <Text style={styles.label}>Chống chỉ định:</Text>
-                <Text style={styles.value}>
-                  {item.medicine.contraindications}
-                </Text>
+                <Text style={styles.value}>{medicine.contraindications}</Text>
               </View>
             )}
 
-            {item.medicine?.side_effects && (
+            {medicine?.side_effects && (
               <View style={styles.infoRow}>
                 <Text style={styles.label}>Tác dụng phụ:</Text>
-                <Text style={styles.value}>{item.medicine.side_effects}</Text>
+                <Text style={styles.value}>{medicine.side_effects}</Text>
               </View>
             )}
 
-            {item.medicine?.usage_instructions && (
+            {medicine?.usage_instructions && (
               <View style={styles.infoRow}>
                 <Text style={styles.label}>Cách sử dụng:</Text>
-                <Text style={styles.value}>
-                  {item.medicine.usage_instructions}
-                </Text>
+                <Text style={styles.value}>{medicine.usage_instructions}</Text>
               </View>
             )}
 
-            {item.medicine?.storage_conditions && (
+            {medicine?.storage_conditions && (
               <View style={styles.infoRow}>
                 <Text style={styles.label}>Điều kiện bảo quản:</Text>
-                <Text style={styles.value}>
-                  {item.medicine.storage_conditions}
-                </Text>
+                <Text style={styles.value}>{medicine.storage_conditions}</Text>
               </View>
             )}
           </View>
@@ -296,49 +390,44 @@ export default function InventoryDetailScreen() {
                 status === 'sufficient' && styles.successValue,
               ]}
             >
-              {item.total_quantity_in_base_unit || item.total_quantity}{' '}
-              {item.medicine?.base_unit || item.medicine?.unit || ''}
+              {item.total_quantity_in_base_unit || item.total_quantity || 0}{' '}
+              {medicine?.base_unit || medicine?.unit || ''}
             </Text>
           </View>
 
-          {/* Multi-Unit Display */}
-          {item.quantities_by_unit && (
-            <View style={styles.multiUnitContainer}>
-              <Text style={styles.label}>Tồn kho theo đơn vị:</Text>
-              <View style={styles.unitQuantities}>
-                {item.quantities_by_unit.box !== undefined && (
-                  <View style={styles.unitQuantityItem}>
-                    <Text style={styles.unitQuantityLabel}>Hộp:</Text>
-                    <Text style={styles.unitQuantityValue}>
-                      {item.quantities_by_unit.box}
-                    </Text>
-                  </View>
-                )}
-                {item.quantities_by_unit.blister !== undefined && (
-                  <View style={styles.unitQuantityItem}>
-                    <Text style={styles.unitQuantityLabel}>Vỉ:</Text>
-                    <Text style={styles.unitQuantityValue}>
-                      {item.quantities_by_unit.blister}
-                    </Text>
-                  </View>
-                )}
-                {item.quantities_by_unit.tablet !== undefined && (
-                  <View style={styles.unitQuantityItem}>
-                    <Text style={styles.unitQuantityLabel}>Viên:</Text>
-                    <Text style={styles.unitQuantityValue}>
-                      {item.quantities_by_unit.tablet}
-                    </Text>
-                  </View>
-                )}
+          {/* Multi-Unit Display - Tính toán động từ package_structure */}
+          {sortedUnits.length > 0 &&
+            Object.keys(quantitiesByUnit).length > 0 && (
+              <View style={styles.multiUnitContainer}>
+                <Text style={styles.multiUnitLabel}>Tồn kho theo đơn vị:</Text>
+                <View style={styles.unitQuantities}>
+                  {sortedUnits.map(unit => {
+                    const quantity = quantitiesByUnit[unit];
+                    if (
+                      quantity === undefined ||
+                      quantity === null ||
+                      quantity === 0
+                    ) {
+                      return null;
+                    }
+                    return (
+                      <View key={unit} style={styles.unitQuantityItem}>
+                        <Text style={styles.unitQuantityLabel}>
+                          {getUnitDisplayName(unit)}:
+                        </Text>
+                        <Text style={styles.unitQuantityValue}>{quantity}</Text>
+                      </View>
+                    );
+                  })}
+                </View>
               </View>
-            </View>
-          )}
+            )}
 
           {item.warning_threshold && (
             <View style={styles.infoRow}>
               <Text style={styles.label}>Ngưỡng cảnh báo:</Text>
               <Text style={styles.value}>
-                {item.warning_threshold} {item.medicine?.unit}
+                {item.warning_threshold} {medicine?.unit}
               </Text>
             </View>
           )}
@@ -502,6 +591,14 @@ const styles = StyleSheet.create({
   priceValue: {
     color: '#4CAF50',
   },
+  priceContainer: {
+    flexDirection: 'column',
+    alignItems: 'flex-end',
+    gap: 4,
+  },
+  priceItem: {
+    fontSize: 14,
+  },
   quantityValue: {
     fontSize: 20,
     fontWeight: '700',
@@ -603,11 +700,16 @@ const styles = StyleSheet.create({
     backgroundColor: '#F5F5F5',
     borderRadius: 8,
   },
+  multiUnitLabel: {
+    fontSize: 13,
+    color: '#757575',
+    fontWeight: '500',
+    marginBottom: 8,
+  },
   unitQuantities: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 16,
-    marginTop: 8,
   },
   unitQuantityItem: {
     flexDirection: 'row',

@@ -175,9 +175,12 @@ export default function BatchDetailExpandedScreen() {
     typeof batch.supplier_id === 'object' ? batch.supplier_id : batch.supplier;
   const statusColor = getStatusColor(batch.status);
   const statusLabel = getStatusLabel(batch.status);
-  const profitPerUnit =
-    ((medicine && typeof medicine === 'object' ? medicine.retail_price : 0) ||
-      0) - (batch.import_price || 0);
+  // Tính lợi nhuận dựa trên giá bán lẻ cho đơn vị cơ sở và giá nhập (cả hai đều tính trên đơn vị cơ sở)
+  const retailPriceForBaseUnit =
+    batch.retail_price_for_base_unit ||
+    (medicine && typeof medicine === 'object' ? medicine.retail_price : 0) ||
+    0;
+  const profitPerUnit = retailPriceForBaseUnit - (batch.import_price || 0);
   const soldQuantity = (batch.initial_quantity || 0) - (batch.quantity || 0);
   const soldPercent =
     batch.initial_quantity && batch.initial_quantity > 0
@@ -290,11 +293,16 @@ export default function BatchDetailExpandedScreen() {
             <Text style={styles.value}>{medicine?.unit}</Text>
           </View>
 
-          {medicine?.retail_price && (
+          {(batch.retail_price_for_base_unit || medicine?.retail_price) && (
             <View style={styles.infoRow}>
               <Text style={styles.label}>Giá bán lẻ:</Text>
               <Text style={[styles.value, styles.priceText]}>
-                ₫{medicine.retail_price.toLocaleString('vi-VN')}
+                ₫
+                {(
+                  batch.retail_price_for_base_unit ||
+                  medicine?.retail_price ||
+                  0
+                ).toLocaleString('vi-VN')}
               </Text>
             </View>
           )}
@@ -387,7 +395,12 @@ export default function BatchDetailExpandedScreen() {
           <View style={styles.infoRow}>
             <Text style={styles.label}>Giá bán lẻ:</Text>
             <Text style={[styles.value, styles.priceText]}>
-              ₫{medicine?.retail_price?.toLocaleString('vi-VN')}
+              ₫
+              {(
+                batch.retail_price_for_base_unit ||
+                medicine?.retail_price ||
+                0
+              ).toLocaleString('vi-VN')}
             </Text>
           </View>
 
@@ -413,9 +426,7 @@ export default function BatchDetailExpandedScreen() {
             <Text style={[styles.value, styles.priceText]}>
               ₫
               {(
-                (medicine && typeof medicine === 'object'
-                  ? medicine.retail_price || 0
-                  : 0) * (batch.initial_quantity || 0)
+                retailPriceForBaseUnit * (batch.initial_quantity || 0)
               ).toLocaleString('vi-VN')}
             </Text>
           </View>

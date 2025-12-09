@@ -25,24 +25,40 @@ const WarehouseHubScreen: React.FC = () => {
   const hubCards: HubCard[] = [
     {
       id: 'inventory',
-      title: 'Tồn Kho Thuốc',
+      title: 'Danh Sách Thuốc Tồn Kho',
       description: 'Xem danh sách thuốc và số lượng tồn kho tại chi nhánh',
       icon: 'package-variant-closed',
       color: '#1E88E5',
-      route: ROUTES.INVENTORY_LIST,
+      route: ROUTES.BRANCH_INVENTORY_MANAGEMENT,
     },
     {
       id: 'batches',
-      title: 'Lô Thuốc',
+      title: 'Danh Sách Lô Hàng',
       description: 'Quản lý lô thuốc, hạn sử dụng và giá nhập',
       icon: 'barcode',
       color: '#F57C00',
-      route: ROUTES.INVENTORY_LIST, // TODO: Change to batch list route when available
+      route: ROUTES.BRANCH_INVENTORY_MANAGEMENT,
+    },
+    {
+      id: 'imports',
+      title: 'Lịch Sử Nhập Hàng',
+      description: 'Xem lịch sử các đơn nhập hàng đã thực hiện',
+      icon: 'history',
+      color: '#4CAF50',
+      route: ROUTES.BRANCH_INVENTORY_MANAGEMENT,
     },
   ];
 
-  const handleCardPress = (route: string) => {
-    navigation.navigate(route);
+  const handleCardPress = (card: HubCard) => {
+    if (card.id === 'inventory') {
+      navigation.navigate(card.route, { initialTab: 'inventory' });
+    } else if (card.id === 'batches') {
+      navigation.navigate(card.route, { initialTab: 'batches' });
+    } else if (card.id === 'imports') {
+      navigation.navigate(card.route, { initialTab: 'imports' });
+    } else {
+      navigation.navigate(card.route);
+    }
   };
 
   return (
@@ -65,7 +81,7 @@ const WarehouseHubScreen: React.FC = () => {
             <TouchableOpacity
               key={card.id}
               style={styles.card}
-              onPress={() => handleCardPress(card.route)}
+              onPress={() => handleCardPress(card)}
               activeOpacity={0.8}
             >
               <View

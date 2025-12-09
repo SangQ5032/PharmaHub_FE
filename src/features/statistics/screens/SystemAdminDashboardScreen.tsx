@@ -120,52 +120,52 @@ const SystemAdminDashboardScreen: React.FC<DashboardScreenProps> = ({
               <>
                 <View style={styles.statsRow}>
                   <StatCard
-                    label="Tổng Doanh Thu"
+                    title="Tổng Doanh Thu"
                     value={dashboardData.overall.totalRevenue}
-                    format="currency"
+                    valueFormat="currency"
                     icon="💰"
-                    style={styles.statCardHalf}
+                    containerStyle={styles.statCardHalf}
                   />
                   <StatCard
-                    label="Tổng Hóa Đơn"
+                    title="Tổng Hóa Đơn"
                     value={dashboardData.overall.totalInvoices}
-                    format="number"
+                    valueFormat="number"
                     icon="📄"
-                    style={styles.statCardHalf}
+                    containerStyle={styles.statCardHalf}
                   />
                 </View>
 
                 <View style={styles.statsRow}>
                   <StatCard
-                    label="Tổng Số Lượng"
+                    title="Tổng Số Lượng"
                     value={dashboardData.overall.totalQuantity}
-                    format="number"
+                    valueFormat="number"
                     icon="📦"
-                    style={styles.statCardHalf}
+                    containerStyle={styles.statCardHalf}
                   />
                   <StatCard
-                    label="Chi Nhánh"
+                    title="Chi Nhánh"
                     value={dashboardData.overall.totalBranches}
-                    format="number"
+                    valueFormat="number"
                     icon="🏪"
-                    style={styles.statCardHalf}
+                    containerStyle={styles.statCardHalf}
                   />
                 </View>
 
                 <View style={styles.statsRow}>
                   <StatCard
-                    label="Avg Giá Trị Hóa Đơn"
+                    title="Avg Giá Trị Hóa Đơn"
                     value={dashboardData.overall.averageInvoiceValue}
-                    format="currency"
+                    valueFormat="currency"
                     icon="📈"
-                    style={styles.statCardHalf}
+                    containerStyle={styles.statCardHalf}
                   />
                   <StatCard
-                    label="Chiếc Khấu"
+                    title="Chiết Khấu"
                     value={dashboardData.overall.totalDiscount}
-                    format="currency"
+                    valueFormat="currency"
                     icon="🏷️"
-                    style={styles.statCardHalf}
+                    containerStyle={styles.statCardHalf}
                   />
                 </View>
               </>

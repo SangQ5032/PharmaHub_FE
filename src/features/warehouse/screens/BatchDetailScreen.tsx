@@ -206,7 +206,12 @@ export default function BatchDetailScreen() {
           <View style={styles.infoRow}>
             <Text style={styles.label}>Giá bán lẻ:</Text>
             <Text style={styles.value}>
-              ₫{batch.medicine?.retail_price?.toLocaleString('vi-VN')}
+              ₫
+              {(
+                batch.retail_price_for_base_unit ||
+                batch.medicine?.retail_price ||
+                0
+              ).toLocaleString('vi-VN')}
             </Text>
           </View>
 
@@ -215,7 +220,9 @@ export default function BatchDetailScreen() {
             <Text style={styles.profitValue}>
               ₫
               {(
-                (batch.medicine?.retail_price || 0) - batch.import_price
+                (batch.retail_price_for_base_unit ||
+                  batch.medicine?.retail_price ||
+                  0) - (batch.import_price || 0)
               ).toLocaleString('vi-VN')}
             </Text>
           </View>

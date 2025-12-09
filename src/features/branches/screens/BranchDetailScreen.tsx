@@ -122,14 +122,14 @@ export default function BranchDetailScreen() {
         <TouchableOpacity
           style={styles.menuItem}
           onPress={() =>
-            navigation.navigate(ROUTES.BRANCH_EMPLOYEE_LIST, {
+            navigation.navigate(ROUTES.BRANCH_EMPLOYEE_INFO_MENU, {
               branchId,
               branchName: branch?.name || branchName,
             })
           }
         >
           <Text style={styles.menuTitle}>Nhân viên</Text>
-          <Text style={styles.menuSubtitle}>Danh sách & quản lý nhân viên</Text>
+          <Text style={styles.menuSubtitle}>Thông tin nhân viên</Text>
         </TouchableOpacity>
 
         <TouchableOpacity

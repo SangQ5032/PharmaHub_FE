@@ -1,6 +1,6 @@
 // src/features/warehouse/screens/InventoryDetailExpandedScreen.tsx
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   View,
   Text,
@@ -16,9 +16,15 @@ import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityI
 import { useRoute, useNavigation } from '@react-navigation/native';
 import { useGetInventoryByBranchAndMedicine } from '@features/warehouse/hooks/useInventory';
 import { useGetBatchesByMedicine } from '@features/warehouse/hooks/useBatches';
+import { useMedicineDetail } from '@features/medicines/hooks/useMedicineDetail';
 import { useAuthStore } from '@features/auth/stores/useAuthStore';
 import { BatchCard } from '@features/warehouse/components/BatchCard';
 import { ROUTES } from '@shared/constants/routes';
+import {
+  calculateQuantitiesByUnit,
+  getSortedUnits,
+  getUnitDisplayName,
+} from '../../../utils/medicineUnits';
 
 interface RouteParams {
   medicineId: string;
@@ -45,20 +51,56 @@ export default function InventoryDetailExpandedScreen() {
   const batchesQuery = useGetBatchesByMedicine(branchId, medicineId);
   const batches = (batchesQuery.data?.data as any[]) || [];
 
+  // Fetch thông tin thuốc chi tiết từ API riêng
+  const {
+    medicine: medicineDetail,
+    loading: medicineLoading,
+    error: medicineError,
+    refresh: refreshMedicine,
+  } = useMedicineDetail(medicineId);
+
   const onRefresh = async () => {
     setRefreshing(true);
-    await Promise.all([inventoryQuery.refetch(), batchesQuery.refetch()]);
+    await Promise.all([
+      inventoryQuery.refetch(),
+      batchesQuery.refetch(),
+      refreshMedicine(),
+    ]);
     setRefreshing(false);
   };
 
+  // Sử dụng thông tin thuốc từ API riêng, fallback về inventory.medicine nếu chưa load xong
+  const medicine = medicineDetail || inventory?.medicine;
+
+  // Tính toán số lượng tồn kho theo các đơn vị từ package_structure
+  const quantitiesByUnit = useMemo(() => {
+    if (!medicine || !inventory?.total_quantity_in_base_unit) {
+      return {};
+    }
+    return calculateQuantitiesByUnit(
+      medicine,
+      inventory.total_quantity_in_base_unit || inventory.total_quantity || 0,
+    );
+  }, [
+    medicine,
+    inventory?.total_quantity_in_base_unit,
+    inventory?.total_quantity,
+  ]);
+
+  // Lấy danh sách đơn vị đã sắp xếp
+  const sortedUnits = useMemo(() => {
+    if (!medicine) return [];
+    return getSortedUnits(medicine);
+  }, [medicine]);
+
   React.useLayoutEffect(() => {
     navigation.setOptions({
-      title: inventory?.medicine?.name || 'Chi tiết thuốc',
+      title: medicine?.name || 'Chi tiết thuốc',
       headerBackTitle: 'Quay lại',
     });
-  }, [navigation, inventory]);
+  }, [navigation, medicine]);
 
-  if (inventoryQuery.isLoading && !inventory) {
+  if ((inventoryQuery.isLoading || medicineLoading) && !inventory) {
     return (
       <SafeAreaView style={styles.container}>
         <View style={styles.centerContainer}>
@@ -89,7 +131,6 @@ export default function InventoryDetailExpandedScreen() {
     );
   }
 
-  const medicine = inventory.medicine;
   const branch = inventory.branch;
 
   // Group batches by status
@@ -189,66 +230,57 @@ export default function InventoryDetailExpandedScreen() {
             </View>
             <Text style={styles.statusCardValue}>
               {inventory.total_quantity_in_base_unit ||
-                inventory.total_quantity}
+                inventory.total_quantity ||
+                0}
             </Text>
             <Text style={styles.statusCardUnit}>
-              {medicine?.base_unit || medicine?.unit}
+              {medicine?.base_unit || medicine?.unit || ''}
             </Text>
           </View>
 
-          {/* Multi-Unit Display */}
-          {inventory.quantities_by_unit && (
-            <>
-              {inventory.quantities_by_unit.box !== undefined && (
-                <View style={[styles.statusCardLarge, styles.statusCardBlue]}>
-                  <View style={styles.statusCardTop}>
-                    <MaterialCommunityIcons
-                      name="package-variant"
-                      size={24}
-                      color="#2196F3"
-                    />
-                    <Text style={styles.statusCardLabel}>Hộp</Text>
+          {/* Multi-Unit Display - Tính toán động từ package_structure */}
+          {sortedUnits.length > 1 &&
+            sortedUnits
+              .filter(unit => {
+                const quantity = quantitiesByUnit[unit];
+                return (
+                  quantity !== undefined && quantity !== null && quantity > 0
+                );
+              })
+              .slice(0, 3)
+              .map((unit, index) => {
+                const quantity = quantitiesByUnit[unit];
+                const colors = ['#2196F3', '#FF9800', '#4CAF50'];
+                const icons = [
+                  'package-variant',
+                  'package-variant-closed',
+                  'pill',
+                ];
+                return (
+                  <View
+                    key={unit}
+                    style={[
+                      styles.statusCardLarge,
+                      { borderLeftColor: colors[index % colors.length] },
+                    ]}
+                  >
+                    <View style={styles.statusCardTop}>
+                      <MaterialCommunityIcons
+                        name={icons[index % icons.length] as any}
+                        size={24}
+                        color={colors[index % colors.length]}
+                      />
+                      <Text style={styles.statusCardLabel}>
+                        {getUnitDisplayName(unit)}
+                      </Text>
+                    </View>
+                    <Text style={styles.statusCardValue}>{quantity}</Text>
+                    <Text style={styles.statusCardUnit}>
+                      {getUnitDisplayName(unit).toLowerCase()}
+                    </Text>
                   </View>
-                  <Text style={styles.statusCardValue}>
-                    {inventory.quantities_by_unit.box}
-                  </Text>
-                  <Text style={styles.statusCardUnit}>hộp</Text>
-                </View>
-              )}
-              {inventory.quantities_by_unit.blister !== undefined && (
-                <View style={[styles.statusCardLarge, styles.statusCardOrange]}>
-                  <View style={styles.statusCardTop}>
-                    <MaterialCommunityIcons
-                      name="package-variant-closed"
-                      size={24}
-                      color="#FF9800"
-                    />
-                    <Text style={styles.statusCardLabel}>Vỉ</Text>
-                  </View>
-                  <Text style={styles.statusCardValue}>
-                    {inventory.quantities_by_unit.blister}
-                  </Text>
-                  <Text style={styles.statusCardUnit}>vỉ</Text>
-                </View>
-              )}
-              {inventory.quantities_by_unit.tablet !== undefined && (
-                <View style={[styles.statusCardLarge, styles.statusCardGreen]}>
-                  <View style={styles.statusCardTop}>
-                    <MaterialCommunityIcons
-                      name="pill"
-                      size={24}
-                      color="#4CAF50"
-                    />
-                    <Text style={styles.statusCardLabel}>Viên</Text>
-                  </View>
-                  <Text style={styles.statusCardValue}>
-                    {inventory.quantities_by_unit.tablet}
-                  </Text>
-                  <Text style={styles.statusCardUnit}>viên</Text>
-                </View>
-              )}
-            </>
-          )}
+                );
+              })}
 
           {!inventory.quantities_by_unit && (
             <>
@@ -267,7 +299,7 @@ export default function InventoryDetailExpandedScreen() {
                     0}
                 </Text>
                 <Text style={styles.statusCardUnit}>
-                  {medicine?.base_unit || medicine?.unit}
+                  {medicine?.base_unit || medicine?.unit || ''}
                 </Text>
               </View>
 
@@ -338,9 +370,29 @@ export default function InventoryDetailExpandedScreen() {
           </View>
 
           <View style={styles.infoRow}>
-            <Text style={styles.label}>Đơn vị:</Text>
-            <Text style={styles.value}>{medicine?.unit}</Text>
+            <Text style={styles.label}>Đơn vị cơ bản:</Text>
+            <Text style={styles.value}>
+              {medicine?.base_unit || medicine?.unit || 'N/A'}
+            </Text>
           </View>
+
+          {medicine?.packaging && (
+            <View style={styles.infoRow}>
+              <Text style={styles.label}>Quy cách đóng gói:</Text>
+              <Text style={styles.value}>{medicine.packaging}</Text>
+            </View>
+          )}
+
+          {medicine?.category_id && (
+            <View style={styles.infoRow}>
+              <Text style={styles.label}>Danh mục:</Text>
+              <Text style={styles.value}>
+                {typeof medicine.category_id === 'object'
+                  ? medicine.category_id.name
+                  : medicine.category_id}
+              </Text>
+            </View>
+          )}
 
           <View style={styles.infoRow}>
             <Text style={styles.label}>Dạng bào chế:</Text>
@@ -351,6 +403,20 @@ export default function InventoryDetailExpandedScreen() {
             <Text style={styles.label}>Hàm lượng:</Text>
             <Text style={styles.value}>{medicine?.strength || 'N/A'}</Text>
           </View>
+
+          <View style={styles.infoRow}>
+            <Text style={styles.label}>Cần kê đơn:</Text>
+            <Text style={styles.value}>
+              {medicine?.prescription_required ? 'Có' : 'Không'}
+            </Text>
+          </View>
+
+          <View style={styles.infoRow}>
+            <Text style={styles.label}>Thuốc kiểm soát:</Text>
+            <Text style={styles.value}>
+              {medicine?.is_controlled ? 'Có' : 'Không'}
+            </Text>
+          </View>
         </View>
 
         {/* Medicine Details - Price & Manufacturer */}
@@ -360,12 +426,46 @@ export default function InventoryDetailExpandedScreen() {
             <Text style={styles.sectionTitle}>Giá & Nhà Sản Xuất</Text>
           </View>
 
-          <View style={styles.infoRow}>
-            <Text style={styles.label}>Giá bán lẻ:</Text>
-            <Text style={[styles.value, styles.priceText]}>
-              ₫{medicine?.retail_price?.toLocaleString('vi-VN') || '0'}
-            </Text>
-          </View>
+          {/* Giá theo đơn vị */}
+          {medicine?.prices && (
+            <View style={styles.infoRow}>
+              <Text style={styles.label}>Giá bán:</Text>
+              <View style={styles.priceContainer}>
+                {medicine.prices.price_per_unit &&
+                  Object.entries(medicine.prices.price_per_unit).map(
+                    ([unit, price]) => (
+                      <Text
+                        key={unit}
+                        style={[
+                          styles.value,
+                          styles.priceText,
+                          styles.priceItem,
+                        ]}
+                      >
+                        ₫{Number(price).toLocaleString('vi-VN')}/
+                        {getUnitDisplayName(unit)}
+                      </Text>
+                    ),
+                  )}
+                {!medicine.prices.price_per_unit &&
+                  medicine.prices.base_unit_price && (
+                    <Text style={[styles.value, styles.priceText]}>
+                      ₫{medicine.prices.base_unit_price.toLocaleString('vi-VN')}
+                      /{getUnitDisplayName(medicine.base_unit || '')}
+                    </Text>
+                  )}
+              </View>
+            </View>
+          )}
+
+          {!medicine?.prices && medicine?.retail_price && (
+            <View style={styles.infoRow}>
+              <Text style={styles.label}>Giá bán lẻ:</Text>
+              <Text style={[styles.value, styles.priceText]}>
+                ₫{medicine.retail_price.toLocaleString('vi-VN')}
+              </Text>
+            </View>
+          )}
 
           <View style={styles.infoRow}>
             <Text style={styles.label}>Nhà sản xuất:</Text>
@@ -679,6 +779,14 @@ const styles = StyleSheet.create({
   priceText: {
     color: '#4CAF50',
     fontSize: 14,
+  },
+  priceContainer: {
+    flexDirection: 'column',
+    alignItems: 'flex-end',
+    gap: 4,
+  },
+  priceItem: {
+    fontSize: 13,
   },
   textBlockRow: {
     paddingVertical: 10,

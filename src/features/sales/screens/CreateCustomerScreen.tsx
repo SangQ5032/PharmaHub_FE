@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -9,17 +9,40 @@ import {
   ActivityIndicator,
   TextInput,
 } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
-import { useCreateCustomer } from '../hooks/useCustomers';
+import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
+import { useCreateCustomer, useUpdateCustomer } from '../hooks/useCustomers';
+import { Customer } from '../api/customers.api';
 
-const CreateCustomerScreen: React.FC = () => {
+interface CreateCustomerScreenProps {
+  route?: RouteProp<any>;
+}
+
+const CreateCustomerScreen: React.FC<CreateCustomerScreenProps> = () => {
   const navigation = useNavigation<any>();
-  const { mutate: createCustomerMutation, isPending } = useCreateCustomer();
+  const route = useRoute<any>();
+  const mode = route?.params?.mode as 'edit' | undefined;
+  const editingCustomer = route?.params?.customer as Customer | undefined;
+
+  const { mutate: createCustomerMutation, isPending: isCreating } =
+    useCreateCustomer();
+  const { mutate: updateCustomerMutation, isPending: isUpdating } =
+    useUpdateCustomer();
+
+  const isPending = isCreating || isUpdating;
 
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
   const [address, setAddress] = useState('');
   const [email, setEmail] = useState('');
+
+  useEffect(() => {
+    if (mode === 'edit' && editingCustomer) {
+      setName(editingCustomer.name || '');
+      setPhone(editingCustomer.phone || '');
+      setAddress(editingCustomer.address || '');
+      setEmail(editingCustomer.email || '');
+    }
+  }, [mode, editingCustomer]);
 
   const handleSubmit = () => {
     // Validation
@@ -47,32 +70,67 @@ const CreateCustomerScreen: React.FC = () => {
       ...(email.trim() ? { email: email.trim() } : {}),
     };
 
-    createCustomerMutation(customerData, {
-      onSuccess: customer => {
-        Alert.alert('Thành công', 'Tạo khách hàng thành công', [
-          {
-            text: 'OK',
-            onPress: () => {
-              navigation.navigate('CreateInvoice', {
-                newCustomer: customer,
-              });
-            },
+    if (mode === 'edit' && editingCustomer?._id) {
+      // Update customer
+      updateCustomerMutation(
+        { id: editingCustomer._id, data: customerData },
+        {
+          onSuccess: () => {
+            Alert.alert('Thành công', 'Cập nhật khách hàng thành công', [
+              {
+                text: 'OK',
+                onPress: () => {
+                  navigation.goBack();
+                },
+              },
+            ]);
           },
-        ]);
-      },
-      onError: (error: any) => {
-        Alert.alert(
-          'Lỗi',
-          error?.response?.data?.message || 'Tạo khách hàng thất bại',
-        );
-      },
-    });
+          onError: (error: any) => {
+            Alert.alert(
+              'Lỗi',
+              error?.response?.data?.message || 'Cập nhật khách hàng thất bại',
+            );
+          },
+        },
+      );
+    } else {
+      // Create customer
+      createCustomerMutation(customerData, {
+        onSuccess: customer => {
+          Alert.alert('Thành công', 'Tạo khách hàng thành công', [
+            {
+              text: 'OK',
+              onPress: () => {
+                // Check if coming from CreateInvoice screen
+                if (route?.params?.fromCreateInvoice) {
+                  navigation.navigate('CreateInvoice', {
+                    newCustomer: customer,
+                  });
+                } else {
+                  navigation.goBack();
+                }
+              },
+            },
+          ]);
+        },
+        onError: (error: any) => {
+          Alert.alert(
+            'Lỗi',
+            error?.response?.data?.message || 'Tạo khách hàng thất bại',
+          );
+        },
+      });
+    }
   };
 
   return (
     <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Thông tin khách hàng</Text>
+        <Text style={styles.sectionTitle}>
+          {mode === 'edit'
+            ? 'Cập nhật thông tin khách hàng'
+            : 'Thông tin khách hàng'}
+        </Text>
 
         {/* Name Input */}
         <View style={styles.inputContainer}>
@@ -156,7 +214,9 @@ const CreateCustomerScreen: React.FC = () => {
           {isPending ? (
             <ActivityIndicator size="small" color="#FFF" />
           ) : (
-            <Text style={styles.submitButtonText}>Tạo khách hàng</Text>
+            <Text style={styles.submitButtonText}>
+              {mode === 'edit' ? 'Cập nhật khách hàng' : 'Tạo khách hàng'}
+            </Text>
           )}
         </TouchableOpacity>
       </View>
