@@ -7,7 +7,8 @@ module.exports = {
     '@react-native-community/geolocation': '<rootDir>/__mocks__/geolocation.js',
     'react-native-maps': '<rootDir>/__mocks__/react-native-maps.js',
     'react-native-qrcode-svg': '<rootDir>/__mocks__/react-native-qrcode-svg.js',
-    '^react-native-vision-camera$': '<rootDir>/__mocks__/react-native-vision-camera.js'
+    '^react-native-vision-camera$': '<rootDir>/__mocks__/react-native-vision-camera.js',
+    '^@react-native-documents/picker$': '<rootDir>/__mocks__/@react-native-documents/picker.js'
   },
   transformIgnorePatterns: [
     "node_modules/(?!(jest-)?@?react-navigation|@react-native|react-native|react-native-.*|@react-native-community/.*)"
