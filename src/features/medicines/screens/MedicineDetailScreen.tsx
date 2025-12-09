@@ -19,13 +19,16 @@ import InventoryBranchCard from '../components/InventoryBranchCard';
 
 const Row: React.FC<{
   label: string;
-  value?: string | number | null | boolean;
+  value?: string | number | null | boolean | any;
 }> = ({ label, value }) => {
   let displayValue: string;
   if (value == null || value === '') {
     displayValue = '-';
   } else if (typeof value === 'boolean') {
     displayValue = value ? 'Có' : 'Không';
+  } else if (typeof value === 'object') {
+    // Nếu value là object, không render trực tiếp
+    displayValue = JSON.stringify(value);
   } else {
     displayValue = String(value);
   }
@@ -202,26 +205,107 @@ const MedicineDetailScreen: React.FC = () => {
                 )}
                 <Row
                   label="Đơn vị cơ sở"
-                  value={
-                    typeof item.base_unit === 'object' &&
-                    item.base_unit !== null
-                      ? `${item.base_unit.name} (${item.base_unit.short_name})`
-                      : item.base_unit || '-'
-                  }
+                  value={(() => {
+                    if (!item.base_unit) return '-';
+                    if (
+                      typeof item.base_unit === 'object' &&
+                      item.base_unit !== null
+                    ) {
+                      const name =
+                        item.base_unit.name &&
+                        typeof item.base_unit.name === 'string'
+                          ? item.base_unit.name
+                          : '-';
+                      const shortName =
+                        item.base_unit.short_name &&
+                        typeof item.base_unit.short_name === 'string'
+                          ? item.base_unit.short_name
+                          : '-';
+                      return `${name} (${shortName})`;
+                    }
+                    if (typeof item.base_unit === 'string') {
+                      return item.base_unit;
+                    }
+                    return '-';
+                  })()}
                 />
-                {item.units && item.units.length > 0 && (
-                  <View style={styles.textRow}>
-                    <Text style={styles.textLabel}>Các đơn vị khác:</Text>
-                    <Text style={styles.textValue}>
-                      {item.units
-                        .map(
-                          (u: any) =>
-                            `${u.name} (${u.short_name}) - Tỷ lệ: ${u.ratio_to_base}`,
-                        )
-                        .join('\n')}
-                    </Text>
-                  </View>
-                )}
+                {item.units &&
+                  Array.isArray(item.units) &&
+                  item.units.length > 0 && (
+                    <View style={styles.textRow}>
+                      <Text style={styles.textLabel}>Các đơn vị khác:</Text>
+                      <Text style={styles.textValue}>
+                        {item.units
+                          .filter(
+                            (u: any) =>
+                              u && typeof u === 'object' && u !== null,
+                          )
+                          .map((u: any) => {
+                            const name =
+                              u.name && typeof u.name === 'string'
+                                ? String(u.name)
+                                : '-';
+                            const shortName =
+                              u.short_name && typeof u.short_name === 'string'
+                                ? String(u.short_name)
+                                : '-';
+                            const ratio =
+                              typeof u.ratio_to_base === 'number'
+                                ? String(u.ratio_to_base)
+                                : '1';
+                            return `${name} (${shortName}) - Tỷ lệ: ${ratio}`;
+                          })
+                          .filter(
+                            (str: any): str is string =>
+                              typeof str === 'string',
+                          )
+                          .join('\n')}
+                      </Text>
+                    </View>
+                  )}
+                {item.unit_ratios &&
+                  typeof item.unit_ratios === 'object' &&
+                  Object.keys(item.unit_ratios).length > 0 && (
+                    <View style={styles.textRow}>
+                      <Text style={styles.textLabel}>Tỷ lệ đơn vị:</Text>
+                      <Text style={styles.textValue}>
+                        {Object.entries(item.unit_ratios)
+                          .map(([unitId, ratio]) => {
+                            if (!unitId || typeof unitId !== 'string')
+                              return null;
+                            const unit = item.units?.find(
+                              (u: any) => u?._id === unitId,
+                            );
+                            let unitName: string;
+                            if (
+                              unit &&
+                              typeof unit === 'object' &&
+                              unit !== null
+                            ) {
+                              unitName =
+                                unit.name && typeof unit.name === 'string'
+                                  ? unit.name
+                                  : unit.short_name &&
+                                    typeof unit.short_name === 'string'
+                                  ? unit.short_name
+                                  : String(unitId);
+                            } else {
+                              unitName = String(unitId);
+                            }
+                            const ratioStr =
+                              typeof ratio === 'number'
+                                ? String(ratio)
+                                : String(ratio || '0');
+                            return `${unitName}: ${ratioStr}`;
+                          })
+                          .filter(
+                            (item): item is string =>
+                              item !== null && typeof item === 'string',
+                          )
+                          .join('\n')}
+                      </Text>
+                    </View>
+                  )}
                 <Row label="Nhà sản xuất" value={item?.manufacturer} />
                 <Row
                   label="Trạng thái"
@@ -259,12 +343,23 @@ const MedicineDetailScreen: React.FC = () => {
                     value={`${formatPrice(item.default_import_price)} đ`}
                   />
                 )}
-                {item.default_expiry_duration_months != null && (
+                {item.default_expiry_duration_days != null && (
                   <Row
                     label="Thời hạn sử dụng mặc định"
-                    value={`${item.default_expiry_duration_months} tháng`}
+                    value={`${
+                      item.default_expiry_duration_days
+                    } ngày (${Math.round(
+                      item.default_expiry_duration_days / 30,
+                    )} tháng)`}
                   />
                 )}
+                {!item.default_expiry_duration_days &&
+                  item.default_expiry_duration_months != null && (
+                    <Row
+                      label="Thời hạn sử dụng mặc định"
+                      value={`${item.default_expiry_duration_months} tháng`}
+                    />
+                  )}
                 {/* Legacy support - chỉ hiển thị nếu không có giá mới */}
                 {!item.default_retail_price &&
                   !item.default_import_price &&
@@ -275,8 +370,16 @@ const MedicineDetailScreen: React.FC = () => {
                           label={`Giá đơn vị cơ sở (${
                             typeof item.base_unit === 'object' &&
                             item.base_unit !== null
-                              ? item.base_unit.name
-                              : item.base_unit || 'tablet'
+                              ? item.base_unit.name &&
+                                typeof item.base_unit.name === 'string'
+                                ? item.base_unit.name
+                                : item.base_unit.short_name &&
+                                  typeof item.base_unit.short_name === 'string'
+                                ? item.base_unit.short_name
+                                : 'tablet'
+                              : typeof item.base_unit === 'string'
+                              ? item.base_unit
+                              : 'tablet'
                           })`}
                           value={`${formatPrice(
                             item.prices.base_unit_price,
@@ -369,9 +472,16 @@ const MedicineDetailScreen: React.FC = () => {
               {/* Thông tin sản xuất (legacy support) */}
               {(item.country_of_origin ||
                 item.registration_number ||
-                item.barcode) && (
+                item.barcode ||
+                item.manufacturing_date) && (
                 <View style={styles.card}>
                   <SectionTitle title="Thông tin sản xuất" />
+                  {item.manufacturing_date && (
+                    <Row
+                      label="Hạn sản xuất"
+                      value={formatDate(item.manufacturing_date)}
+                    />
+                  )}
                   {item.country_of_origin && (
                     <Row label="Nước sản xuất" value={item.country_of_origin} />
                   )}

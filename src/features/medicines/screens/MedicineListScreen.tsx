@@ -1,4 +1,11 @@
-import React, { useCallback, useMemo, useState } from 'react';
+/* eslint-disable no-undef */
+import React, {
+  useCallback,
+  useMemo,
+  useState,
+  useEffect,
+  useRef,
+} from 'react';
 import {
   View,
   Text,
@@ -19,6 +26,52 @@ import { ROUTES } from '@shared/constants/routes';
 import { importMedicines } from '../services/medicineService';
 import { pick } from '@react-native-documents/picker';
 
+// Helper function để đảm bảo giá trị là string khi render
+const ensureString = (value: any, fallback: string = '-'): string => {
+  if (value == null) return fallback;
+  if (typeof value === 'string') return value;
+  if (typeof value === 'number' || typeof value === 'boolean')
+    return String(value);
+  if (typeof value === 'object') {
+    // Nếu là object, thử lấy các field thường dùng
+    if ('name' in value && typeof value.name === 'string') return value.name;
+    if ('message' in value && typeof value.message === 'string')
+      return value.message;
+    if ('_id' in value && typeof value._id === 'string') return value._id;
+    if ('short_name' in value && typeof value.short_name === 'string')
+      return value.short_name;
+    // Nếu không có field hợp lệ, trả về JSON string
+    try {
+      return JSON.stringify(value);
+    } catch {
+      return fallback;
+    }
+  }
+  return fallback;
+};
+
+// Helper function để đảm bảo giá trị là số hoặc string khi render (dùng cho số liệu thống kê)
+const ensureNumberOrString = (
+  value: any,
+  fallback: string | number = 0,
+): string | number => {
+  if (value == null) return fallback;
+  if (typeof value === 'number') return value;
+  if (typeof value === 'string') {
+    const num = Number(value);
+    return isNaN(num) ? value : num;
+  }
+  if (typeof value === 'boolean') return value ? 1 : 0;
+  if (typeof value === 'object') {
+    // Nếu là object, thử lấy các field thường dùng
+    if ('name' in value && typeof value.name === 'string') return value.name;
+    if ('_id' in value && typeof value._id === 'string') return value._id;
+    // Nếu không có field hợp lệ, trả về string
+    return ensureString(value, String(fallback));
+  }
+  return fallback;
+};
+
 const MedicineListScreen: React.FC = () => {
   const { medicines, loading, error, refresh, search, setSearch } =
     useMedicines();
@@ -26,12 +79,49 @@ const MedicineListScreen: React.FC = () => {
   const [importing, setImporting] = useState(false);
   const [importResult, setImportResult] = useState<any>(null);
   const [showImportModal, setShowImportModal] = useState(false);
+  const autoCloseTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   useFocusEffect(
     useCallback(() => {
       refresh();
     }, [refresh]),
   );
+
+  // Tự động đóng modal sau 3 giây nếu import thành công và không có lỗi
+  useEffect(() => {
+    if (
+      !importing &&
+      importResult &&
+      importResult.success &&
+      (!importResult.data?.errors || importResult.data.errors.length === 0)
+    ) {
+      // Clear timer cũ nếu có
+      if (autoCloseTimerRef.current) {
+        clearTimeout(autoCloseTimerRef.current);
+      }
+
+      // Tạo timer mới để tự động đóng sau 3 giây
+      autoCloseTimerRef.current = setTimeout(() => {
+        closeImportModal();
+      }, 3000);
+    }
+
+    // Cleanup timer khi component unmount hoặc dependencies thay đổi
+    return () => {
+      if (autoCloseTimerRef.current) {
+        clearTimeout(autoCloseTimerRef.current);
+        autoCloseTimerRef.current = null;
+      }
+    };
+  }, [importing, importResult]);
+
+  // Cleanup timer khi modal đóng
+  useEffect(() => {
+    if (!showImportModal && autoCloseTimerRef.current) {
+      clearTimeout(autoCloseTimerRef.current);
+      autoCloseTimerRef.current = null;
+    }
+  }, [showImportModal]);
 
   // Filter medicines by search query
   const filteredMedicines = useMemo(() => {
@@ -141,6 +231,11 @@ const MedicineListScreen: React.FC = () => {
   };
 
   const closeImportModal = () => {
+    // Clear timer nếu có
+    if (autoCloseTimerRef.current) {
+      clearTimeout(autoCloseTimerRef.current);
+      autoCloseTimerRef.current = null;
+    }
     setShowImportModal(false);
     setImportResult(null);
   };
@@ -277,29 +372,36 @@ const MedicineListScreen: React.FC = () => {
                 </View>
 
                 <Text style={styles.resultMessage}>
-                  {typeof importResult.message === 'string'
-                    ? importResult.message
-                    : String(importResult.message || 'Hoàn thành')}
+                  {ensureString(importResult.message, 'Hoàn thành')}
                 </Text>
+
+                {/* Thông báo tự động đóng nếu thành công và không có lỗi */}
+                {importResult.success &&
+                  (!importResult.data?.errors ||
+                    importResult.data.errors.length === 0) && (
+                    <Text style={styles.autoCloseHint}>
+                      ⏱️ Modal sẽ tự động đóng sau 3 giây...
+                    </Text>
+                  )}
 
                 {importResult.data && (
                   <View style={styles.resultStats}>
                     <View style={styles.statItem}>
                       <Text style={styles.statLabel}>Tổng số:</Text>
                       <Text style={styles.statValue}>
-                        {importResult.data.total || 0}
+                        {ensureNumberOrString(importResult.data.total, 0)}
                       </Text>
                     </View>
                     <View style={styles.statItem}>
                       <Text style={styles.statLabel}>Thành công:</Text>
                       <Text style={[styles.statValue, styles.statSuccess]}>
-                        {importResult.data.success || 0}
+                        {ensureNumberOrString(importResult.data.success, 0)}
                       </Text>
                     </View>
                     <View style={styles.statItem}>
                       <Text style={styles.statLabel}>Thất bại:</Text>
                       <Text style={[styles.statValue, styles.statError]}>
-                        {importResult.data.failed || 0}
+                        {ensureNumberOrString(importResult.data.failed, 0)}
                       </Text>
                     </View>
                   </View>
@@ -313,10 +415,11 @@ const MedicineListScreen: React.FC = () => {
                         (error: any, index: number) => (
                           <View key={index} style={styles.errorItem}>
                             <Text style={styles.errorText}>
-                              Dòng {error.row}:{' '}
-                              {typeof error.message === 'string'
-                                ? error.message
-                                : String(error.message || 'Lỗi không xác định')}
+                              Dòng {ensureNumberOrString(error.row, 'N/A')}:{' '}
+                              {ensureString(
+                                error.message,
+                                'Lỗi không xác định',
+                              )}
                             </Text>
                           </View>
                         ),
@@ -488,6 +591,13 @@ const styles = StyleSheet.create({
     color: '#333',
     marginBottom: 16,
     textAlign: 'center',
+  },
+  autoCloseHint: {
+    fontSize: 12,
+    color: '#666',
+    marginBottom: 12,
+    textAlign: 'center',
+    fontStyle: 'italic',
   },
   resultStats: {
     flexDirection: 'row',

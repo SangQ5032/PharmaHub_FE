@@ -29,6 +29,31 @@ export default function BranchEmployeeInfoMenuScreen() {
         <TouchableOpacity
           style={styles.menuCard}
           onPress={() =>
+            navigation.navigate(ROUTES.BRANCH_EMPLOYEE_LIST, {
+              branchId,
+              branchName,
+            })
+          }
+        >
+          <View style={styles.iconContainer}>
+            <MaterialCommunityIcons
+              name="account-group"
+              size={32}
+              color="#FF9500"
+            />
+          </View>
+          <View style={styles.textContainer}>
+            <Text style={styles.menuTitle}>Quản lý nhân viên</Text>
+            <Text style={styles.menuSubtitle}>
+              Thêm và quản lý nhân viên trong chi nhánh
+            </Text>
+          </View>
+          <MaterialCommunityIcons name="chevron-right" size={24} color="#999" />
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={styles.menuCard}
+          onPress={() =>
             navigation.navigate(ROUTES.BRANCH_EMPLOYEE_SELECTION, {
               branchId,
               branchName,

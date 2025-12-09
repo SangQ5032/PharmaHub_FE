@@ -79,6 +79,7 @@ export type Medicine = {
   registration_number?: string;
   barcode?: string;
   alert_threshold?: number;
+  manufacturing_date?: string;
   status?: 'active' | 'inactive';
   createdAt: string;
   updatedAt: string;

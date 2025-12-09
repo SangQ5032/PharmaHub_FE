@@ -10,6 +10,7 @@ import {
   TextInput,
   Alert,
   ActivityIndicator,
+  Image,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { useGetSuppliers } from '@features/warehouse/hooks/useSuppliers';
@@ -21,6 +22,9 @@ import { useAuthStore } from '@features/auth';
 import {
   getValidUnits,
   getUnitDisplayName,
+  getUnitMultiplier,
+  getUnitConversionText,
+  getUnitShortName,
 } from '../../../utils/medicineUnits';
 
 interface ImportItem {
@@ -98,6 +102,25 @@ export default function CreateImportScreen() {
     return `${medicineCode}-${timeCode}-${branchCode}`;
   };
 
+  // Helper function để lấy tên đơn vị từ base_unit (có thể là object hoặc string)
+  const getBaseUnitName = (baseUnit: any): string | null => {
+    if (!baseUnit) {
+      return null;
+    }
+
+    // Nếu là object (MedicineUnit)
+    if (typeof baseUnit === 'object' && baseUnit !== null) {
+      return baseUnit.short_name || baseUnit.name || null;
+    }
+
+    // Nếu là string
+    if (typeof baseUnit === 'string') {
+      return baseUnit;
+    }
+
+    return null;
+  };
+
   // Handle add medicine
   const handleAddMedicine = (medicine: Medicine) => {
     // Check if medicine already exists
@@ -109,7 +132,8 @@ export default function CreateImportScreen() {
 
     // Lấy đơn vị mặc định từ base_unit của thuốc
     const validUnits = getValidUnits(medicine);
-    const defaultUnit = medicine.base_unit || validUnits[0];
+    const baseUnitName = getBaseUnitName(medicine.base_unit);
+    const defaultUnit = baseUnitName || validUnits[0];
 
     // Kiểm tra xem có đơn vị hợp lệ không
     if (!defaultUnit || validUnits.length === 0) {
@@ -117,14 +141,46 @@ export default function CreateImportScreen() {
       return;
     }
 
-    // Lấy giá mặc định từ prices.price_per_unit theo đơn vị, nếu không có thì dùng base_unit_price hoặc retail_price
-    let defaultPrice = 0;
-    if (medicine.prices?.price_per_unit?.[defaultUnit]) {
-      defaultPrice = medicine.prices.price_per_unit[defaultUnit];
+    // Lấy giá mặc định từ default_import_price (giá trên đơn vị cơ sở)
+    let baseImportPrice = 0;
+    if ((medicine as any).default_import_price) {
+      baseImportPrice = (medicine as any).default_import_price;
     } else if (medicine.prices?.base_unit_price) {
-      defaultPrice = medicine.prices.base_unit_price;
+      baseImportPrice = medicine.prices.base_unit_price;
+    } else if (medicine.prices?.price_per_unit?.[defaultUnit]) {
+      baseImportPrice = medicine.prices.price_per_unit[defaultUnit];
     } else if (medicine.retail_price) {
-      defaultPrice = medicine.retail_price;
+      baseImportPrice = medicine.retail_price;
+    } else if ((medicine as any).default_retail_price) {
+      baseImportPrice = (medicine as any).default_retail_price;
+    }
+
+    // Tính giá nhập dựa trên đơn vị được chọn
+    // default_import_price là giá trên đơn vị cơ sở
+    // Khi chọn đơn vị khác, giá = base_import_price * multiplier
+    // multiplier là số base units trong 1 unit (ví dụ: 1 Hộp = 100 Viên thì multiplier = 100)
+    const unitMultiplier = getUnitMultiplier(medicine, defaultUnit);
+    const defaultPrice = baseImportPrice * unitMultiplier;
+
+    // Tính toán ngày hết hạn từ default_expiry_duration_days
+    // default_expiry_duration_days là số ngày hạn sử dụng tính từ ngày hiện tại
+    let expiryDate = '';
+    const expiryDurationDays = (medicine as any).default_expiry_duration_days;
+    if (
+      expiryDurationDays &&
+      typeof expiryDurationDays === 'number' &&
+      expiryDurationDays > 0
+    ) {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const expiryDateObj = new Date(today);
+      expiryDateObj.setDate(today.getDate() + expiryDurationDays);
+
+      // Format: YYYY-MM-DD
+      const year = expiryDateObj.getFullYear();
+      const month = String(expiryDateObj.getMonth() + 1).padStart(2, '0');
+      const day = String(expiryDateObj.getDate()).padStart(2, '0');
+      expiryDate = `${year}-${month}-${day}`;
     }
 
     // Tự động sinh mã lô hàng
@@ -139,7 +195,7 @@ export default function CreateImportScreen() {
         unit: defaultUnit,
         unit_price: defaultPrice,
         batch_number: autoBatchNumber,
-        expiry_date: '',
+        expiry_date: expiryDate,
       },
     ]);
   };
@@ -158,53 +214,31 @@ export default function CreateImportScreen() {
     );
   };
 
-  // Handle update unit price
-  const handleUpdateUnitPrice = (medicineId: string, unit_price: number) => {
-    setItems(
-      items.map(item =>
-        item.medicine._id === medicineId ? { ...item, unit_price } : item,
-      ),
-    );
-  };
-
-  // Handle update batch number
-  const handleUpdateBatchNumber = (
-    medicineId: string,
-    batch_number: string,
-  ) => {
-    setItems(
-      items.map(item =>
-        item.medicine._id === medicineId ? { ...item, batch_number } : item,
-      ),
-    );
-  };
-
-  // Handle update expiry date
-  const handleUpdateExpiryDate = (medicineId: string, expiry_date: string) => {
-    setItems(
-      items.map(item =>
-        item.medicine._id === medicineId ? { ...item, expiry_date } : item,
-      ),
-    );
-  };
-
   // Handle update unit
   const handleUpdateUnit = (medicineId: string, unit: string) => {
     setItems(
       items.map(item => {
         if (item.medicine._id === medicineId) {
-          // Khi đổi đơn vị, tự động cập nhật giá theo đơn vị mới
-          let newPrice = item.unit_price; // Giữ giá cũ làm mặc định
-
-          // Lấy giá từ prices.price_per_unit theo đơn vị mới
-          if (item.medicine.prices?.price_per_unit?.[unit]) {
-            newPrice = item.medicine.prices.price_per_unit[unit];
-          } else if (
-            item.medicine.prices?.base_unit_price &&
-            unit === item.medicine.base_unit
-          ) {
-            newPrice = item.medicine.prices.base_unit_price;
+          // Lấy giá nhập trên đơn vị cơ sở (default_import_price)
+          let baseImportPrice = 0;
+          if ((item.medicine as any).default_import_price) {
+            baseImportPrice = (item.medicine as any).default_import_price;
+          } else if (item.medicine.prices?.base_unit_price) {
+            baseImportPrice = item.medicine.prices.base_unit_price;
+          } else if (item.medicine.prices?.price_per_unit?.[unit]) {
+            baseImportPrice = item.medicine.prices.price_per_unit[unit];
+          } else if ((item.medicine as any).default_retail_price) {
+            baseImportPrice = (item.medicine as any).default_retail_price;
+          } else if (item.medicine.retail_price) {
+            baseImportPrice = item.medicine.retail_price;
           }
+
+          // Tính giá nhập dựa trên đơn vị được chọn
+          // default_import_price là giá trên đơn vị cơ sở
+          // Khi chọn đơn vị khác, giá = base_import_price * multiplier
+          // multiplier là số base units trong 1 unit (ví dụ: 1 Hộp = 100 Viên thì multiplier = 100)
+          const unitMultiplier = getUnitMultiplier(item.medicine, unit);
+          const newPrice = baseImportPrice * unitMultiplier;
 
           return { ...item, unit, unit_price: newPrice };
         }
@@ -232,26 +266,20 @@ export default function CreateImportScreen() {
       return;
     }
 
-    // Check all items have valid quantity, price, batch_number, and expiry_date
-    const invalidItem = items.find(
-      item =>
-        item.quantity <= 0 ||
-        item.unit_price < 0 ||
-        !item.batch_number.trim() ||
-        !item.expiry_date.trim(),
-    );
+    // Check all items have valid quantity
+    const invalidItem = items.find(item => item.quantity <= 0);
     if (invalidItem) {
-      Alert.alert(
-        'Lỗi',
-        'Số lượng phải > 0, đơn giá phải ≥ 0, và mã lô, ngày hết hạn không được để trống',
-      );
+      Alert.alert('Lỗi', 'Số lượng phải > 0');
       return;
     }
 
-    // Validate expiry date is not in the past
+    // Validate expiry date is not in the past (nếu có)
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     const invalidExpiryItem = items.find(item => {
+      if (!item.expiry_date || !item.expiry_date.trim()) {
+        return false; // Bỏ qua nếu không có ngày hết hạn
+      }
       const expiryDate = new Date(item.expiry_date);
       return expiryDate < today;
     });
@@ -267,7 +295,8 @@ export default function CreateImportScreen() {
       items: items.map(item => ({
         medicine_id: item.medicine._id,
         quantity: item.quantity,
-        unit: item.unit,
+        // Sử dụng getUnitShortName để đảm bảo gửi đúng format mà API mong đợi
+        unit: getUnitShortName(item.medicine, item.unit),
         unit_price: item.unit_price,
         batch_number: item.batch_number.trim(),
         expiry_date: item.expiry_date,
@@ -347,17 +376,24 @@ export default function CreateImportScreen() {
                   >
                     <View style={styles.supplierInfo}>
                       <Text style={styles.supplierName}>{supplier.name}</Text>
-                      <Text style={styles.supplierContact}>
-                        📞 {supplier.contact.phone}
-                      </Text>
-                      {supplier.contact.email && (
-                        <Text style={styles.supplierEmail}>
-                          ✉️ {supplier.contact.email}
+                      {supplier.phone && (
+                        <Text style={styles.supplierContact}>
+                          📞 {supplier.phone}
                         </Text>
                       )}
-                      {supplier.contact.address && (
+                      {supplier.email && (
+                        <Text style={styles.supplierEmail}>
+                          ✉️ {supplier.email}
+                        </Text>
+                      )}
+                      {supplier.address && (
                         <Text style={styles.supplierAddress}>
-                          📍 {supplier.contact.address}
+                          📍 {supplier.address}
+                        </Text>
+                      )}
+                      {supplier.contact_name && (
+                        <Text style={styles.supplierContactName}>
+                          👤 {supplier.contact_name}
                         </Text>
                       )}
                       {supplier.note && (
@@ -395,7 +431,25 @@ export default function CreateImportScreen() {
             items.map(item => (
               <View key={item.medicine._id} style={styles.medicineItem}>
                 <View style={styles.medicineHeader}>
-                  <Text style={styles.medicineName}>{item.medicine.name}</Text>
+                  <View style={styles.medicineHeaderLeft}>
+                    {(item.medicine as any).image_url && (
+                      <Image
+                        source={{ uri: (item.medicine as any).image_url }}
+                        style={styles.medicineImage}
+                        resizeMode="cover"
+                      />
+                    )}
+                    <View style={styles.medicineInfo}>
+                      <Text style={styles.medicineName}>
+                        {item.medicine.name}
+                      </Text>
+                      {(item.medicine as any).manufacturer && (
+                        <Text style={styles.medicineManufacturer}>
+                          {(item.medicine as any).manufacturer}
+                        </Text>
+                      )}
+                    </View>
+                  </View>
                   <TouchableOpacity
                     onPress={() => handleRemoveMedicine(item.medicine._id)}
                   >
@@ -410,30 +464,46 @@ export default function CreateImportScreen() {
                       {(() => {
                         // Lấy danh sách đơn vị hợp lệ từ medicine (đã loại bỏ trùng lặp)
                         const validUnits = getValidUnits(item.medicine);
-                        return validUnits.map(unit => (
-                          <TouchableOpacity
-                            key={`${item.medicine._id}-${unit}`}
-                            style={[
-                              styles.unitButton,
-                              item.unit === unit && styles.unitButtonActive,
-                            ]}
-                            onPress={() =>
-                              handleUpdateUnit(item.medicine._id, unit)
-                            }
-                          >
-                            <Text
+                        return validUnits
+                          .filter(unit => unit && typeof unit === 'string')
+                          .map(unit => (
+                            <TouchableOpacity
+                              key={`${item.medicine._id}-${unit}`}
                               style={[
-                                styles.unitButtonText,
-                                item.unit === unit &&
-                                  styles.unitButtonTextActive,
+                                styles.unitButton,
+                                item.unit === unit && styles.unitButtonActive,
                               ]}
+                              onPress={() =>
+                                handleUpdateUnit(item.medicine._id, unit)
+                              }
                             >
-                              {getUnitDisplayName(unit)}
-                            </Text>
-                          </TouchableOpacity>
-                        ));
+                              <Text
+                                style={[
+                                  styles.unitButtonText,
+                                  item.unit === unit &&
+                                    styles.unitButtonTextActive,
+                                ]}
+                              >
+                                {getUnitDisplayName(unit)}
+                              </Text>
+                            </TouchableOpacity>
+                          ));
                       })()}
                     </View>
+                    {(() => {
+                      const conversionText = getUnitConversionText(
+                        item.medicine,
+                        item.unit,
+                      );
+                      if (conversionText) {
+                        return (
+                          <Text style={styles.unitConversionText}>
+                            {conversionText}
+                          </Text>
+                        );
+                      }
+                      return null;
+                    })()}
                   </View>
 
                   <View style={styles.inputGroup}>
@@ -455,45 +525,37 @@ export default function CreateImportScreen() {
                 <View style={styles.medicineInputs}>
                   <View style={styles.inputGroup}>
                     <Text style={styles.inputLabel}>
-                      Đơn giá ({getUnitDisplayName(item.unit).toLowerCase()})
+                      Đơn giá (
+                      {item.unit
+                        ? getUnitDisplayName(item.unit).toLowerCase()
+                        : ''}
+                      )
                     </Text>
-                    <TextInput
-                      style={styles.input}
-                      keyboardType="numeric"
-                      value={String(item.unit_price)}
-                      onChangeText={text =>
-                        handleUpdateUnitPrice(
-                          item.medicine._id,
-                          parseInt(text) || 0,
-                        )
-                      }
-                    />
+                    <View style={styles.readOnlyInput}>
+                      <Text style={styles.readOnlyText}>
+                        {formatCurrency(item.unit_price)}
+                      </Text>
+                    </View>
                   </View>
                 </View>
 
                 <View style={styles.medicineInputs}>
                   <View style={styles.inputGroup}>
                     <Text style={styles.inputLabel}>Mã lô hàng *</Text>
-                    <TextInput
-                      style={styles.input}
-                      placeholder="VD: LOT202311001"
-                      value={item.batch_number}
-                      onChangeText={text =>
-                        handleUpdateBatchNumber(item.medicine._id, text)
-                      }
-                    />
+                    <View style={styles.readOnlyInput}>
+                      <Text style={styles.readOnlyText}>
+                        {item.batch_number}
+                      </Text>
+                    </View>
                   </View>
 
                   <View style={styles.inputGroup}>
                     <Text style={styles.inputLabel}>Ngày hết hạn *</Text>
-                    <TextInput
-                      style={styles.input}
-                      placeholder="YYYY-MM-DD"
-                      value={item.expiry_date}
-                      onChangeText={text =>
-                        handleUpdateExpiryDate(item.medicine._id, text)
-                      }
-                    />
+                    <View style={styles.readOnlyInput}>
+                      <Text style={styles.readOnlyText}>
+                        {item.expiry_date || 'Chưa có thông tin'}
+                      </Text>
+                    </View>
                   </View>
                 </View>
 
@@ -649,6 +711,10 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: '#555555',
   },
+  supplierContactName: {
+    fontSize: 13,
+    color: '#555555',
+  },
   supplierNote: {
     fontSize: 12,
     color: '#888888',
@@ -684,11 +750,31 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 12,
   },
+  medicineHeaderLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+    marginRight: 8,
+  },
+  medicineImage: {
+    width: 60,
+    height: 60,
+    borderRadius: 8,
+    marginRight: 12,
+    backgroundColor: '#F0F0F0',
+  },
+  medicineInfo: {
+    flex: 1,
+  },
   medicineName: {
     fontSize: 16,
     fontWeight: '600',
     color: '#212121',
-    flex: 1,
+    marginBottom: 4,
+  },
+  medicineManufacturer: {
+    fontSize: 13,
+    color: '#757575',
   },
   removeButton: {
     fontSize: 20,
@@ -713,6 +799,19 @@ const styles = StyleSheet.create({
     borderRadius: 6,
     padding: 8,
     fontSize: 16,
+  },
+  readOnlyInput: {
+    borderWidth: 1,
+    borderColor: '#E0E0E0',
+    borderRadius: 6,
+    padding: 8,
+    backgroundColor: '#F5F5F5',
+    minHeight: 40,
+    justifyContent: 'center',
+  },
+  readOnlyText: {
+    fontSize: 16,
+    color: '#212121',
   },
   itemTotal: {
     fontSize: 14,
@@ -789,5 +888,11 @@ const styles = StyleSheet.create({
   unitButtonTextActive: {
     color: '#FFFFFF',
     fontWeight: '600',
+  },
+  unitConversionText: {
+    fontSize: 12,
+    color: '#757575',
+    fontStyle: 'italic',
+    marginTop: 4,
   },
 });

@@ -6,8 +6,10 @@ const BATCHES_ENDPOINT = '/batches';
 export type Batch = {
   _id: string;
   batch_number: string;
+  batch_code?: string; // Hỗ trợ cả batch_code từ API
   expiry_date: string;
   import_price: number;
+  retail_price?: number; // Giá bán lẻ của lô hàng
   quantity: number;
   supplier_id?: string;
   supplier_name?: string;
@@ -194,7 +196,12 @@ export const getBatchesByMedicineAndBranch = async (
   const response = await api.get<{
     success: boolean;
     message: string;
-    data: Batch[];
+    data: any[];
   }>(`/inventory/branch/${branchId}/medicine/${medicineId}/batches`);
-  return response.data.data;
+
+  // Map batch_code thành batch_number để đảm bảo tính nhất quán với type definition
+  return response.data.data.map((batch: any) => ({
+    ...batch,
+    batch_number: batch.batch_code || batch.batch_number, // Hỗ trợ cả batch_code và batch_number
+  }));
 };
