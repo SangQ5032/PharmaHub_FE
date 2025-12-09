@@ -88,27 +88,30 @@ export const InventoryCard: React.FC<InventoryCardProps> = ({
           <View style={styles.multiUnitRow}>
             <Text style={styles.label}>Tồn kho:</Text>
             <View style={styles.unitChips}>
-              {(item as any).quantities_by_unit.box !== undefined && (
-                <View style={styles.unitChip}>
-                  <Text style={styles.unitChipText}>
-                    {(item as any).quantities_by_unit.box} hộp
-                  </Text>
-                </View>
-              )}
-              {(item as any).quantities_by_unit.blister !== undefined && (
-                <View style={styles.unitChip}>
-                  <Text style={styles.unitChipText}>
-                    {(item as any).quantities_by_unit.blister} vỉ
-                  </Text>
-                </View>
-              )}
-              {(item as any).quantities_by_unit.tablet !== undefined && (
-                <View style={styles.unitChip}>
-                  <Text style={styles.unitChipText}>
-                    {(item as any).quantities_by_unit.tablet} viên
-                  </Text>
-                </View>
-              )}
+              {(item as any).quantities_by_unit.box !== undefined &&
+                (item as any).quantities_by_unit.box !== null && (
+                  <View style={styles.unitChip}>
+                    <Text style={styles.unitChipText}>
+                      {(item as any).quantities_by_unit.box} hộp
+                    </Text>
+                  </View>
+                )}
+              {(item as any).quantities_by_unit.blister !== undefined &&
+                (item as any).quantities_by_unit.blister !== null && (
+                  <View style={styles.unitChip}>
+                    <Text style={styles.unitChipText}>
+                      {(item as any).quantities_by_unit.blister} vỉ
+                    </Text>
+                  </View>
+                )}
+              {(item as any).quantities_by_unit.tablet !== undefined &&
+                (item as any).quantities_by_unit.tablet !== null && (
+                  <View style={styles.unitChip}>
+                    <Text style={styles.unitChipText}>
+                      {(item as any).quantities_by_unit.tablet} viên
+                    </Text>
+                  </View>
+                )}
             </View>
           </View>
         )}

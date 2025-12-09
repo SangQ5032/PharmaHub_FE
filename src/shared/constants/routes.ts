@@ -31,6 +31,8 @@ export const ROUTES = {
   // Revenue Report routes
   BRANCH_REVENUE_REPORT: 'BranchRevenueReport',
   BRANCH_EMPLOYEE_LIST: 'BranchEmployeeList',
+  BRANCH_EMPLOYEE_INFO_MENU: 'BranchEmployeeInfoMenu',
+  BRANCH_EMPLOYEE_SELECTION: 'BranchEmployeeSelection',
   EMPLOYEE_WORK_HISTORY: 'EmployeeWorkHistory',
   EMPLOYEE_WORK_HISTORY_DETAIL: 'EmployeeWorkHistoryDetail',
   BRANCH_WORK_HISTORY: 'BranchWorkHistory',
@@ -50,6 +52,7 @@ export const ROUTES = {
   INVOICE_DETAIL: 'InvoiceDetail',
   INVOICE_LIST: 'InvoiceList',
   BRANCH_INVOICE_HISTORY: 'BranchInvoiceHistory',
+  EMPLOYEE_INVOICE_HISTORY: 'EmployeeInvoiceHistory',
   CUSTOMER_LIST: 'CustomerList',
   CUSTOMER_DETAIL: 'CustomerDetail',
   // Categories routes
@@ -84,4 +87,12 @@ export const ROUTES = {
   SYSTEM_ADMIN_TOP_MEDICINES: 'SystemAdminTopMedicines',
   SYSTEM_ADMIN_BATCH_STATUS: 'SystemAdminBatchStatus',
   SYSTEM_ADMIN_REVENUE_BY_PERIOD: 'SystemAdminRevenueByPeriod',
+  // System Admin Work Schedule routes
+  SYSTEM_ADMIN_WORK_SCHEDULE_MENU: 'SystemAdminWorkScheduleMenu',
+  SYSTEM_ADMIN_WORK_SCHEDULE_BRANCH_SELECTION:
+    'SystemAdminWorkScheduleBranchSelection',
+  SYSTEM_ADMIN_WORK_HISTORY_BRANCH_SELECTION:
+    'SystemAdminWorkHistoryBranchSelection',
+  SYSTEM_ADMIN_BRANCH_WORK_SCHEDULE: 'SystemAdminBranchWorkSchedule',
+  SYSTEM_ADMIN_BRANCH_WORK_HISTORY: 'SystemAdminBranchWorkHistory',
 } as const;

@@ -31,6 +31,8 @@ import {
   BranchListScreen,
   BranchFormScreen,
   MapPickerScreen,
+  BranchEmployeeInfoMenuScreen,
+  BranchEmployeeSelectionScreen,
 } from '@features/branches';
 import BranchDetailScreen from '@features/branches/screens/BranchDetailScreen';
 import { ROUTES } from '@shared/constants/routes';
@@ -56,6 +58,7 @@ import {
   InvoiceListScreen,
   InvoiceDetailScreen,
   BranchInvoiceHistoryScreen,
+  EmployeeInvoiceHistoryScreen,
   MedicineDetailScreen as SalesMedicineDetailScreen,
   CreateCustomerScreen,
   PaymentQRScreen,
@@ -73,6 +76,10 @@ import {
   AdminWorkHistoryScreen,
   EmployeeWorkHistoryDetailScreen,
 } from '@features/work-schdule';
+import SystemAdminWorkScheduleMenuScreen from '@features/work-schdule/screens/SystemAdminWorkScheduleMenuScreen';
+import WorkScheduleBranchSelectionScreen from '@features/work-schdule/screens/WorkScheduleBranchSelectionScreen';
+import SystemAdminBranchWorkScheduleScreen from '@features/work-schdule/screens/SystemAdminBranchWorkScheduleScreen';
+import { SystemAdminBranchWorkHistoryScreen } from '@features/work-schdule/screens/SystemAdminBranchWorkHistoryScreen';
 import {
   PayrollMenuScreen,
   PayrollListScreen,
@@ -213,6 +220,33 @@ const MainAppNavigator = () => {
         options={{ headerShown: true, title: 'Lịch Sử Làm Việc' }}
       />
 
+      {/* System Admin Work Schedule Routes */}
+      <MainStack.Screen
+        name={ROUTES.SYSTEM_ADMIN_WORK_SCHEDULE_MENU}
+        component={SystemAdminWorkScheduleMenuScreen}
+        options={{ headerShown: true, title: 'Quản lý Lịch Làm Việc' }}
+      />
+      <MainStack.Screen
+        name={ROUTES.SYSTEM_ADMIN_WORK_SCHEDULE_BRANCH_SELECTION}
+        component={WorkScheduleBranchSelectionScreen}
+        options={{ headerShown: true, title: 'Chọn Chi Nhánh' }}
+      />
+      <MainStack.Screen
+        name={ROUTES.SYSTEM_ADMIN_WORK_HISTORY_BRANCH_SELECTION}
+        component={WorkScheduleBranchSelectionScreen}
+        options={{ headerShown: true, title: 'Chọn Chi Nhánh' }}
+      />
+      <MainStack.Screen
+        name={ROUTES.SYSTEM_ADMIN_BRANCH_WORK_SCHEDULE}
+        component={SystemAdminBranchWorkScheduleScreen}
+        options={{ headerShown: true, title: 'Lịch Làm Việc' }}
+      />
+      <MainStack.Screen
+        name={ROUTES.SYSTEM_ADMIN_BRANCH_WORK_HISTORY}
+        component={SystemAdminBranchWorkHistoryScreen}
+        options={{ headerShown: true, title: 'Lịch Sử Làm Việc' }}
+      />
+
       {/* Checkin/Checkout */}
       <MainStack.Screen
         name={ROUTES.CHECKIN_CHECKOUT}
@@ -293,6 +327,16 @@ const MainAppNavigator = () => {
       <MainStack.Screen
         name={ROUTES.BRANCH_DETAIL}
         component={BranchDetailScreen}
+        options={{ headerShown: false }}
+      />
+      <MainStack.Screen
+        name={ROUTES.BRANCH_EMPLOYEE_INFO_MENU}
+        component={BranchEmployeeInfoMenuScreen}
+        options={{ headerShown: false }}
+      />
+      <MainStack.Screen
+        name={ROUTES.BRANCH_EMPLOYEE_SELECTION}
+        component={BranchEmployeeSelectionScreen}
         options={{ headerShown: false }}
       />
 
@@ -416,6 +460,11 @@ const MainAppNavigator = () => {
       <MainStack.Screen
         name={ROUTES.BRANCH_INVOICE_HISTORY}
         component={BranchInvoiceHistoryScreen}
+        options={{ headerShown: false }}
+      />
+      <MainStack.Screen
+        name={ROUTES.EMPLOYEE_INVOICE_HISTORY}
+        component={EmployeeInvoiceHistoryScreen}
         options={{ headerShown: false }}
       />
       <MainStack.Screen

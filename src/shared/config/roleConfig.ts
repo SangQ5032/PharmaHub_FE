@@ -32,13 +32,13 @@ export const ROLE_CONFIG: Record<UserRole, RoleConfig> = {
         route: ROUTES.SYSTEM_ADMIN_STATISTICS_MENU,
         description: 'Xem thống kê toàn hệ thống',
       },
-      {
-        id: 'admin-2',
-        name: 'Quản lý nhân viên',
-        icon: 'account-group',
-        route: ROUTES.EMPLOYEE_MANAGEMENT,
-        description: 'Quản lý toàn bộ nhân viên',
-      },
+      // {
+      //   id: 'admin-2',
+      //   name: 'Quản lý nhân viên',
+      //   icon: 'account-group',
+      //   route: ROUTES.EMPLOYEE_MANAGEMENT,
+      //   description: 'Quản lý toàn bộ nhân viên',
+      // },
       {
         id: 'admin-3',
         name: 'Báo cáo doanh thu',
@@ -62,20 +62,27 @@ export const ROLE_CONFIG: Record<UserRole, RoleConfig> = {
       },
       {
         id: 'admin-6',
+        name: 'Quản lý lịch làm việc',
+        icon: 'calendar-clock',
+        route: ROUTES.SYSTEM_ADMIN_WORK_SCHEDULE_MENU,
+        description: 'Quản lý lịch làm việc theo chi nhánh',
+      },
+      {
+        id: 'admin-7',
         name: 'Lịch sử làm việc',
         icon: 'history',
         route: ROUTES.ADMIN_WORK_HISTORY,
         description: 'Xem lịch sử làm việc toàn hệ thống',
       },
       {
-        id: 'admin-7',
+        id: 'admin-8',
         name: 'Quản lý lương',
         icon: 'cash-multiple',
         route: ROUTES.PAYROLL_MENU,
         description: 'Quản lý và duyệt lương nhân viên',
       },
       {
-        id: 'admin-8',
+        id: 'admin-9',
         name: 'Quản lý khách hàng',
         icon: 'account-multiple',
         route: ROUTES.CUSTOMER_LIST,
@@ -93,11 +100,11 @@ export const ROLE_CONFIG: Record<UserRole, RoleConfig> = {
         name: 'MedicinesHub',
         label: 'Medicines Hub',
       },
-      {
-        id: 'admin-tab-3',
-        name: 'ReportsHub',
-        label: 'Reports',
-      },
+      // {
+      //   id: 'admin-tab-3',
+      //   name: 'ReportsHub',
+      //   label: 'Reports',
+      // },
     ],
   },
   'branch-manager': {
@@ -125,10 +132,10 @@ export const ROLE_CONFIG: Record<UserRole, RoleConfig> = {
       },
       {
         id: 'manager-4',
-        name: 'Quản lý tồn kho',
-        icon: 'package-box-multiple',
-        route: ROUTES.BRANCH_INVENTORY_MANAGEMENT,
-        description: 'Quản lý tồn kho chi nhánh',
+        name: 'Kho Thuốc',
+        icon: 'warehouse',
+        route: ROUTES.WAREHOUSE_HUB,
+        description: 'Quản lý tồn kho thuốc',
       },
       {
         id: 'manager-5',
@@ -136,13 +143,6 @@ export const ROLE_CONFIG: Record<UserRole, RoleConfig> = {
         icon: 'truck-delivery',
         route: ROUTES.IMPORT_LIST,
         description: 'Quản lý đơn nhập hàng',
-      },
-      {
-        id: 'manager-6',
-        name: 'Kho Thuốc',
-        icon: 'warehouse',
-        route: ROUTES.WAREHOUSE_HUB,
-        description: 'Quản lý tồn kho thuốc',
       },
       {
         id: 'manager-7',
@@ -171,6 +171,13 @@ export const ROLE_CONFIG: Record<UserRole, RoleConfig> = {
         icon: 'account-multiple',
         route: ROUTES.CUSTOMER_LIST,
         description: 'Quản lý danh sách khách hàng',
+      },
+      {
+        id: 'manager-11',
+        name: 'Thông tin nhân viên',
+        icon: 'account-group',
+        route: ROUTES.BRANCH_EMPLOYEE_INFO_MENU,
+        description: 'Xem thông tin nhân viên',
       },
     ],
     tabs: [
@@ -250,6 +257,13 @@ export const ROLE_CONFIG: Record<UserRole, RoleConfig> = {
         icon: 'account-multiple',
         route: ROUTES.CUSTOMER_LIST,
         description: 'Quản lý danh sách khách hàng',
+      },
+      {
+        id: 'staff-10',
+        name: 'Xem Tồn Kho Chi Nhánh',
+        icon: 'package-box-multiple',
+        route: ROUTES.BRANCH_INVENTORY_MANAGEMENT,
+        description: 'Xem tồn kho của chi nhánh',
       },
     ],
     tabs: [

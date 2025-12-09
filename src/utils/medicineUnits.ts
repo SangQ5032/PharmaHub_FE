@@ -20,16 +20,11 @@ export const getValidUnits = (medicine: {
   package_structure?: PackageStructure;
 }): string[] => {
   if (!medicine) {
-    return ['tablet']; // fallback
+    return []; // Không có thuốc, trả về mảng rỗng
   }
 
   const units: string[] = [];
-  const baseUnit = medicine.base_unit || 'tablet';
-
-  // Luôn có base_unit
-  if (!units.includes(baseUnit)) {
-    units.push(baseUnit);
-  }
+  const baseUnit = medicine.base_unit;
 
   // Lấy tất cả đơn vị từ package_structure
   if (
@@ -43,11 +38,12 @@ export const getValidUnits = (medicine: {
     });
   }
 
-  // Fallback: nếu không có package_structure, trả về 3 đơn vị mặc định (backward compatibility)
-  if (units.length === 1 && units[0] === baseUnit) {
-    return ['box', 'blister', 'tablet'];
+  // Nếu có base_unit và chưa có trong danh sách, thêm vào
+  if (baseUnit && !units.includes(baseUnit)) {
+    units.push(baseUnit);
   }
 
+  // Nếu không có đơn vị nào, trả về mảng rỗng thay vì fallback hardcode
   return units;
 };
 
@@ -69,7 +65,12 @@ export const isValidUnit = (
   }
 
   const validUnits = getValidUnits(medicine);
-  return validUnits.includes(unit.toLowerCase());
+  const normalizedUnit = unit.toLowerCase().trim();
+
+  // So sánh không phân biệt hoa thường
+  return validUnits.some(
+    validUnit => validUnit.toLowerCase().trim() === normalizedUnit,
+  );
 };
 
 /**
@@ -78,22 +79,56 @@ export const isValidUnit = (
  * @returns Vietnamese name
  */
 export const getUnitDisplayName = (unit: string): string => {
+  if (!unit) {
+    return '';
+  }
+
+  const normalizedUnit = unit.toLowerCase().trim();
+
   const unitMap: { [key: string]: string } = {
+    // Tiếng Anh
     box: 'Hộp',
-    hop: 'Hộp',
     blister: 'Vỉ',
-    vi: 'Vỉ',
     tablet: 'Viên',
-    vien: 'Viên',
     bottle: 'Lọ',
-    lo: 'Lọ',
     capsule: 'Viên nang',
     vial: 'Lọ',
     tube: 'Ống',
     pack: 'Gói',
+    package: 'Gói',
+    // Tiếng Việt - viết thường
+    hop: 'Hộp',
+    vi: 'Vỉ',
+    vien: 'Viên',
+    lo: 'Lọ',
+    goi: 'Gói',
+    // Tiếng Việt - có dấu
+    hộp: 'Hộp',
+    vỉ: 'Vỉ',
+    viên: 'Viên',
+    lọ: 'Lọ',
+    gói: 'Gói',
+    ống: 'Ống',
   };
 
-  return unitMap[unit.toLowerCase()] || unit;
+  // Nếu đơn vị đã là tiếng Việt có dấu và viết hoa chữ cái đầu, trả về như cũ
+  if (unitMap[normalizedUnit]) {
+    return unitMap[normalizedUnit];
+  }
+
+  // Nếu không tìm thấy trong map, kiểm tra xem có phải là tiếng Việt không
+  // Nếu đơn vị đã viết hoa chữ cái đầu và có dấu, có thể đã là tên hiển thị
+  if (
+    unit[0] === unit[0].toUpperCase() &&
+    /[àáạảãâầấậẩẫăằắặẳẵèéẹẻẽêềếệểễìíịỉĩòóọỏõôồốộổỗơờớợởỡùúụủũưừứựửữỳýỵỷỹđ]/i.test(
+      unit,
+    )
+  ) {
+    return unit;
+  }
+
+  // Fallback: trả về unit gốc với chữ cái đầu viết hoa
+  return unit.charAt(0).toUpperCase() + unit.slice(1);
 };
 
 /**
@@ -113,47 +148,138 @@ export const getUnitMultiplier = (
     return 1;
   }
 
-  const baseUnit = medicine.base_unit || 'tablet';
-  const normalizedUnit = unit.toLowerCase();
-
-  // Nếu là base unit, multiplier = 1
-  if (normalizedUnit === baseUnit || normalizedUnit === 'tablet') {
+  const baseUnit = medicine.base_unit;
+  if (!baseUnit) {
     return 1;
   }
 
-  // Nếu không có package_structure, fallback về giá trị mặc định
+  // So sánh không phân biệt hoa thường
+  const normalizeUnit = (u: string) => u.toLowerCase().trim();
+  const normalizedUnit = normalizeUnit(unit);
+  const normalizedBaseUnit = normalizeUnit(baseUnit);
+
+  // Nếu là base unit, multiplier = 1
+  if (normalizedUnit === normalizedBaseUnit) {
+    return 1;
+  }
+
+  // Nếu không có package_structure, không thể tính được
   if (
     !medicine.package_structure ||
     typeof medicine.package_structure !== 'object'
   ) {
-    // Fallback cho backward compatibility
-    if (normalizedUnit === 'box') return 100;
-    if (normalizedUnit === 'blister') return 10;
     return 1;
   }
 
   const structure = medicine.package_structure;
   let multiplier = 1;
   let currentUnit = normalizedUnit;
+  const visited = new Set<string>(); // Tránh vòng lặp vô hạn
 
   // Navigate from requested unit down to base unit
-  while (currentUnit !== baseUnit && currentUnit !== 'tablet') {
-    const unitConfig = structure[currentUnit];
+  while (
+    currentUnit &&
+    currentUnit !== normalizedBaseUnit &&
+    !visited.has(currentUnit)
+  ) {
+    visited.add(currentUnit);
 
-    if (!unitConfig || !unitConfig.contains) {
-      // Không tìm thấy cấu trúc, fallback
-      if (currentUnit === 'box') return 100;
-      if (currentUnit === 'blister') return 10;
+    // Tìm key trong structure (không phân biệt hoa thường)
+    let unitKey: string | undefined;
+    for (const key of Object.keys(structure)) {
+      if (normalizeUnit(key) === currentUnit) {
+        unitKey = key;
+        break;
+      }
+    }
+
+    if (!unitKey) {
+      // Không tìm thấy đơn vị trong structure
+      return 1;
+    }
+
+    const unitConfig = structure[unitKey];
+    if (!unitConfig || !unitConfig.contains || unitConfig.contains <= 0) {
       return 1;
     }
 
     multiplier *= unitConfig.contains;
-    currentUnit = unitConfig.child || baseUnit;
 
-    if (!currentUnit) {
-      currentUnit = baseUnit;
+    if (!unitConfig.child) {
+      // Đã đến đơn vị cuối cùng
+      break;
     }
+
+    currentUnit = normalizeUnit(unitConfig.child);
   }
 
   return multiplier;
+};
+
+/**
+ * Tính toán số lượng tồn kho theo từng đơn vị từ package_structure
+ * @param medicine - Medicine object với package_structure
+ * @param totalQuantityInBaseUnit - Tổng số lượng tồn kho ở đơn vị base
+ * @returns Object chứa số lượng theo từng đơn vị
+ */
+export const calculateQuantitiesByUnit = (
+  medicine: {
+    base_unit?: string;
+    package_structure?: PackageStructure;
+  },
+  totalQuantityInBaseUnit: number,
+): Record<string, number> => {
+  if (!medicine || !totalQuantityInBaseUnit || totalQuantityInBaseUnit <= 0) {
+    return {};
+  }
+
+  const baseUnit = medicine.base_unit || 'tablet';
+  const result: Record<string, number> = {};
+
+  // Luôn có base unit
+  result[baseUnit] = totalQuantityInBaseUnit;
+
+  // Tính toán cho các đơn vị khác từ package_structure
+  if (
+    medicine.package_structure &&
+    typeof medicine.package_structure === 'object'
+  ) {
+    const structure = medicine.package_structure;
+
+    // Lấy tất cả các đơn vị (bao gồm cả base unit)
+    const allUnits = Object.keys(structure);
+
+    // Tính toán số lượng cho mỗi đơn vị
+    allUnits.forEach(unit => {
+      if (unit === baseUnit) {
+        // Base unit đã được set ở trên
+        return;
+      }
+      const multiplier = getUnitMultiplier(medicine, unit);
+      if (multiplier > 0) {
+        result[unit] = Math.floor(totalQuantityInBaseUnit / multiplier);
+      }
+    });
+  }
+
+  return result;
+};
+
+/**
+ * Sắp xếp các đơn vị theo thứ tự từ lớn đến nhỏ dựa trên multiplier
+ * @param medicine - Medicine object với package_structure
+ * @returns Array of units sorted from largest to smallest
+ */
+export const getSortedUnits = (medicine: {
+  base_unit?: string;
+  package_structure?: PackageStructure;
+}): string[] => {
+  const units = getValidUnits(medicine);
+
+  // Sắp xếp theo multiplier từ lớn đến nhỏ
+  return units.sort((a, b) => {
+    const multiplierA = getUnitMultiplier(medicine, a);
+    const multiplierB = getUnitMultiplier(medicine, b);
+    return multiplierB - multiplierA;
+  });
 };

@@ -1,6 +1,6 @@
 // src/features/warehouse/screens/InventoryDetailWithBatchesScreen.tsx
 
-import React from 'react';
+import React, { useMemo } from 'react';
 import {
   View,
   Text,
@@ -16,9 +16,15 @@ import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityI
 import { useRoute, useNavigation } from '@react-navigation/native';
 import { useGetInventoryByBranchAndMedicine } from '@features/warehouse/hooks/useInventory';
 import { useGetBatchesByMedicine } from '@features/warehouse/hooks/useBatches';
+import { useMedicineDetail } from '@features/medicines/hooks/useMedicineDetail';
 import { useAuthStore } from '@features/auth/stores/useAuthStore';
 import { BatchCard } from '@features/warehouse/components/BatchCard';
 import { ROUTES } from '@shared/constants/routes';
+import {
+  calculateQuantitiesByUnit,
+  getSortedUnits,
+  getUnitDisplayName,
+} from '../../../utils/medicineUnits';
 
 interface RouteParams {
   medicineId: string;
@@ -44,14 +50,46 @@ export default function InventoryDetailWithBatchesScreen() {
   const batchesQuery = useGetBatchesByMedicine(branchId, medicineId);
   const batches = (batchesQuery.data?.data as any[]) || [];
 
+  // Fetch thông tin thuốc chi tiết từ API riêng
+  const {
+    medicine: medicineDetail,
+    loading: medicineLoading,
+    error: medicineError,
+    refresh: refreshMedicine,
+  } = useMedicineDetail(medicineId);
+
+  // Sử dụng thông tin thuốc từ API riêng, fallback về inventory.medicine nếu chưa load xong
+  const medicine = medicineDetail || inventory?.medicine;
+
+  // Tính toán số lượng tồn kho theo các đơn vị từ package_structure
+  const quantitiesByUnit = useMemo(() => {
+    if (!medicine || !inventory?.total_quantity_in_base_unit) {
+      return {};
+    }
+    return calculateQuantitiesByUnit(
+      medicine,
+      inventory.total_quantity_in_base_unit || inventory.total_quantity || 0,
+    );
+  }, [
+    medicine,
+    inventory?.total_quantity_in_base_unit,
+    inventory?.total_quantity,
+  ]);
+
+  // Lấy danh sách đơn vị đã sắp xếp
+  const sortedUnits = useMemo(() => {
+    if (!medicine) return [];
+    return getSortedUnits(medicine);
+  }, [medicine]);
+
   React.useLayoutEffect(() => {
     navigation.setOptions({
-      title: inventory?.medicine?.name || 'Chi tiết thuốc',
+      title: medicine?.name || 'Chi tiết thuốc',
       headerBackTitle: 'Quay lại',
     });
-  }, [navigation, inventory]);
+  }, [navigation, medicine]);
 
-  if (inventoryQuery.isLoading) {
+  if (inventoryQuery.isLoading || medicineLoading) {
     return (
       <SafeAreaView style={styles.container}>
         <View style={styles.centerContainer}>
@@ -81,8 +119,6 @@ export default function InventoryDetailWithBatchesScreen() {
       </SafeAreaView>
     );
   }
-
-  const medicine = inventory.medicine;
 
   // Group batches by status
   const groupedBatches = batches.reduce(
@@ -133,52 +169,48 @@ export default function InventoryDetailWithBatchesScreen() {
             <View style={styles.statusCard}>
               <Text style={styles.statusLabel}>Số lượng</Text>
               <Text style={styles.statusValue}>
-                {inventory.total_quantity_in_base_unit || inventory.quantity}
+                {inventory.total_quantity_in_base_unit ||
+                  inventory.quantity ||
+                  0}
               </Text>
               <Text style={styles.statusUnit}>
-                {medicine?.base_unit || medicine?.unit}
+                {medicine?.base_unit || medicine?.unit || ''}
               </Text>
             </View>
 
-            {/* Multi-Unit Display */}
-            {inventory.quantities_by_unit && (
-              <>
-                {inventory.quantities_by_unit.box !== undefined && (
-                  <View style={styles.statusCard}>
-                    <Text style={styles.statusLabel}>Hộp</Text>
-                    <Text style={styles.statusValue}>
-                      {inventory.quantities_by_unit.box}
-                    </Text>
-                    <Text style={styles.statusUnit}>hộp</Text>
-                  </View>
-                )}
-                {inventory.quantities_by_unit.blister !== undefined && (
-                  <View style={styles.statusCard}>
-                    <Text style={styles.statusLabel}>Vỉ</Text>
-                    <Text style={styles.statusValue}>
-                      {inventory.quantities_by_unit.blister}
-                    </Text>
-                    <Text style={styles.statusUnit}>vỉ</Text>
-                  </View>
-                )}
-                {inventory.quantities_by_unit.tablet !== undefined && (
-                  <View style={styles.statusCard}>
-                    <Text style={styles.statusLabel}>Viên</Text>
-                    <Text style={styles.statusValue}>
-                      {inventory.quantities_by_unit.tablet}
-                    </Text>
-                    <Text style={styles.statusUnit}>viên</Text>
-                  </View>
-                )}
-              </>
-            )}
+            {/* Multi-Unit Display - Tính toán động từ package_structure */}
+            {sortedUnits.length > 1 &&
+              sortedUnits
+                .filter(unit => {
+                  const quantity = quantitiesByUnit[unit];
+                  return (
+                    quantity !== undefined && quantity !== null && quantity > 0
+                  );
+                })
+                .slice(0, 3)
+                .map(unit => {
+                  const quantity = quantitiesByUnit[unit];
+                  return (
+                    <View key={unit} style={styles.statusCard}>
+                      <Text style={styles.statusLabel}>
+                        {getUnitDisplayName(unit)}
+                      </Text>
+                      <Text style={styles.statusValue}>{quantity}</Text>
+                      <Text style={styles.statusUnit}>
+                        {getUnitDisplayName(unit).toLowerCase()}
+                      </Text>
+                    </View>
+                  );
+                })}
 
             <View style={styles.statusCard}>
               <Text style={styles.statusLabel}>Cảnh báo</Text>
               <Text style={styles.statusValue}>
-                {medicine?.warning_threshold || '0'}
+                {medicine?.warning_threshold ||
+                  inventory?.warning_threshold ||
+                  '0'}
               </Text>
-              <Text style={styles.statusUnit}>{medicine?.unit}</Text>
+              <Text style={styles.statusUnit}>{medicine?.unit || ''}</Text>
             </View>
 
             <View style={[styles.statusCard, styles.statusCardGray]}>
@@ -204,15 +236,44 @@ export default function InventoryDetailWithBatchesScreen() {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Thông Tin Thuốc</Text>
 
-          <View style={styles.infoRow}>
-            <Text style={styles.label}>Loại:</Text>
-            <Text style={styles.value}>{medicine?.category || 'N/A'}</Text>
-          </View>
+          {medicine?.category_id && (
+            <View style={styles.infoRow}>
+              <Text style={styles.label}>Danh mục:</Text>
+              <Text style={styles.value}>
+                {typeof medicine.category_id === 'object'
+                  ? medicine.category_id.name
+                  : medicine.category_id || 'N/A'}
+              </Text>
+            </View>
+          )}
 
           <View style={styles.infoRow}>
-            <Text style={styles.label}>Đơn vị:</Text>
-            <Text style={styles.value}>{medicine?.unit}</Text>
+            <Text style={styles.label}>Đơn vị cơ bản:</Text>
+            <Text style={styles.value}>
+              {medicine?.base_unit || medicine?.unit || 'N/A'}
+            </Text>
           </View>
+
+          {medicine?.packaging && (
+            <View style={styles.infoRow}>
+              <Text style={styles.label}>Quy cách đóng gói:</Text>
+              <Text style={styles.value}>{medicine.packaging}</Text>
+            </View>
+          )}
+
+          {medicine?.dosage_form && (
+            <View style={styles.infoRow}>
+              <Text style={styles.label}>Dạng bào chế:</Text>
+              <Text style={styles.value}>{medicine.dosage_form}</Text>
+            </View>
+          )}
+
+          {medicine?.strength && (
+            <View style={styles.infoRow}>
+              <Text style={styles.label}>Hàm lượng:</Text>
+              <Text style={styles.value}>{medicine.strength}</Text>
+            </View>
+          )}
 
           {medicine?.description && (
             <View style={styles.infoRow}>
@@ -226,12 +287,54 @@ export default function InventoryDetailWithBatchesScreen() {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Giá</Text>
 
-          <View style={styles.infoRow}>
-            <Text style={styles.label}>Giá:</Text>
-            <Text style={[styles.value, styles.priceValue]}>
-              ₫{medicine?.price?.toLocaleString('vi-VN') || '0'}
-            </Text>
-          </View>
+          {medicine?.prices && (
+            <View style={styles.infoRow}>
+              <Text style={styles.label}>Giá bán:</Text>
+              <View style={styles.priceContainer}>
+                {medicine.prices.price_per_unit &&
+                  Object.entries(medicine.prices.price_per_unit).map(
+                    ([unit, price]) => (
+                      <Text
+                        key={unit}
+                        style={[
+                          styles.value,
+                          styles.priceValue,
+                          styles.priceItem,
+                        ]}
+                      >
+                        ₫{Number(price).toLocaleString('vi-VN')}/
+                        {getUnitDisplayName(unit)}
+                      </Text>
+                    ),
+                  )}
+                {!medicine.prices.price_per_unit &&
+                  medicine.prices.base_unit_price && (
+                    <Text style={[styles.value, styles.priceValue]}>
+                      ₫{medicine.prices.base_unit_price.toLocaleString('vi-VN')}
+                      /{getUnitDisplayName(medicine.base_unit || '')}
+                    </Text>
+                  )}
+              </View>
+            </View>
+          )}
+
+          {!medicine?.prices && medicine?.retail_price && (
+            <View style={styles.infoRow}>
+              <Text style={styles.label}>Giá bán lẻ:</Text>
+              <Text style={[styles.value, styles.priceValue]}>
+                ₫{medicine.retail_price.toLocaleString('vi-VN')}
+              </Text>
+            </View>
+          )}
+
+          {!medicine?.prices && !medicine?.retail_price && medicine?.price && (
+            <View style={styles.infoRow}>
+              <Text style={styles.label}>Giá:</Text>
+              <Text style={[styles.value, styles.priceValue]}>
+                ₫{medicine.price.toLocaleString('vi-VN')}
+              </Text>
+            </View>
+          )}
         </View>
 
         {/* Batches Section */}
@@ -395,6 +498,14 @@ const styles = StyleSheet.create({
   priceValue: {
     color: '#4CAF50',
     fontSize: 14,
+  },
+  priceContainer: {
+    flexDirection: 'column',
+    alignItems: 'flex-end',
+    gap: 4,
+  },
+  priceItem: {
+    fontSize: 13,
   },
   batchSectionHeader: {
     backgroundColor: '#F5F5F5',

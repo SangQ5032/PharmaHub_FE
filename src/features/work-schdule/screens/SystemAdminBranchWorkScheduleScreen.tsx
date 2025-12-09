@@ -13,7 +13,8 @@ import {
 } from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
-import { useWorkSchedules } from '@features/work-schdule/hooks/useWorkSchedule';
+import { useRoute } from '@react-navigation/native';
+import { useWorkScheduleByBranch } from '@features/work-schdule/hooks/useWorkSchedule';
 import { WorkSchedule } from '@features/work-schdule/types/types';
 
 interface SchedulesByDate {
@@ -27,13 +28,16 @@ interface GroupedSchedule {
   afternoon?: WorkSchedule;
 }
 
-export default function WorkScheduleListScreen() {
-  const { data, isLoading, error, refetch } = useWorkSchedules();
+export default function SystemAdminBranchWorkScheduleScreen() {
+  const route = useRoute();
+  const branchId = (route.params as any)?.branchId || '';
+  const branchName = (route.params as any)?.branchName || 'Chi nhánh';
+
+  const { data, isLoading, error, refetch } = useWorkScheduleByBranch(branchId);
   const [refreshing, setRefreshing] = useState(false);
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [currentWeekStart, setCurrentWeekStart] = useState(() => {
-    // Get start of current week (Sunday)
     const today = new Date();
     const day = today.getDay();
     const diff = today.getDate() - day;
@@ -59,7 +63,6 @@ export default function WorkScheduleListScreen() {
     ? data.data
     : ([data?.data].filter(Boolean) as WorkSchedule[]);
 
-  // Get day of week in Vietnamese
   const getDayOfWeek = (dateString: string) => {
     const date = new Date(dateString + 'T00:00:00');
     const daysVN = [
@@ -74,7 +77,6 @@ export default function WorkScheduleListScreen() {
     return daysVN[date.getDay()];
   };
 
-  // Get employee name
   const getEmployeeName = (userId: string | any) => {
     if (typeof userId === 'string') {
       return userId;
@@ -82,7 +84,6 @@ export default function WorkScheduleListScreen() {
     return userId?.name || 'N/A';
   };
 
-  // Format date to YYYY-MM-DD
   const formatDateToString = (date: Date): string => {
     const year = date.getFullYear();
     const month = String(date.getMonth() + 1).padStart(2, '0');
@@ -90,14 +91,12 @@ export default function WorkScheduleListScreen() {
     return `${year}-${month}-${day}`;
   };
 
-  // Handle date picker change
   const handleDateChange = (event: any, date?: Date) => {
     if (Platform.OS === 'android') {
       setShowDatePicker(false);
     }
     if (date) {
       setSelectedDate(date);
-      // Update current week to show the week containing the selected date
       const day = date.getDay();
       const diff = date.getDate() - day;
       const weekStart = new Date(date);
@@ -107,12 +106,10 @@ export default function WorkScheduleListScreen() {
     }
   };
 
-  // Clear selected date
   const handleClearDate = () => {
     setSelectedDate(null);
   };
 
-  // Get dates that have schedules
   const datesWithSchedules = useMemo(() => {
     const dateSet = new Set<string>();
     schedules.forEach((schedule: WorkSchedule) => {
@@ -121,14 +118,12 @@ export default function WorkScheduleListScreen() {
     return dateSet;
   }, [schedules]);
 
-  // Format date to DD/MM
   const formatDateToShort = (date: Date): string => {
     const day = String(date.getDate()).padStart(2, '0');
     const month = String(date.getMonth() + 1).padStart(2, '0');
     return `${day}/${month}`;
   };
 
-  // Get week range text
   const getWeekRangeText = () => {
     const weekEnd = new Date(currentWeekStart);
     weekEnd.setDate(weekEnd.getDate() + 6);
@@ -138,25 +133,21 @@ export default function WorkScheduleListScreen() {
     )}/${year}`;
   };
 
-  // Navigate to previous week
   const goToPreviousWeek = () => {
     const newWeekStart = new Date(currentWeekStart);
     newWeekStart.setDate(newWeekStart.getDate() - 7);
     setCurrentWeekStart(newWeekStart);
   };
 
-  // Navigate to next week
   const goToNextWeek = () => {
     const newWeekStart = new Date(currentWeekStart);
     newWeekStart.setDate(newWeekStart.getDate() + 7);
     setCurrentWeekStart(newWeekStart);
   };
 
-  // Get calendar days for current week (7 days)
   const getCalendarDays = () => {
     const days: Array<{ day: number; date: Date; dateString: string }> = [];
 
-    // Get 7 days starting from currentWeekStart (Sunday)
     for (let i = 0; i < 7; i++) {
       const date = new Date(currentWeekStart);
       date.setDate(date.getDate() + i);
@@ -171,21 +162,17 @@ export default function WorkScheduleListScreen() {
     return days;
   };
 
-  // Handle day selection
   const handleDayPress = (date: Date, dateString: string) => {
     if (selectedDate && formatDateToString(selectedDate) === dateString) {
-      // Deselect if clicking the same date
       setSelectedDate(null);
     } else {
       setSelectedDate(date);
     }
   };
 
-  // Group schedules by date
   const groupedSchedules: GroupedSchedule[] = useMemo(() => {
     const schedulesByDate: SchedulesByDate = {};
 
-    // Filter schedules by selected date if any
     let filteredSchedules = schedules;
     if (selectedDate) {
       const selectedDateString = formatDateToString(selectedDate);
@@ -194,7 +181,6 @@ export default function WorkScheduleListScreen() {
       );
     }
 
-    // First, organize schedules by date
     filteredSchedules.forEach((schedule: WorkSchedule) => {
       if (!schedulesByDate[schedule.date]) {
         schedulesByDate[schedule.date] = [];
@@ -202,7 +188,6 @@ export default function WorkScheduleListScreen() {
       schedulesByDate[schedule.date].push(schedule);
     });
 
-    // Convert to array of GroupedSchedule
     return Object.entries(schedulesByDate)
       .sort(([dateA], [dateB]) => dateA.localeCompare(dateB))
       .map(([date, daySchedules]) => {
@@ -225,6 +210,10 @@ export default function WorkScheduleListScreen() {
 
   return (
     <View style={styles.container}>
+      <View style={styles.branchHeader}>
+        <Text style={styles.branchTitle}>{branchName}</Text>
+      </View>
+
       <ScrollView
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />
@@ -320,7 +309,6 @@ export default function WorkScheduleListScreen() {
           <View style={styles.timelineContainer}>
             {groupedSchedules.map((group, index) => (
               <View key={group.date} style={styles.timelineItem}>
-                {/* Timeline dot and line */}
                 <View style={styles.timelineMarker}>
                   <View style={styles.timelineDot} />
                   {index < groupedSchedules.length - 1 && (
@@ -328,17 +316,13 @@ export default function WorkScheduleListScreen() {
                   )}
                 </View>
 
-                {/* Content */}
                 <View style={styles.timelineContent}>
-                  {/* Date Header */}
                   <View style={styles.dateHeader}>
                     <Text style={styles.dayOfWeek}>📅 {group.dayOfWeek}</Text>
                     <Text style={styles.dateText}>{group.date}</Text>
                   </View>
 
-                  {/* Shift Items */}
                   <View style={styles.shiftsContainer}>
-                    {/* Morning Shift */}
                     <View style={styles.shiftItem}>
                       <Text style={styles.shiftLabel}>☀️ Sáng</Text>
                       <Text style={styles.employeeName}>
@@ -353,7 +337,6 @@ export default function WorkScheduleListScreen() {
                       )}
                     </View>
 
-                    {/* Afternoon Shift */}
                     <View style={styles.shiftItem}>
                       <Text style={styles.shiftLabel}>🌙 Chiều</Text>
                       <Text style={styles.employeeName}>
@@ -417,6 +400,16 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#f5f5f5',
+  },
+  branchHeader: {
+    backgroundColor: '#007AFF',
+    paddingHorizontal: 16,
+    paddingVertical: 16,
+  },
+  branchTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: '#fff',
   },
   calendarSection: {
     backgroundColor: '#fff',

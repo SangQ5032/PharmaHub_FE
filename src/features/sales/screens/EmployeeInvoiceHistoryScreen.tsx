@@ -8,61 +8,30 @@ import {
   ActivityIndicator,
   RefreshControl,
 } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
-import { useGetInvoicesByBranch, useGetInvoicesByMe } from '../hooks/useSales';
+import { useNavigation, useRoute } from '@react-navigation/native';
+import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
+import { useGetInvoicesByBranch } from '../hooks/useSales';
 import { ROUTES } from '@shared/constants/routes';
 import { Invoice } from '../types';
-import { useAuthStore } from '@features/auth';
 
-type TabType = 'branch' | 'me';
-
-const InvoiceListScreen: React.FC = ({ route }: any) => {
+const EmployeeInvoiceHistoryScreen: React.FC = () => {
   const navigation = useNavigation<any>();
-  const user = useAuthStore(state => state.user);
-  const isEmployee = user?.role === 'employee';
-  const branchId = route?.params?.branchId;
-  const [activeTab, setActiveTab] = useState<TabType>(
-    isEmployee ? 'me' : 'branch',
-  );
+  const route = useRoute<any>();
+  const { employeeId, employeeName, branchId } = route?.params || {};
   const [page, setPage] = useState(1);
   const limit = 20;
 
-  // Chỉ lấy dữ liệu tab branch nếu không phải employee
   const {
-    data: branchInvoicesData,
-    isLoading: isBranchLoading,
-    refetch: refetchBranch,
-  } = useGetInvoicesByBranch(
-    {
-      page,
-      limit,
-      branch_id: branchId,
-    },
-    { enabled: !isEmployee },
-  );
+    data: invoicesData,
+    isLoading,
+    refetch,
+  } = useGetInvoicesByBranch({
+    page,
+    limit,
+    branch_id: branchId,
+    employee_id: employeeId,
+  });
 
-  // Chỉ lấy dữ liệu tab "Của tôi" nếu là employee
-  const {
-    data: meInvoicesData,
-    isLoading: isMeLoading,
-    refetch: refetchMe,
-  } = useGetInvoicesByMe({ page, limit }, { enabled: isEmployee });
-
-  // Đảm bảo activeTab đúng theo role
-  useEffect(() => {
-    if (isEmployee && activeTab !== 'me') {
-      setActiveTab('me');
-    } else if (!isEmployee && activeTab !== 'branch') {
-      setActiveTab('branch');
-    }
-  }, [isEmployee, activeTab]);
-
-  // Chọn dữ liệu dựa trên tab active
-  const isLoading = activeTab === 'branch' ? isBranchLoading : isMeLoading;
-  const invoicesData =
-    activeTab === 'branch' ? branchInvoicesData : meInvoicesData;
-
-  // Xử lý response format từ API
   const invoices: Invoice[] = invoicesData?.data || [];
   const pagination = invoicesData?.pagination || { total: 0, totalPages: 0 };
   const total = pagination.total || 0;
@@ -128,12 +97,6 @@ const InvoiceListScreen: React.FC = ({ route }: any) => {
           <Text style={styles.label}>Số điện thoại:</Text>
           <Text style={styles.value}>{item.customer_phone}</Text>
         </View>
-        {activeTab === 'branch' && (
-          <View style={styles.contentRow}>
-            <Text style={styles.label}>Nhân viên:</Text>
-            <Text style={styles.value}>{item.employee_id?.name || '-'}</Text>
-          </View>
-        )}
         <View style={styles.contentRow}>
           <Text style={styles.label}>Sản phẩm:</Text>
           <Text style={styles.value}>{item.items?.length || 0} mặt hàng</Text>
@@ -163,66 +126,25 @@ const InvoiceListScreen: React.FC = ({ route }: any) => {
     }
   };
 
-  const handleTabChange = (tab: TabType) => {
-    // Không cho phép chuyển tab không phù hợp với role
-    if (isEmployee && tab === 'branch') {
-      return;
-    }
-    if (!isEmployee && tab === 'me') {
-      return;
-    }
-    setActiveTab(tab);
-    setPage(1);
-  };
-
   const handleRefresh = () => {
     setPage(1);
-    if (activeTab === 'branch') {
-      refetchBranch();
-    } else {
-      refetchMe();
-    }
+    refetch();
   };
 
   return (
     <View style={styles.container}>
-      {/* Tab Navigation */}
-      <View style={styles.tabContainer}>
-        {/* Chỉ hiển thị tab "Chi nhánh" nếu không phải employee */}
-        {!isEmployee && (
-          <TouchableOpacity
-            style={[styles.tab, activeTab === 'branch' && styles.tabActive]}
-            onPress={() => handleTabChange('branch')}
-          >
-            <Text
-              style={[
-                styles.tabText,
-                activeTab === 'branch' && styles.tabTextActive,
-              ]}
-            >
-              Chi nhánh
-            </Text>
-            {activeTab === 'branch' && <View style={styles.tabIndicator} />}
-          </TouchableOpacity>
-        )}
-
-        {/* Tab "Của tôi" - chỉ hiển thị nếu là employee */}
-        {isEmployee && (
-          <TouchableOpacity
-            style={[styles.tab, activeTab === 'me' && styles.tabActive]}
-            onPress={() => handleTabChange('me')}
-          >
-            <Text
-              style={[
-                styles.tabText,
-                activeTab === 'me' && styles.tabTextActive,
-              ]}
-            >
-              Của tôi
-            </Text>
-            {activeTab === 'me' && <View style={styles.tabIndicator} />}
-          </TouchableOpacity>
-        )}
+      {/* Header */}
+      <View style={styles.headerRow}>
+        <TouchableOpacity onPress={() => navigation.goBack()}>
+          <MaterialCommunityIcons name="chevron-left" size={28} color="#333" />
+        </TouchableOpacity>
+        <View style={styles.headerContent}>
+          <Text style={styles.headerTitle}>Lịch sử hoá đơn</Text>
+          {employeeName && (
+            <Text style={styles.headerSubtitle}>{employeeName}</Text>
+          )}
+        </View>
+        <View style={{ width: 28 }} />
       </View>
 
       {/* Content */}
@@ -233,20 +155,14 @@ const InvoiceListScreen: React.FC = ({ route }: any) => {
         </View>
       ) : invoices.length === 0 ? (
         <View style={styles.emptyContainer}>
+          <MaterialCommunityIcons
+            name="file-document-outline"
+            size={64}
+            color="#999"
+          />
           <Text style={styles.emptyText}>
-            {activeTab === 'branch'
-              ? 'Chưa có hóa đơn nào trong chi nhánh'
-              : 'Bạn chưa tạo hóa đơn nào'}
+            Không có hoá đơn nào của nhân viên này
           </Text>
-          {/* Chỉ hiển thị nút tạo hóa đơn nếu là employee */}
-          {isEmployee && (
-            <TouchableOpacity
-              style={styles.createButton}
-              onPress={() => navigation.navigate(ROUTES.CREATE_INVOICE)}
-            >
-              <Text style={styles.createButtonText}>Tạo hóa đơn mới</Text>
-            </TouchableOpacity>
-          )}
         </View>
       ) : (
         <FlatList
@@ -259,6 +175,11 @@ const InvoiceListScreen: React.FC = ({ route }: any) => {
             <RefreshControl refreshing={isLoading} onRefresh={handleRefresh} />
           }
           contentContainerStyle={styles.listContent}
+          ListHeaderComponent={
+            <View style={styles.statsContainer}>
+              <Text style={styles.statsText}>Tổng cộng: {total} hoá đơn</Text>
+            </View>
+          }
           ListFooterComponent={
             invoices.length > 0 && page < pagination.totalPages ? (
               <View style={styles.loadMoreContainer}>
@@ -275,16 +196,6 @@ const InvoiceListScreen: React.FC = ({ route }: any) => {
           }
         />
       )}
-
-      {/* Nút FAB (+) - chỉ hiển thị nếu là employee */}
-      {isEmployee && (
-        <TouchableOpacity
-          style={styles.fab}
-          onPress={() => navigation.navigate(ROUTES.CREATE_INVOICE)}
-        >
-          <Text style={styles.fabText}>+</Text>
-        </TouchableOpacity>
-      )}
     </View>
   );
 };
@@ -294,42 +205,41 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#F5F5F5',
   },
-  tabContainer: {
+  headerRow: {
     flexDirection: 'row',
-    backgroundColor: '#FFF',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    backgroundColor: '#fff',
     borderBottomWidth: 1,
     borderBottomColor: '#E0E0E0',
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
   },
-  tab: {
+  headerContent: {
     flex: 1,
-    paddingVertical: 12,
-    paddingHorizontal: 16,
     alignItems: 'center',
-    justifyContent: 'center',
   },
-  tabActive: {
-    backgroundColor: '#FAFAFA',
+  headerTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#333',
   },
-  tabText: {
+  headerSubtitle: {
+    fontSize: 13,
+    color: '#666',
+    marginTop: 2,
+  },
+  statsContainer: {
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    backgroundColor: '#fff',
+    borderBottomWidth: 1,
+    borderBottomColor: '#E0E0E0',
+  },
+  statsText: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#999',
-  },
-  tabTextActive: {
-    color: '#0066CC',
-  },
-  tabIndicator: {
-    position: 'absolute',
-    bottom: 0,
-    height: 3,
-    backgroundColor: '#0066CC',
-    left: 0,
-    right: 0,
+    color: '#666',
   },
   listContent: {
     padding: 12,
@@ -443,19 +353,8 @@ const styles = StyleSheet.create({
   emptyText: {
     fontSize: 16,
     color: '#999',
-    marginBottom: 16,
+    marginTop: 12,
     textAlign: 'center',
-  },
-  createButton: {
-    backgroundColor: '#0066CC',
-    paddingHorizontal: 24,
-    paddingVertical: 12,
-    borderRadius: 6,
-  },
-  createButtonText: {
-    color: '#FFF',
-    fontSize: 14,
-    fontWeight: '600',
   },
   loadMoreContainer: {
     paddingVertical: 16,
@@ -474,27 +373,6 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#999',
   },
-  fab: {
-    position: 'absolute',
-    bottom: 20,
-    right: 20,
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    backgroundColor: '#0066CC',
-    justifyContent: 'center',
-    alignItems: 'center',
-    elevation: 8,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 6,
-  },
-  fabText: {
-    color: '#FFF',
-    fontSize: 28,
-    fontWeight: '700',
-  },
 });
 
-export default InvoiceListScreen;
+export default EmployeeInvoiceHistoryScreen;
