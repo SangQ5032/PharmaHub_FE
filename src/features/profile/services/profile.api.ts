@@ -14,16 +14,49 @@ import {
 
 const PROFILE_BASE_URL = '/profile';
 
+// Normalize helpers
+const normalizeRole = (
+  role: any,
+): 'system-admin' | 'branch-manager' | 'employee' => {
+  const r = String(role || '')
+    .toLowerCase()
+    .replace(/[_\s]+/g, '-');
+  if (r.includes('system') && r.includes('admin')) return 'system-admin';
+  if (r.includes('branch') && r.includes('manager')) return 'branch-manager';
+  return 'employee';
+};
+
+const normalizeProfile = (raw: any): IUserProfile => {
+  const fullName = raw?.fullName ?? raw?.name ?? '';
+  const username = raw?.username ?? raw?.phone ?? raw?.email ?? '';
+  const email = raw?.email ?? raw?.contact?.email ?? '';
+  const phone = raw?.phone ?? raw?.contact?.phone ?? '';
+
+  return {
+    id: raw?.id ?? raw?._id ?? '',
+    username,
+    fullName: fullName || 'Người dùng',
+    email,
+    phone,
+    role: normalizeRole(raw?.role),
+    avatarUrl: raw?.avatarUrl ?? raw?.avatar ?? undefined,
+    address: raw?.address ?? raw?.contact?.address ?? undefined,
+    branchId: raw?.branchId ?? raw?.branch_id ?? raw?.branch?.id ?? undefined,
+    branchName: raw?.branchName ?? raw?.branch?.name ?? undefined,
+    position: raw?.position ?? raw?.title ?? undefined,
+    createdAt: raw?.createdAt ?? raw?.created_at ?? new Date().toISOString(),
+    updatedAt: raw?.updatedAt ?? raw?.updated_at ?? new Date().toISOString(),
+  };
+};
+
 export const profileApi = {
   /**
    * GET /api/profile/me
    * Lấy đầy đủ thông tin profile của người dùng hiện tại
    */
   getMe: async (): Promise<IUserProfile> => {
-    const response = await apiClient.get<IUserProfile>(
-      `${PROFILE_BASE_URL}/me`,
-    );
-    return response.data;
+    const response = await apiClient.get<any>(`${PROFILE_BASE_URL}/me`);
+    return normalizeProfile(response.data);
   },
 
   /**
@@ -42,11 +75,8 @@ export const profileApi = {
    * Cập nhật thông tin cá nhân
    */
   updateProfile: async (data: IProfileUpdatePayload): Promise<IUserProfile> => {
-    const response = await apiClient.put<IUserProfile>(
-      `${PROFILE_BASE_URL}`,
-      data,
-    );
-    return response.data;
+    const response = await apiClient.put<any>(`${PROFILE_BASE_URL}`, data);
+    return normalizeProfile(response.data);
   },
 
   /**
