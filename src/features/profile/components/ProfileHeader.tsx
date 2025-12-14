@@ -50,6 +50,9 @@ export const ProfileHeader: React.FC<ProfileHeaderProps> = ({
     );
   }
 
+  const displayName = profile.fullName || profile.username || 'Người dùng';
+  const initial = (displayName?.trim?.() || 'U').charAt(0).toUpperCase();
+
   return (
     <View style={styles.container}>
       <View style={styles.avatarContainer}>
@@ -57,14 +60,12 @@ export const ProfileHeader: React.FC<ProfileHeaderProps> = ({
           <Image source={{ uri: profile.avatarUrl }} style={styles.avatar} />
         ) : (
           <View style={[styles.avatar, styles.placeholderAvatar]}>
-            <Text style={styles.placeholderText}>
-              {profile.fullName.charAt(0).toUpperCase()}
-            </Text>
+            <Text style={styles.placeholderText}>{initial}</Text>
           </View>
         )}
       </View>
 
-      <Text style={styles.fullName}>{profile.fullName}</Text>
+      <Text style={styles.fullName}>{displayName}</Text>
       <Text style={styles.role}>{getRoleLabel(profile.role)}</Text>
       <Text style={styles.username}>@{profile.username}</Text>
 
