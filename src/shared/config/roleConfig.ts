@@ -100,8 +100,13 @@ export const ROLE_CONFIG: Record<UserRole, RoleConfig> = {
         name: 'MedicinesHub',
         label: 'Medicines Hub',
       },
+      {
+        id: 'admin-tab-3',
+        name: 'Profile',
+        label: 'Hồ Sơ',
+      },
       // {
-      //   id: 'admin-tab-3',
+      //   id: 'admin-tab-4',
       //   name: 'ReportsHub',
       //   label: 'Reports',
       // },
@@ -186,8 +191,13 @@ export const ROLE_CONFIG: Record<UserRole, RoleConfig> = {
         name: 'Home',
         label: 'Trang chủ',
       },
+      {
+        id: 'manager-tab-2',
+        name: 'Profile',
+        label: 'Hồ Sơ',
+      },
       // {
-      //   id: 'manager-tab-2',
+      //   id: 'manager-tab-3',
       //   name: 'MedicinesHub',
       //   label: 'Medicines',
       // },
@@ -272,8 +282,13 @@ export const ROLE_CONFIG: Record<UserRole, RoleConfig> = {
         name: 'Home',
         label: 'Trang chủ',
       },
+      {
+        id: 'staff-tab-2',
+        name: 'Profile',
+        label: 'Hồ Sơ',
+      },
       // {
-      //   id: 'staff-tab-2',
+      //   id: 'staff-tab-3',
       //   name: 'MedicinesHub',
       //   label: 'Medicines',
       // },
