@@ -35,6 +35,11 @@ import {
   BranchEmployeeSelectionScreen,
 } from '@features/branches';
 import BranchDetailScreen from '@features/branches/screens/BranchDetailScreen';
+import {
+  ProfileScreen,
+  EditProfileScreen,
+  ChangePasswordScreen,
+} from '@features/profile';
 import { ROUTES } from '@shared/constants/routes';
 import { HomeNavigator, TabItem } from '@shared/components';
 import HomeScreen from '@shared/screens/HomeScreen';
@@ -124,6 +129,7 @@ const TAB_COMPONENTS: Record<string, React.ComponentType<any>> = {
   Home: HomeScreen,
   MedicinesHub: MedicinesHubScreen,
   ReportsHub: ReportsHubScreen,
+  Profile: ProfileScreen,
 };
 
 // Create Auth Navigator - chỉ có PhoneLoginScreen
@@ -620,6 +626,23 @@ const MainAppNavigator = () => {
           headerShown: true,
           title: 'Xu Hướng Doanh Thu Toàn Hệ Thống',
         }}
+      />
+
+      {/* Profile Routes */}
+      <MainStack.Screen
+        name={ROUTES.PROFILE}
+        component={ProfileScreen}
+        options={{ headerShown: true, title: 'Hồ Sơ Cá Nhân' }}
+      />
+      <MainStack.Screen
+        name={ROUTES.EDIT_PROFILE}
+        component={EditProfileScreen}
+        options={{ headerShown: true, title: 'Chỉnh Sửa Hồ Sơ' }}
+      />
+      <MainStack.Screen
+        name={ROUTES.CHANGE_PASSWORD}
+        component={ChangePasswordScreen}
+        options={{ headerShown: true, title: 'Đổi Mật Khẩu' }}
       />
     </MainStack.Navigator>
   );
