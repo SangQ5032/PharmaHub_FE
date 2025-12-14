@@ -95,4 +95,8 @@ export const ROUTES = {
     'SystemAdminWorkHistoryBranchSelection',
   SYSTEM_ADMIN_BRANCH_WORK_SCHEDULE: 'SystemAdminBranchWorkSchedule',
   SYSTEM_ADMIN_BRANCH_WORK_HISTORY: 'SystemAdminBranchWorkHistory',
+  // Profile routes
+  PROFILE: 'Profile',
+  EDIT_PROFILE: 'EditProfile',
+  CHANGE_PASSWORD: 'ChangePassword',
 } as const;
