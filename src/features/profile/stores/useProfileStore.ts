@@ -4,7 +4,7 @@
  */
 
 import { create } from 'zustand';
-import { profileApi } from '../services/profile.api';
+import { profileApi, normalizeProfile } from '../services/profile.api';
 import {
   IUserProfile,
   IProfileSummary,
@@ -26,8 +26,36 @@ export const useProfileStore = create<IProfileState>((set, get) => ({
   fetchProfile: async () => {
     set({ loading: true, error: null });
     try {
-      const profile = await profileApi.getMe();
-      set({ profile, loading: false });
+      // Seed từ auth store (nếu có) để tránh UI trống
+      const authUser = useAuthStore.getState().user;
+      const current = get().profile;
+      const seed = authUser ? normalizeProfile(authUser) : null;
+      if (seed && !current) {
+        set({ profile: seed });
+      }
+
+      const apiProfile = await profileApi.getMe();
+
+      // Merge dữ liệu API với seed (ưu tiên API)
+      const merged = seed
+        ? {
+            ...seed,
+            ...apiProfile,
+            fullName:
+              apiProfile.fullName && apiProfile.fullName !== 'Người dùng'
+                ? apiProfile.fullName
+                : seed.fullName,
+            email: apiProfile.email || seed.email,
+            phone: apiProfile.phone || seed.phone,
+            avatarUrl: apiProfile.avatarUrl || seed.avatarUrl,
+            address: apiProfile.address || seed.address,
+            branchId: apiProfile.branchId || seed.branchId,
+            branchName: apiProfile.branchName || seed.branchName,
+            position: apiProfile.position || seed.position,
+          }
+        : apiProfile;
+
+      set({ profile: merged, loading: false });
     } catch (error: any) {
       const errorMessage =
         error?.response?.data?.message || error?.message || 'Lỗi tải profile';

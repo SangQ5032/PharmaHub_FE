@@ -65,11 +65,7 @@ export const ProfileScreen: React.FC = () => {
         <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
       }
     >
-      <ProfileHeader
-        profile={profile}
-        loading={loading}
-        onEditPress={handleEditPress}
-      />
+      <ProfileHeader profile={profile} loading={loading} />
 
       <ProfileInfo profile={profile} />
 

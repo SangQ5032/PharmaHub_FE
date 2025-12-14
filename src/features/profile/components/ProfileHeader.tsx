@@ -4,26 +4,17 @@
  */
 
 import React from 'react';
-import {
-  View,
-  Text,
-  Image,
-  StyleSheet,
-  TouchableOpacity,
-  ActivityIndicator,
-} from 'react-native';
+import { View, Text, Image, StyleSheet, ActivityIndicator } from 'react-native';
 import { IUserProfile } from '../types/profile.types';
 
 interface ProfileHeaderProps {
   profile: IUserProfile | null;
   loading?: boolean;
-  onEditPress?: () => void;
 }
 
 export const ProfileHeader: React.FC<ProfileHeaderProps> = ({
   profile,
   loading = false,
-  onEditPress,
 }) => {
   const getRoleLabel = (role: string) => {
     const roleMap: Record<string, string> = {
@@ -31,7 +22,7 @@ export const ProfileHeader: React.FC<ProfileHeaderProps> = ({
       'branch-manager': 'Quản Lý Chi Nhánh',
       employee: 'Nhân Viên',
     };
-    return roleMap[role] || role;
+    return roleMap[role] || 'Người dùng';
   };
 
   if (loading) {
@@ -67,12 +58,8 @@ export const ProfileHeader: React.FC<ProfileHeaderProps> = ({
 
       <Text style={styles.fullName}>{displayName}</Text>
       <Text style={styles.role}>{getRoleLabel(profile.role)}</Text>
-      <Text style={styles.username}>@{profile.username}</Text>
-
-      {onEditPress && (
-        <TouchableOpacity style={styles.editButton} onPress={onEditPress}>
-          <Text style={styles.editButtonText}>Chỉnh Sửa Hồ Sơ</Text>
-        </TouchableOpacity>
+      {Boolean(profile.username) && (
+        <Text style={styles.username}>@{profile.username}</Text>
       )}
     </View>
   );

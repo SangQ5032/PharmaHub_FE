@@ -4,6 +4,7 @@
  */
 
 import { apiClient } from '@shared/services/api';
+import { authApi } from '@features/auth/api/auth.api';
 import {
   IUserProfile,
   IProfileSummary,
@@ -26,7 +27,25 @@ const normalizeRole = (
   return 'employee';
 };
 
-const normalizeProfile = (raw: any): IUserProfile => {
+const pickEntity = (payload: any) => {
+  if (!payload) return {};
+  // Common wrappers from BE
+  if (payload.data?.data) return payload.data.data;
+  if (payload.data?.user) return payload.data.user;
+  if (payload.data?.profile) return payload.data.profile;
+  if (payload.result?.user) return payload.result.user;
+  if (payload.result?.profile) return payload.result.profile;
+  if (payload.payload?.user) return payload.payload.user;
+  if (payload.payload?.profile) return payload.payload.profile;
+  if (payload.userProfile) return payload.userProfile;
+  if (payload.user) return payload.user;
+  if (payload.profile) return payload.profile;
+  if (payload.data) return payload.data;
+  return payload;
+};
+
+export const normalizeProfile = (rawAny: any): IUserProfile => {
+  const raw = pickEntity(rawAny);
   const fullName = raw?.fullName ?? raw?.name ?? '';
   const username = raw?.username ?? raw?.phone ?? raw?.email ?? '';
   const email = raw?.email ?? raw?.contact?.email ?? '';
@@ -49,6 +68,37 @@ const normalizeProfile = (raw: any): IUserProfile => {
   };
 };
 
+const hasBasicData = (p: IUserProfile) => {
+  return Boolean(
+    (p.fullName && p.fullName !== 'Người dùng') ||
+      p.email ||
+      p.phone ||
+      p.username,
+  );
+};
+
+const mergeProfile = (
+  primary: IUserProfile,
+  fallback: IUserProfile,
+): IUserProfile => {
+  return {
+    ...fallback,
+    ...primary,
+    // strings: if primary empty, take fallback
+    fullName:
+      primary.fullName && primary.fullName !== 'Người dùng'
+        ? primary.fullName
+        : fallback.fullName,
+    email: primary.email || fallback.email,
+    phone: primary.phone || fallback.phone,
+    avatarUrl: primary.avatarUrl || fallback.avatarUrl,
+    address: primary.address || fallback.address,
+    branchId: primary.branchId || fallback.branchId,
+    branchName: primary.branchName || fallback.branchName,
+    position: primary.position || fallback.position,
+  };
+};
+
 export const profileApi = {
   /**
    * GET /api/profile/me
@@ -56,7 +106,19 @@ export const profileApi = {
    */
   getMe: async (): Promise<IUserProfile> => {
     const response = await apiClient.get<any>(`${PROFILE_BASE_URL}/me`);
-    return normalizeProfile(response.data);
+    let me = normalizeProfile(response.data);
+
+    if (!hasBasicData(me)) {
+      try {
+        const authMe = await authApi.profile();
+        const normalizedAuth = normalizeProfile(authMe);
+        me = mergeProfile(me, normalizedAuth);
+      } catch (_e) {
+        // ignore fallback error
+      }
+    }
+
+    return me;
   },
 
   /**
