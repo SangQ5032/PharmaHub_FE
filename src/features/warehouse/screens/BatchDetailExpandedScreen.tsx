@@ -175,12 +175,13 @@ export default function BatchDetailExpandedScreen() {
     typeof batch.supplier_id === 'object' ? batch.supplier_id : batch.supplier;
   const statusColor = getStatusColor(batch.status);
   const statusLabel = getStatusLabel(batch.status);
-  // Tính lợi nhuận dựa trên giá bán lẻ cho đơn vị cơ sở và giá nhập (cả hai đều tính trên đơn vị cơ sở)
-  const retailPriceForBaseUnit =
+  // Tính lợi nhuận dựa trên giá bán lẻ của lô hàng và giá nhập
+  const retailPrice =
+    batch.retail_price ||
     batch.retail_price_for_base_unit ||
     (medicine && typeof medicine === 'object' ? medicine.retail_price : 0) ||
     0;
-  const profitPerUnit = retailPriceForBaseUnit - (batch.import_price || 0);
+  const profitPerUnit = retailPrice - (batch.import_price || 0);
   const soldQuantity = (batch.initial_quantity || 0) - (batch.quantity || 0);
   const soldPercent =
     batch.initial_quantity && batch.initial_quantity > 0
@@ -293,12 +294,15 @@ export default function BatchDetailExpandedScreen() {
             <Text style={styles.value}>{medicine?.unit}</Text>
           </View>
 
-          {(batch.retail_price_for_base_unit || medicine?.retail_price) && (
+          {(batch.retail_price ||
+            batch.retail_price_for_base_unit ||
+            medicine?.retail_price) && (
             <View style={styles.infoRow}>
               <Text style={styles.label}>Giá bán lẻ:</Text>
               <Text style={[styles.value, styles.priceText]}>
                 ₫
                 {(
+                  batch.retail_price ||
                   batch.retail_price_for_base_unit ||
                   medicine?.retail_price ||
                   0
@@ -397,6 +401,7 @@ export default function BatchDetailExpandedScreen() {
             <Text style={[styles.value, styles.priceText]}>
               ₫
               {(
+                batch.retail_price ||
                 batch.retail_price_for_base_unit ||
                 medicine?.retail_price ||
                 0
@@ -425,9 +430,9 @@ export default function BatchDetailExpandedScreen() {
             <Text style={styles.label}>Tổng giá bán (dự tính):</Text>
             <Text style={[styles.value, styles.priceText]}>
               ₫
-              {(
-                retailPriceForBaseUnit * (batch.initial_quantity || 0)
-              ).toLocaleString('vi-VN')}
+              {(retailPrice * (batch.initial_quantity || 0)).toLocaleString(
+                'vi-VN',
+              )}
             </Text>
           </View>
 

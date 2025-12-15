@@ -23,6 +23,12 @@ import {
   Attendance,
   CheckinBody,
 } from '@features/checkin-checkout/types/types';
+import {
+  validateCheckinTime,
+  validateCheckoutTime,
+  getCurrentShift,
+  formatShiftTime,
+} from '@features/checkin-checkout/utils/shiftValidation';
 
 const CheckinCheckoutScreen = () => {
   const [todayAttendance, setTodayAttendance] = useState<Attendance | null>(
@@ -146,6 +152,17 @@ const CheckinCheckoutScreen = () => {
         return;
       }
 
+      // Kiểm tra thời gian checkin có hợp lệ không
+      const now = new Date();
+      const checkinValidation = validateCheckinTime(now);
+      if (!checkinValidation.isValid) {
+        Alert.alert(
+          'Lỗi Checkin',
+          checkinValidation.message || 'Thời gian checkin không hợp lệ',
+        );
+        return;
+      }
+
       // Gửi API checkin với lat/long
       const checkinBody: CheckinBody = {
         latitude: currentLocation.latitude,
@@ -173,6 +190,23 @@ const CheckinCheckoutScreen = () => {
    */
   const handleCheckout = async () => {
     try {
+      // Kiểm tra thời gian checkout có hợp lệ không
+      if (!todayAttendance?.checkin_time) {
+        Alert.alert('Lỗi', 'Không tìm thấy thông tin checkin');
+        return;
+      }
+
+      const checkinTime = new Date(todayAttendance.checkin_time);
+      const now = new Date();
+      const checkoutValidation = validateCheckoutTime(checkinTime, now);
+      if (!checkoutValidation.isValid) {
+        Alert.alert(
+          'Lỗi Checkout',
+          checkoutValidation.message || 'Thời gian checkout không hợp lệ',
+        );
+        return;
+      }
+
       await checkoutMutation.mutateAsync({});
       Alert.alert('Thành công', 'Checkout thành công!', [
         {
@@ -225,6 +259,12 @@ const CheckinCheckoutScreen = () => {
     checkoutMutation.isPending ||
     isLoadingAttendance;
 
+  // Lấy thông tin ca làm việc hiện tại
+  const currentShift = getCurrentShift();
+  const shiftTimeRange = currentShift
+    ? formatShiftTime(currentShift)
+    : 'Không có ca';
+
   return (
     <View style={styles.container}>
       <Header title="Chấm công" showBack={true} />
@@ -233,6 +273,31 @@ const CheckinCheckoutScreen = () => {
         <View style={styles.timeContainer}>
           <Text style={styles.dateText}>{currentDate}</Text>
           <Text style={styles.timeText}>{currentTime}</Text>
+        </View>
+
+        {/* Shift Info Card */}
+        <View style={styles.shiftInfoCard}>
+          <View style={styles.shiftInfoRow}>
+            <Icon
+              name="clock-time-four-outline"
+              size={20}
+              color={currentShift ? '#2196F3' : '#FF9800'}
+            />
+            <View style={{ flex: 1 }}>
+              <Text style={styles.shiftInfoLabel}>
+                {currentShift
+                  ? `Ca làm việc hiện tại: ${
+                      currentShift === 'morning' ? 'Ca sáng' : 'Ca chiều'
+                    }`
+                  : 'Hiện tại không có ca làm việc'}
+              </Text>
+              <Text style={styles.shiftInfoValue}>
+                {currentShift
+                  ? `Thời gian: ${shiftTimeRange}`
+                  : 'Ca sáng: 7:00 - 15:00, Ca chiều: 15:00 - 22:00'}
+              </Text>
+            </View>
+          </View>
         </View>
 
         {/* Status Card */}
@@ -395,6 +460,29 @@ const styles = StyleSheet.create({
     fontSize: 32,
     fontWeight: 'bold',
     color: '#4CAF50',
+  },
+  shiftInfoCard: {
+    backgroundColor: '#E3F2FD',
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 16,
+    borderLeftWidth: 4,
+    borderLeftColor: '#2196F3',
+  },
+  shiftInfoRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 12,
+  },
+  shiftInfoLabel: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#1976D2',
+    marginBottom: 4,
+  },
+  shiftInfoValue: {
+    fontSize: 13,
+    color: '#1565C0',
   },
   statusCard: {
     backgroundColor: '#FFFFFF',

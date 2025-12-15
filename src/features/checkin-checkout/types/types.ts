@@ -1,5 +1,12 @@
 import { User, Branch } from '@features/work-schdule/types/types';
 
+export type AttendanceStatus =
+  | 'checked_in'
+  | 'checked_out'
+  | 'late'
+  | 'early'
+  | 'absent';
+
 export interface Attendance {
   _id: string;
   user_id: User | string;
@@ -7,7 +14,7 @@ export interface Attendance {
   checkin_time: string;
   checkout_time: string | null;
   working_hours: number;
-  status: 'checked_in' | 'checked_out';
+  status: AttendanceStatus;
   note?: string;
   createdAt: string;
   updatedAt: string;
