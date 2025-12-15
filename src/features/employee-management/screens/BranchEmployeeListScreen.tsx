@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { useBranches } from '@features/branches';
+import { useAuthStore } from '@features/auth';
 import { useEmployeeManagement, useAllEmployees } from '../index';
 import { Employee } from '../types/types';
 
@@ -45,14 +46,25 @@ const BranchEmployeeListScreen: React.FC<BranchEmployeeListScreenProps> = ({
   const { data: branchesData, isLoading: isLoadingBranches } = useBranches();
   const branches = useMemo(() => branchesData || [], [branchesData]);
 
+  const { user } = useAuthStore();
+  const isSystemAdmin = user?.role === 'system-admin';
+
   const {
-    employees,
+    employees: employeesRaw,
     isLoadingEmployees,
     handleTransferBranch,
     handleAssignBranch,
   } = useEmployeeManagement(branchId);
+  const employees = useMemo(
+    () => (employeesRaw as unknown as Employee[]) || [],
+    [employeesRaw],
+  );
 
-  const { employees: allEmployees } = useAllEmployees();
+  const { employees: allEmployeesRaw } = useAllEmployees();
+  const allEmployees = useMemo(
+    () => (allEmployeesRaw as unknown as Employee[]) || [],
+    [allEmployeesRaw],
+  );
 
   // Get employees not in this branch (can be added or transferred)
   const availableEmployees = useMemo(() => {
@@ -154,13 +166,15 @@ const BranchEmployeeListScreen: React.FC<BranchEmployeeListScreenProps> = ({
         </View>
       </View>
       <View style={styles.employeeActions}>
-        <TouchableOpacity
-          style={[styles.actionButton, styles.transferButton]}
-          onPress={() => handleSelectTransfer(employee)}
-        >
-          <Icon name="swap-horizontal" size={18} color="#fff" />
-          <Text style={styles.actionButtonText}>Chuyển</Text>
-        </TouchableOpacity>
+        {isSystemAdmin && (
+          <TouchableOpacity
+            style={[styles.actionButton, styles.transferButton]}
+            onPress={() => handleSelectTransfer(employee)}
+          >
+            <Icon name="swap-horizontal" size={18} color="#fff" />
+            <Text style={styles.actionButtonText}>Chuyển</Text>
+          </TouchableOpacity>
+        )}
       </View>
     </View>
   );
@@ -186,13 +200,15 @@ const BranchEmployeeListScreen: React.FC<BranchEmployeeListScreenProps> = ({
               </Text>
             </View>
           </View>
-          <TouchableOpacity
-            style={styles.addButton}
-            onPress={() => setShowAddEmployeeModal(true)}
-          >
-            <Icon name="plus" size={24} color="#fff" />
-            <Text style={styles.addButtonText}>Thêm</Text>
-          </TouchableOpacity>
+          {isSystemAdmin && (
+            <TouchableOpacity
+              style={styles.addButton}
+              onPress={() => setShowAddEmployeeModal(true)}
+            >
+              <Icon name="plus" size={24} color="#fff" />
+              <Text style={styles.addButtonText}>Thêm</Text>
+            </TouchableOpacity>
+          )}
         </View>
       </View>
 
@@ -395,22 +411,29 @@ const BranchEmployeeListScreen: React.FC<BranchEmployeeListScreenProps> = ({
                               }
                             </Text>
                           </View>
-                          <TouchableOpacity
-                            style={[styles.actionButton, styles.transferButton]}
-                            onPress={() => {
-                              setSelectedEmployee(emp);
-                              setActionType('transfer');
-                              setSelectedTargetBranch('');
-                              setShowActionModal(true);
-                            }}
-                          >
-                            <Icon
-                              name="swap-horizontal"
-                              size={18}
-                              color="#fff"
-                            />
-                            <Text style={styles.actionButtonText}>Chuyển</Text>
-                          </TouchableOpacity>
+                          {isSystemAdmin && (
+                            <TouchableOpacity
+                              style={[
+                                styles.actionButton,
+                                styles.transferButton,
+                              ]}
+                              onPress={() => {
+                                setSelectedEmployee(emp);
+                                setActionType('transfer');
+                                setSelectedTargetBranch('');
+                                setShowActionModal(true);
+                              }}
+                            >
+                              <Icon
+                                name="swap-horizontal"
+                                size={18}
+                                color="#fff"
+                              />
+                              <Text style={styles.actionButtonText}>
+                                Chuyển
+                              </Text>
+                            </TouchableOpacity>
+                          )}
                         </>
                       )}
                     </View>
