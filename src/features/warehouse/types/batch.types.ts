@@ -90,6 +90,8 @@ export interface Batch {
   // Các trường mới từ server - tự động đồng bộ với quantity và initial_quantity
   quantity_in_base_unit?: number;
   initial_quantity_in_base_unit?: number;
+  // Giá bán lẻ của lô hàng
+  retail_price?: number;
   // Giá bán lẻ cho đơn vị cơ sở (base unit)
   retail_price_for_base_unit?: number;
   // Giá bán lẻ theo từng đơn vị

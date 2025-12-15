@@ -31,14 +31,18 @@ export interface PayrollPreview {
   user_id: string;
   branch_id: string;
   month: string;
-  base_salary: number;
-  total_shifts: number;
-  completed_shifts: number;
-  late_count: number;
-  penalty_amount: number;
-  bonus_amount: number;
-  sales_amount: number;
-  final_salary: number;
+  base_monthly_salary: number; // Lương cơ bản chuẩn theo tháng (26 công/26 ca)
+  base_salary: number; // Lương cơ bản đã tính theo số ca thực tế
+  total_shifts: number; // Tổng số ca được giao trong tháng
+  completed_shifts: number; // Số ca đã chấm công
+  missed_shifts: number; // Số ca được giao nhưng không checkin
+  late_count: number; // Số ca đi muộn
+  late_penalty_amount: number; // Phạt đi muộn
+  missed_penalty_amount: number; // Phạt không đi làm
+  penalty_amount: number; // Tổng phạt (muộn + không đi làm)
+  bonus_amount: number; // Thưởng (nếu có)
+  sales_amount: number; // Doanh số bán hàng trong tháng
+  final_salary: number; // Lương cuối cùng sau khi trừ phạt
   status: PayrollStatus;
   note: string;
 }
@@ -76,6 +80,8 @@ export interface PayrollDetail {
   branch_id: PayrollBranch | string;
   month: string;
   base_salary: number;
+  working_days?: number; // Số ngày làm việc thực tế
+  standard_working_days?: number; // Số ngày công chuẩn (26 ngày)
   total_shifts: number;
   completed_shifts: number;
   late_count: number;

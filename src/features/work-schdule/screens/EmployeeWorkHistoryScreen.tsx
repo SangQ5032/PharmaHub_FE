@@ -28,6 +28,7 @@ import { WorkScheduleHistoryRecord } from '@features/work-schdule/types/workSche
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { ROUTES } from '@shared/constants/routes';
 import { useAuthStore } from '@features/auth/stores/useAuthStore';
+import { calculateAttendanceStatus } from '@features/checkin-checkout/utils/shiftValidation';
 
 type NavigationProp = NativeStackNavigationProp<any>;
 
@@ -165,7 +166,7 @@ export const EmployeeWorkHistoryScreen: React.FC = () => {
   const getStatusLabel = (status: string): string => {
     switch (status) {
       case 'checked_out':
-        return 'Đã checkout';
+        return 'Checkout đúng giờ';
       case 'checked_in':
         return 'Đang làm';
       case 'late':
@@ -267,363 +268,414 @@ export const EmployeeWorkHistoryScreen: React.FC = () => {
     </View>
   );
 
-  const renderItem = ({ item }: { item: WorkScheduleHistoryRecord }) => (
-    <TouchableOpacity
-      onPress={() => handleViewDetail(item)}
-      style={[
-        styles.card,
-        { backgroundColor: colors.card, borderColor: colors.border },
-      ]}
-    >
-      <View style={styles.cardContent}>
-        {/* Date & Status */}
-        <View style={styles.cardTop}>
-          <View>
-            <Text style={[styles.dateText, { color: colors.text }]}>
-              {formatDate(item.date)}
-            </Text>
-            <Text style={[styles.timeText, { color: colors.gray }]}>
-              {formatTime(item.checkin_time)}
-            </Text>
+  const renderItem = ({ item }: { item: WorkScheduleHistoryRecord }) => {
+    // Tính lại status đúng dựa trên thời gian checkin/checkout
+    const correctStatus = calculateAttendanceStatus(
+      item.checkin_time,
+      item.checkout_time,
+      item.shift,
+      item.scheduledShift,
+    );
+    const statusFromBackend = item.status;
+    const statusMismatch = correctStatus !== statusFromBackend;
+
+    // Sử dụng status đúng để hiển thị
+    const displayStatus = correctStatus;
+
+    return (
+      <TouchableOpacity
+        onPress={() => handleViewDetail(item)}
+        style={[
+          styles.card,
+          { backgroundColor: colors.card, borderColor: colors.border },
+        ]}
+      >
+        <View style={styles.cardContent}>
+          {/* Date & Status */}
+          <View style={styles.cardTop}>
+            <View>
+              <Text style={[styles.dateText, { color: colors.text }]}>
+                {formatDate(item.date)}
+              </Text>
+              <Text style={[styles.timeText, { color: colors.gray }]}>
+                {formatTime(item.checkin_time)}
+              </Text>
+            </View>
+            <View style={styles.statusContainer}>
+              <View
+                style={[
+                  styles.statusBadge,
+                  { backgroundColor: getStatusColor(displayStatus) },
+                ]}
+              >
+                <MaterialCommunityIcons
+                  name={getStatusIcon(displayStatus)}
+                  size={16}
+                  color="#fff"
+                />
+                <Text style={styles.statusBadgeText}>
+                  {getStatusLabel(displayStatus)}
+                </Text>
+              </View>
+              {statusMismatch && (
+                <View style={styles.statusWarning}>
+                  <MaterialCommunityIcons
+                    name="alert"
+                    size={12}
+                    color="#FF9800"
+                  />
+                  <Text style={styles.statusWarningText}>
+                    Backend: {getStatusLabel(statusFromBackend)}
+                  </Text>
+                </View>
+              )}
+            </View>
           </View>
-          <View
-            style={[
-              styles.statusBadge,
-              { backgroundColor: getStatusColor(item.status) },
-            ]}
-          >
+
+          {/* Shift & Working Hours */}
+          <View style={styles.cardRow}>
             <MaterialCommunityIcons
-              name={getStatusIcon(item.status)}
+              name={
+                item.shift === 'morning' ? 'weather-sunny' : 'weather-night'
+              }
               size={16}
-              color="#fff"
+              color={colors.primary}
             />
-            <Text style={styles.statusBadgeText}>
-              {getStatusLabel(item.status)}
+            <Text style={[styles.cardLabel, { color: colors.text }]}>
+              {item.shift === 'morning' ? 'Ca sáng' : 'Ca chiều'} •{' '}
+              {item.working_hours.toFixed(1)} giờ
             </Text>
           </View>
-        </View>
 
-        {/* Shift & Working Hours */}
-        <View style={styles.cardRow}>
-          <MaterialCommunityIcons
-            name={item.shift === 'morning' ? 'weather-sunny' : 'weather-night'}
-            size={16}
-            color={colors.primary}
-          />
-          <Text style={[styles.cardLabel, { color: colors.text }]}>
-            {item.shift === 'morning' ? 'Ca sáng' : 'Ca chiều'} •{' '}
-            {item.working_hours.toFixed(1)} giờ
-          </Text>
-        </View>
-
-        {/* Branch */}
-        <View style={styles.cardRow}>
-          <MaterialCommunityIcons
-            name="office-building"
-            size={16}
-            color={colors.primary}
-          />
-          <Text
-            style={[styles.cardLabel, { color: colors.text }]}
-            numberOfLines={1}
-          >
-            {item.branch_id.name}
-          </Text>
-        </View>
-
-        {/* Check-in/Check-out times */}
-        <View style={styles.cardRow}>
-          <MaterialCommunityIcons
-            name="clock-check"
-            size={16}
-            color={colors.primary}
-          />
-          <Text
-            style={[styles.cardValue, { color: colors.text }]}
-            numberOfLines={1}
-          >
-            {formatTime(item.checkin_time)} -{' '}
-            {item.checkout_time
-              ? formatTime(item.checkout_time)
-              : 'Chưa checkout'}
-          </Text>
-        </View>
-
-        {/* On Schedule Status */}
-        <View style={[styles.cardBottom, { borderTopColor: colors.border }]}>
-          <View style={styles.scheduleStatus}>
+          {/* Branch */}
+          <View style={styles.cardRow}>
             <MaterialCommunityIcons
-              name={item.isOnSchedule ? 'check-circle' : 'alert-circle'}
+              name="office-building"
               size={16}
-              color={item.isOnSchedule ? '#4CAF50' : '#FF9800'}
+              color={colors.primary}
             />
             <Text
-              style={[
-                styles.scheduleStatusText,
-                { color: item.isOnSchedule ? '#4CAF50' : '#FF9800' },
-              ]}
+              style={[styles.cardLabel, { color: colors.text }]}
+              numberOfLines={1}
             >
-              {item.isOnSchedule ? 'Đúng lịch' : 'Ngoài lịch'}
+              {item.branch_id.name}
             </Text>
           </View>
-          <MaterialCommunityIcons
-            name="chevron-right"
-            size={20}
-            color={colors.primary}
-          />
+
+          {/* Check-in/Check-out times */}
+          <View style={styles.cardRow}>
+            <MaterialCommunityIcons
+              name="clock-check"
+              size={16}
+              color={colors.primary}
+            />
+            <Text
+              style={[styles.cardValue, { color: colors.text }]}
+              numberOfLines={1}
+            >
+              {formatTime(item.checkin_time)} -{' '}
+              {item.checkout_time
+                ? formatTime(item.checkout_time)
+                : 'Chưa checkout'}
+            </Text>
+          </View>
+
+          {/* On Schedule Status */}
+          <View style={[styles.cardBottom, { borderTopColor: colors.border }]}>
+            <View style={styles.scheduleStatus}>
+              <MaterialCommunityIcons
+                name={item.isOnSchedule ? 'check-circle' : 'alert-circle'}
+                size={16}
+                color={item.isOnSchedule ? '#4CAF50' : '#FF9800'}
+              />
+              <Text
+                style={[
+                  styles.scheduleStatusText,
+                  { color: item.isOnSchedule ? '#4CAF50' : '#FF9800' },
+                ]}
+              >
+                {item.isOnSchedule ? 'Đúng lịch' : 'Ngoài lịch'}
+              </Text>
+            </View>
+            <MaterialCommunityIcons
+              name="chevron-right"
+              size={20}
+              color={colors.primary}
+            />
+          </View>
         </View>
-      </View>
-    </TouchableOpacity>
-  );
+      </TouchableOpacity>
+    );
 
-  const renderEmpty = () => (
-    <View style={styles.emptyContainer}>
-      <MaterialCommunityIcons
-        name="calendar-blank"
-        size={64}
-        color={colors.primary}
-      />
-      <Text style={[styles.emptyText, { color: colors.text }]}>
-        Không có lịch sử làm việc
-      </Text>
-      <Text style={[styles.emptySubText, { color: colors.gray }]}>
-        Lịch sử làm việc của bạn sẽ hiển thị ở đây
-      </Text>
-    </View>
-  );
-
-  const renderFooter = () => {
-    if (!isLoading || page === 1) return null;
-    return (
-      <View style={styles.footerLoader}>
-        <ActivityIndicator size="small" color={colors.primary} />
-        <Text style={[styles.footerLoaderText, { color: colors.text }]}>
-          Đang tải...
+    const renderEmpty = () => (
+      <View style={styles.emptyContainer}>
+        <MaterialCommunityIcons
+          name="calendar-blank"
+          size={64}
+          color={colors.primary}
+        />
+        <Text style={[styles.emptyText, { color: colors.text }]}>
+          Không có lịch sử làm việc
+        </Text>
+        <Text style={[styles.emptySubText, { color: colors.gray }]}>
+          Lịch sử làm việc của bạn sẽ hiển thị ở đây
         </Text>
       </View>
     );
-  };
 
-  if (isError) {
+    const renderFooter = () => {
+      if (!isLoading || page === 1) return null;
+      return (
+        <View style={styles.footerLoader}>
+          <ActivityIndicator size="small" color={colors.primary} />
+          <Text style={[styles.footerLoaderText, { color: colors.text }]}>
+            Đang tải...
+          </Text>
+        </View>
+      );
+    };
+
+    if (isError) {
+      return (
+        <SafeAreaView
+          style={[styles.container, { backgroundColor: colors.background }]}
+        >
+          <View style={styles.errorContainer}>
+            <MaterialCommunityIcons
+              name="alert-circle"
+              size={64}
+              color={colors.notification}
+            />
+            <Text style={[styles.errorText, { color: colors.notification }]}>
+              Lỗi khi tải dữ liệu
+            </Text>
+            <TouchableOpacity
+              onPress={() => {
+                setPage(1);
+                refetch();
+              }}
+              style={[styles.retryButton, { backgroundColor: colors.primary }]}
+            >
+              <Text style={styles.retryButtonText}>Thử lại</Text>
+            </TouchableOpacity>
+          </View>
+        </SafeAreaView>
+      );
+    }
+
     return (
       <SafeAreaView
         style={[styles.container, { backgroundColor: colors.background }]}
       >
-        <View style={styles.errorContainer}>
-          <MaterialCommunityIcons
-            name="alert-circle"
-            size={64}
-            color={colors.notification}
-          />
-          <Text style={[styles.errorText, { color: colors.notification }]}>
-            Lỗi khi tải dữ liệu
-          </Text>
-          <TouchableOpacity
-            onPress={() => {
-              setPage(1);
-              refetch();
-            }}
-            style={[styles.retryButton, { backgroundColor: colors.primary }]}
-          >
-            <Text style={styles.retryButtonText}>Thử lại</Text>
-          </TouchableOpacity>
-        </View>
+        <FlatList
+          data={data?.data || []}
+          renderItem={renderItem}
+          keyExtractor={item => item._id}
+          ListHeaderComponent={renderHeader}
+          ListEmptyComponent={renderEmpty}
+          ListFooterComponent={renderFooter}
+          onEndReached={handleLoadMore}
+          onEndReachedThreshold={0.5}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={handleRefresh}
+              colors={[colors.primary]}
+            />
+          }
+          contentContainerStyle={
+            !data?.data?.length ? { flex: 1 } : { paddingBottom: 20 }
+          }
+        />
+        {isLoading && page === 1 && (
+          <View style={styles.loadingOverlay}>
+            <ActivityIndicator size="large" color={colors.primary} />
+          </View>
+        )}
       </SafeAreaView>
     );
-  }
+  };
 
-  return (
-    <SafeAreaView
-      style={[styles.container, { backgroundColor: colors.background }]}
-    >
-      <FlatList
-        data={data?.data || []}
-        renderItem={renderItem}
-        keyExtractor={item => item._id}
-        ListHeaderComponent={renderHeader}
-        ListEmptyComponent={renderEmpty}
-        ListFooterComponent={renderFooter}
-        onEndReached={handleLoadMore}
-        onEndReachedThreshold={0.5}
-        refreshControl={
-          <RefreshControl
-            refreshing={refreshing}
-            onRefresh={handleRefresh}
-            colors={[colors.primary]}
-          />
-        }
-        contentContainerStyle={
-          !data?.data?.length ? { flex: 1 } : { paddingBottom: 20 }
-        }
-      />
-      {isLoading && page === 1 && (
-        <View style={styles.loadingOverlay}>
-          <ActivityIndicator size="large" color={colors.primary} />
-        </View>
-      )}
-    </SafeAreaView>
-  );
+  const styles = StyleSheet.create({
+    container: {
+      flex: 1,
+    },
+    header: {
+      paddingHorizontal: 16,
+      paddingVertical: 12,
+      borderBottomWidth: 1,
+    },
+    headerTitle: {
+      fontSize: 18,
+      fontWeight: '700',
+      marginBottom: 12,
+    },
+    filterContainer: {
+      flexDirection: 'row',
+      gap: 8,
+      marginBottom: 12,
+    },
+    filterButton: {
+      flex: 1,
+      paddingVertical: 8,
+      paddingHorizontal: 12,
+      borderRadius: 8,
+      borderWidth: 1,
+      alignItems: 'center',
+    },
+    filterButtonText: {
+      fontSize: 12,
+      fontWeight: '600',
+    },
+    statsContainer: {
+      paddingTop: 8,
+    },
+    statsText: {
+      fontSize: 12,
+      fontWeight: '500',
+    },
+    card: {
+      marginHorizontal: 12,
+      marginVertical: 8,
+      borderRadius: 12,
+      borderWidth: 1,
+      overflow: 'hidden',
+    },
+    cardContent: {
+      paddingHorizontal: 12,
+      paddingVertical: 12,
+    },
+    cardTop: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      marginBottom: 10,
+    },
+    dateText: {
+      fontSize: 14,
+      fontWeight: '600',
+    },
+    timeText: {
+      fontSize: 12,
+      marginTop: 4,
+    },
+    statusContainer: {
+      alignItems: 'flex-end',
+      gap: 4,
+    },
+    statusBadge: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 6,
+      paddingHorizontal: 12,
+      paddingVertical: 6,
+      borderRadius: 20,
+    },
+    statusBadgeText: {
+      color: '#fff',
+      fontSize: 12,
+      fontWeight: '600',
+    },
+    statusWarning: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 4,
+      paddingHorizontal: 8,
+      paddingVertical: 4,
+      backgroundColor: '#FFF3CD',
+      borderRadius: 12,
+      borderWidth: 1,
+      borderColor: '#FF9800',
+    },
+    statusWarningText: {
+      fontSize: 10,
+      color: '#856404',
+      fontWeight: '500',
+    },
+    cardRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      marginVertical: 6,
+      gap: 8,
+    },
+    cardLabel: {
+      fontSize: 13,
+      fontWeight: '500',
+      flex: 1,
+    },
+    cardValue: {
+      fontSize: 13,
+      flex: 1,
+    },
+    cardBottom: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      marginTop: 10,
+      paddingTop: 10,
+      borderTopWidth: 1,
+    },
+    scheduleStatus: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 6,
+    },
+    scheduleStatusText: {
+      fontSize: 12,
+      fontWeight: '600',
+    },
+    emptyContainer: {
+      flex: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
+      paddingHorizontal: 20,
+    },
+    emptyText: {
+      fontSize: 16,
+      fontWeight: '600',
+      marginTop: 12,
+    },
+    emptySubText: {
+      fontSize: 13,
+      marginTop: 6,
+    },
+    errorContainer: {
+      flex: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
+      paddingHorizontal: 20,
+    },
+    errorText: {
+      fontSize: 16,
+      fontWeight: '600',
+      marginTop: 12,
+      marginBottom: 16,
+    },
+    retryButton: {
+      paddingHorizontal: 24,
+      paddingVertical: 10,
+      borderRadius: 8,
+    },
+    retryButtonText: {
+      color: '#fff',
+      fontSize: 14,
+      fontWeight: '600',
+    },
+    footerLoader: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      paddingVertical: 16,
+      gap: 8,
+    },
+    footerLoaderText: {
+      fontSize: 12,
+    },
+    loadingOverlay: {
+      ...StyleSheet.absoluteFillObject,
+      justifyContent: 'center',
+      alignItems: 'center',
+      backgroundColor: 'rgba(0, 0, 0, 0.3)',
+    },
+  });
 };
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  header: {
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-  },
-  headerTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-    marginBottom: 12,
-  },
-  filterContainer: {
-    flexDirection: 'row',
-    gap: 8,
-    marginBottom: 12,
-  },
-  filterButton: {
-    flex: 1,
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    borderRadius: 8,
-    borderWidth: 1,
-    alignItems: 'center',
-  },
-  filterButtonText: {
-    fontSize: 12,
-    fontWeight: '600',
-  },
-  statsContainer: {
-    paddingTop: 8,
-  },
-  statsText: {
-    fontSize: 12,
-    fontWeight: '500',
-  },
-  card: {
-    marginHorizontal: 12,
-    marginVertical: 8,
-    borderRadius: 12,
-    borderWidth: 1,
-    overflow: 'hidden',
-  },
-  cardContent: {
-    paddingHorizontal: 12,
-    paddingVertical: 12,
-  },
-  cardTop: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 10,
-  },
-  dateText: {
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  timeText: {
-    fontSize: 12,
-    marginTop: 4,
-  },
-  statusBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 20,
-  },
-  statusBadgeText: {
-    color: '#fff',
-    fontSize: 12,
-    fontWeight: '600',
-  },
-  cardRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginVertical: 6,
-    gap: 8,
-  },
-  cardLabel: {
-    fontSize: 13,
-    fontWeight: '500',
-    flex: 1,
-  },
-  cardValue: {
-    fontSize: 13,
-    flex: 1,
-  },
-  cardBottom: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginTop: 10,
-    paddingTop: 10,
-    borderTopWidth: 1,
-  },
-  scheduleStatus: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-  },
-  scheduleStatusText: {
-    fontSize: 12,
-    fontWeight: '600',
-  },
-  emptyContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-  },
-  emptyText: {
-    fontSize: 16,
-    fontWeight: '600',
-    marginTop: 12,
-  },
-  emptySubText: {
-    fontSize: 13,
-    marginTop: 6,
-  },
-  errorContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-  },
-  errorText: {
-    fontSize: 16,
-    fontWeight: '600',
-    marginTop: 12,
-    marginBottom: 16,
-  },
-  retryButton: {
-    paddingHorizontal: 24,
-    paddingVertical: 10,
-    borderRadius: 8,
-  },
-  retryButtonText: {
-    color: '#fff',
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  footerLoader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 16,
-    gap: 8,
-  },
-  footerLoaderText: {
-    fontSize: 12,
-  },
-  loadingOverlay: {
-    ...StyleSheet.absoluteFillObject,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: 'rgba(0, 0, 0, 0.3)',
-  },
-});

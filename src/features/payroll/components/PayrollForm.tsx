@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -14,6 +14,7 @@ import {
 import DateTimePicker from '@react-native-community/datetimepicker';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { CreatePayrollRequest } from '../types';
+import { usePayrollPreview } from '../hooks/usePayroll';
 
 interface Employee {
   _id: string;
@@ -63,6 +64,20 @@ export const PayrollForm: React.FC<PayrollFormProps> = ({
   );
   const [note, setNote] = useState(initialValues.note || '');
   const [showEmployeeDropdown, setShowEmployeeDropdown] = useState(false);
+
+  // Get preview when we have all required info
+  const canPreview =
+    userId && branchId && month && baseSalary && !isNaN(parseFloat(baseSalary));
+  const {
+    data: previewResponse,
+    isLoading: loadingPreview,
+    error: previewError,
+  } = usePayrollPreview(
+    canPreview ? userId : '',
+    canPreview ? branchId : '',
+    canPreview ? month : '',
+  );
+  const preview = previewResponse?.data;
 
   const handleDateChange = (event: any, selectedDate?: Date) => {
     setShowDatePicker(false);
@@ -262,6 +277,170 @@ export const PayrollForm: React.FC<PayrollFormProps> = ({
           />
         </View>
 
+        {/* Preview Section */}
+        {canPreview && (
+          <View style={styles.formGroup}>
+            <View style={styles.previewHeader}>
+              <Icon name="calculator" size={20} color="#1976d2" />
+              <Text style={styles.previewTitle}>Xem trước tính toán</Text>
+            </View>
+
+            {loadingPreview ? (
+              <View style={styles.previewLoading}>
+                <ActivityIndicator size="small" color="#1976d2" />
+                <Text style={styles.previewLoadingText}>Đang tính toán...</Text>
+              </View>
+            ) : previewError ? (
+              <View style={styles.previewError}>
+                <Icon name="alert-circle" size={20} color="#f44336" />
+                <Text style={styles.previewErrorText}>
+                  Không thể tải preview. Vui lòng thử lại.
+                </Text>
+              </View>
+            ) : preview ? (
+              <View style={styles.previewCard}>
+                {/* Thông tin lương */}
+                <View style={styles.previewSection}>
+                  <Text style={styles.previewSectionTitle}>
+                    Thông tin lương
+                  </Text>
+                  <View style={styles.previewRow}>
+                    <Text style={styles.previewLabel}>
+                      Lương cơ bản chuẩn (26 ca):
+                    </Text>
+                    <Text style={styles.previewValue}>
+                      {preview.base_monthly_salary?.toLocaleString('vi-VN') ||
+                        preview.base_salary.toLocaleString('vi-VN')}{' '}
+                      VND
+                    </Text>
+                  </View>
+                  <View style={styles.previewRow}>
+                    <Text style={styles.previewLabel}>
+                      Lương cơ bản đã tính:
+                    </Text>
+                    <Text style={styles.previewValue}>
+                      {preview.base_salary.toLocaleString('vi-VN')} VND
+                    </Text>
+                  </View>
+                </View>
+
+                {/* Thông tin ca làm việc */}
+                <View style={styles.previewDivider} />
+                <View style={styles.previewSection}>
+                  <Text style={styles.previewSectionTitle}>
+                    Thông tin ca làm việc
+                  </Text>
+                  <View style={styles.previewRow}>
+                    <Text style={styles.previewLabel}>
+                      Tổng số ca được giao:
+                    </Text>
+                    <Text style={styles.previewValue}>
+                      {preview.total_shifts} ca
+                    </Text>
+                  </View>
+                  <View style={styles.previewRow}>
+                    <Text style={styles.previewLabel}>Số ca đã chấm công:</Text>
+                    <Text style={styles.previewValue}>
+                      {preview.completed_shifts} ca
+                    </Text>
+                  </View>
+                  <View style={styles.previewRow}>
+                    <Text style={styles.previewLabel}>
+                      Số ca không checkin:
+                    </Text>
+                    <Text style={styles.previewValue}>
+                      {preview.missed_shifts || 0} ca
+                    </Text>
+                  </View>
+                </View>
+
+                {/* Thông tin phạt */}
+                <View style={styles.previewDivider} />
+                <View style={styles.previewSection}>
+                  <Text style={styles.previewSectionTitle}>Thông tin phạt</Text>
+                  <View style={styles.previewRow}>
+                    <Text style={styles.previewLabel}>Số ca đi muộn:</Text>
+                    <Text style={styles.previewValue}>
+                      {preview.late_count} ca
+                    </Text>
+                  </View>
+                  {preview.late_penalty_amount > 0 && (
+                    <View style={styles.previewRow}>
+                      <Text style={styles.previewLabel}>Phạt đi muộn:</Text>
+                      <Text style={[styles.previewValue, styles.negativeValue]}>
+                        -{preview.late_penalty_amount.toLocaleString('vi-VN')}{' '}
+                        VND
+                      </Text>
+                    </View>
+                  )}
+                  {preview.missed_penalty_amount > 0 && (
+                    <View style={styles.previewRow}>
+                      <Text style={styles.previewLabel}>
+                        Phạt không đi làm:
+                      </Text>
+                      <Text style={[styles.previewValue, styles.negativeValue]}>
+                        -{preview.missed_penalty_amount.toLocaleString('vi-VN')}{' '}
+                        VND
+                      </Text>
+                    </View>
+                  )}
+                  {preview.penalty_amount > 0 && (
+                    <View style={styles.previewRow}>
+                      <Text style={styles.previewLabel}>Tổng phạt:</Text>
+                      <Text style={[styles.previewValue, styles.negativeValue]}>
+                        -{preview.penalty_amount.toLocaleString('vi-VN')} VND
+                      </Text>
+                    </View>
+                  )}
+                </View>
+
+                {/* Thông tin khác */}
+                {(preview.bonus_amount > 0 || preview.sales_amount > 0) && (
+                  <>
+                    <View style={styles.previewDivider} />
+                    <View style={styles.previewSection}>
+                      <Text style={styles.previewSectionTitle}>
+                        Thông tin khác
+                      </Text>
+                      {preview.bonus_amount > 0 && (
+                        <View style={styles.previewRow}>
+                          <Text style={styles.previewLabel}>Thưởng:</Text>
+                          <Text
+                            style={[styles.previewValue, styles.positiveValue]}
+                          >
+                            +{preview.bonus_amount.toLocaleString('vi-VN')} VND
+                          </Text>
+                        </View>
+                      )}
+                      {preview.sales_amount > 0 && (
+                        <View style={styles.previewRow}>
+                          <Text style={styles.previewLabel}>
+                            Doanh số bán hàng:
+                          </Text>
+                          <Text
+                            style={[styles.previewValue, styles.positiveValue]}
+                          >
+                            +{preview.sales_amount.toLocaleString('vi-VN')} VND
+                          </Text>
+                        </View>
+                      )}
+                    </View>
+                  </>
+                )}
+
+                {/* Lương cuối cùng */}
+                <View style={styles.previewDivider} />
+                <View style={[styles.previewRow, styles.finalSalaryRow]}>
+                  <Text style={styles.finalSalaryLabel}>Lương cuối cùng:</Text>
+                  <Text style={styles.finalSalaryValue}>
+                    {preview.final_salary.toLocaleString('vi-VN')} VND
+                  </Text>
+                </View>
+              </View>
+            ) : null}
+          </View>
+        )}
+
         {/* Submit Button */}
         <TouchableOpacity
           style={[styles.submitButton, loading && styles.submitButtonDisabled]}
@@ -416,5 +595,164 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 16,
     fontWeight: '600',
+  },
+  // Preview Styles
+  previewHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 12,
+  },
+  previewTitle: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: '#1976d2',
+  },
+  previewLoading: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 16,
+    backgroundColor: '#f8f9fa',
+    borderRadius: 8,
+    gap: 8,
+  },
+  previewLoadingText: {
+    fontSize: 14,
+    color: '#666',
+  },
+  previewError: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 16,
+    backgroundColor: '#ffebee',
+    borderRadius: 8,
+    gap: 8,
+  },
+  previewErrorText: {
+    fontSize: 14,
+    color: '#f44336',
+    flex: 1,
+  },
+  previewCard: {
+    backgroundColor: '#fff',
+    borderRadius: 8,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: '#e0e0e0',
+  },
+  previewRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 8,
+  },
+  previewLabel: {
+    fontSize: 13,
+    color: '#666',
+    fontWeight: '500',
+    flex: 1,
+  },
+  previewValue: {
+    fontSize: 13,
+    color: '#333',
+    fontWeight: '600',
+    textAlign: 'right',
+  },
+  positiveValue: {
+    color: '#4CAF50',
+  },
+  negativeValue: {
+    color: '#f44336',
+  },
+  warningValue: {
+    color: '#FF9800',
+    fontWeight: '700',
+  },
+  previewDivider: {
+    height: 1,
+    backgroundColor: '#e0e0e0',
+    marginVertical: 8,
+  },
+  previewSection: {
+    marginBottom: 4,
+  },
+  previewSectionTitle: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#1976d2',
+    marginBottom: 8,
+  },
+  finalSalaryRow: {
+    backgroundColor: '#e3f2fd',
+    padding: 12,
+    borderRadius: 6,
+    marginTop: 4,
+  },
+  finalSalaryLabel: {
+    fontSize: 15,
+    color: '#1976d2',
+    fontWeight: '700',
+  },
+  finalSalaryValue: {
+    fontSize: 16,
+    color: '#1976d2',
+    fontWeight: '700',
+  },
+  warningBox: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    backgroundColor: '#fff3cd',
+    padding: 12,
+    borderRadius: 6,
+    marginTop: 12,
+    gap: 8,
+    borderLeftWidth: 4,
+    borderLeftColor: '#FF9800',
+  },
+  warningText: {
+    fontSize: 12,
+    color: '#856404',
+    flex: 1,
+    lineHeight: 18,
+  },
+  infoBox: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    backgroundColor: '#e3f2fd',
+    padding: 12,
+    borderRadius: 6,
+    marginTop: 12,
+    gap: 8,
+    borderLeftWidth: 4,
+    borderLeftColor: '#1976d2',
+  },
+  infoText: {
+    fontSize: 12,
+    color: '#1565c0',
+    flex: 1,
+    lineHeight: 18,
+  },
+  errorBox: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    backgroundColor: '#ffebee',
+    padding: 12,
+    borderRadius: 6,
+    marginTop: 12,
+    gap: 8,
+    borderLeftWidth: 4,
+    borderLeftColor: '#f44336',
+  },
+  errorText: {
+    fontSize: 12,
+    color: '#c62828',
+    flex: 1,
+    lineHeight: 18,
+    fontWeight: '500',
+  },
+  errorValue: {
+    color: '#f44336',
+    fontWeight: '700',
   },
 });

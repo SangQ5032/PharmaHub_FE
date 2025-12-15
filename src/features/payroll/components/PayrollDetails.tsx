@@ -215,6 +215,20 @@ export const PayrollDetails: React.FC<PayrollDetailsProps> = ({
           <Text style={styles.sectionTitle}>📊 Chấm công</Text>
           <View style={styles.twoColumnGrid}>
             <View style={styles.gridItem}>
+              <Text style={styles.gridLabel}>Ngày công chuẩn</Text>
+              <Text style={styles.gridValue}>
+                {payroll.standard_working_days || 26} ngày
+              </Text>
+            </View>
+            <View style={styles.gridItem}>
+              <Text style={styles.gridLabel}>Ngày làm việc thực tế</Text>
+              <Text style={styles.gridValue}>
+                {payroll.working_days || payroll.completed_shifts || 0} ngày
+              </Text>
+            </View>
+          </View>
+          <View style={styles.twoColumnGrid}>
+            <View style={styles.gridItem}>
               <Text style={styles.gridLabel}>Tổng ca</Text>
               <Text style={styles.gridValue}>{payroll.total_shifts}</Text>
             </View>
@@ -251,11 +265,38 @@ export const PayrollDetails: React.FC<PayrollDetailsProps> = ({
           <View style={styles.breakdownContainer}>
             {/* Lương cơ bản */}
             <View style={styles.breakdownRow}>
-              <Text style={styles.breakdownLabel}>Lương cơ bản</Text>
+              <Text style={styles.breakdownLabel}>Lương cơ bản (26 ngày)</Text>
               <Text style={styles.breakdownValue}>
                 {formatCurrency(payroll.base_salary)}
               </Text>
             </View>
+
+            {/* Tính toán lương theo ngày công thực tế */}
+            {payroll.working_days !== undefined &&
+              payroll.standard_working_days !== undefined &&
+              payroll.working_days !== payroll.standard_working_days && (
+                <View style={[styles.breakdownRow, styles.infoRow]}>
+                  <Text style={styles.breakdownLabel}>
+                    Điều chỉnh theo ngày công ({payroll.working_days} ngày)
+                  </Text>
+                  <Text
+                    style={[
+                      styles.breakdownValue,
+                      payroll.working_days > payroll.standard_working_days
+                        ? styles.positiveValue
+                        : styles.penaltyValue,
+                    ]}
+                  >
+                    {payroll.working_days > payroll.standard_working_days
+                      ? '+'
+                      : ''}
+                    {formatCurrency(
+                      (payroll.base_salary / payroll.standard_working_days) *
+                        (payroll.working_days - payroll.standard_working_days),
+                    )}
+                  </Text>
+                </View>
+              )}
 
             {/* Doanh số */}
             {payroll.sales_amount > 0 && (
@@ -277,10 +318,35 @@ export const PayrollDetails: React.FC<PayrollDetailsProps> = ({
               </View>
             )}
 
-            {/* Phạt */}
+            {/* Phạt muộn */}
+            {payroll.late_count > 0 && (
+              <View style={[styles.breakdownRow, styles.infoRow]}>
+                <Text style={styles.breakdownLabel}>
+                  Phạt muộn ({payroll.late_count} ca × 50,000đ)
+                </Text>
+                <Text style={styles.penaltyValue}>
+                  -{formatCurrency(payroll.late_count * 50000)}
+                </Text>
+              </View>
+            )}
+
+            {/* Phạt khác (nếu có phạt ngoài phạt muộn) */}
+            {payroll.penalty_amount > payroll.late_count * 50000 && (
+              <View style={[styles.breakdownRow, styles.penaltyRowBg]}>
+                <Text style={styles.breakdownLabel}>Phạt khác</Text>
+                <Text style={styles.penaltyValue}>
+                  -
+                  {formatCurrency(
+                    payroll.penalty_amount - payroll.late_count * 50000,
+                  )}
+                </Text>
+              </View>
+            )}
+
+            {/* Tổng phạt (chỉ hiển thị nếu có phạt) */}
             {payroll.penalty_amount > 0 && (
               <View style={[styles.breakdownRow, styles.penaltyRowBg]}>
-                <Text style={styles.breakdownLabel}>Phạt</Text>
+                <Text style={styles.breakdownLabel}>Tổng phạt</Text>
                 <Text style={styles.penaltyValue}>
                   -{formatCurrency(payroll.penalty_amount)}
                 </Text>
@@ -683,6 +749,11 @@ const styles = StyleSheet.create({
   penaltyValue: {
     color: '#f44336',
     fontWeight: '600',
+  },
+  infoRow: {
+    backgroundColor: '#f8f9fa',
+    borderRadius: 6,
+    borderBottomWidth: 0,
   },
   totalBreakdownRow: {
     flexDirection: 'row',

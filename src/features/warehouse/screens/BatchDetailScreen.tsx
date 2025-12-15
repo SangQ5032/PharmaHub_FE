@@ -208,6 +208,7 @@ export default function BatchDetailScreen() {
             <Text style={styles.value}>
               ₫
               {(
+                batch.retail_price ||
                 batch.retail_price_for_base_unit ||
                 batch.medicine?.retail_price ||
                 0
@@ -220,7 +221,8 @@ export default function BatchDetailScreen() {
             <Text style={styles.profitValue}>
               ₫
               {(
-                (batch.retail_price_for_base_unit ||
+                (batch.retail_price ||
+                  batch.retail_price_for_base_unit ||
                   batch.medicine?.retail_price ||
                   0) - (batch.import_price || 0)
               ).toLocaleString('vi-VN')}
