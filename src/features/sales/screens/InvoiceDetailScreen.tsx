@@ -106,12 +106,6 @@ const InvoiceDetailScreen: React.FC = () => {
         {/* Branch Info */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Thông tin cửa hàng</Text>
-          {invoice.branch_id?._id && (
-            <View style={styles.infoRow}>
-              <Text style={styles.label}>ID Cửa hàng:</Text>
-              <Text style={styles.value}>{invoice.branch_id._id}</Text>
-            </View>
-          )}
           <View style={styles.infoRow}>
             <Text style={styles.label}>Tên cửa hàng:</Text>
             <Text style={styles.value}>{invoice.branch_id?.name}</Text>
@@ -129,12 +123,6 @@ const InvoiceDetailScreen: React.FC = () => {
         {/* Customer Info */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Thông tin khách hàng</Text>
-          {invoice.customer_id?._id && (
-            <View style={styles.infoRow}>
-              <Text style={styles.label}>ID Khách hàng:</Text>
-              <Text style={styles.value}>{invoice.customer_id._id}</Text>
-            </View>
-          )}
           <View style={styles.infoRow}>
             <Text style={styles.label}>Tên:</Text>
             <Text style={styles.value}>{invoice.customer_name}</Text>
@@ -160,12 +148,6 @@ const InvoiceDetailScreen: React.FC = () => {
         {/* Employee Info */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Nhân viên bán hàng</Text>
-          {invoice.employee_id?._id && (
-            <View style={styles.infoRow}>
-              <Text style={styles.label}>ID Nhân viên:</Text>
-              <Text style={styles.value}>{invoice.employee_id._id}</Text>
-            </View>
-          )}
           <View style={styles.infoRow}>
             <Text style={styles.label}>Tên:</Text>
             <Text style={styles.value}>{invoice.employee_id?.name}</Text>
@@ -184,23 +166,12 @@ const InvoiceDetailScreen: React.FC = () => {
               <View style={styles.itemHeader}>
                 <View style={styles.itemHeaderLeft}>
                   <Text style={styles.itemName}>{item.name}</Text>
-                  {item.medicine_id?._id && (
-                    <Text style={styles.itemId}>
-                      ID: {item.medicine_id._id}
-                    </Text>
-                  )}
                 </View>
               </View>
               <View style={styles.itemRow}>
                 <Text style={styles.itemLabel}>Lô hàng:</Text>
                 <Text style={styles.itemValue}>{item.batch_number}</Text>
               </View>
-              {item.batch_id?._id && (
-                <View style={styles.itemRow}>
-                  <Text style={styles.itemLabel}>ID Lô hàng:</Text>
-                  <Text style={styles.itemValue}>{item.batch_id._id}</Text>
-                </View>
-              )}
               <View style={styles.itemRow}>
                 <Text style={styles.itemLabel}>Ngày hết hạn:</Text>
                 <Text style={styles.itemValue}>
