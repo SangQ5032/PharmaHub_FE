@@ -47,19 +47,25 @@ export const FilterDateRange: React.FC<FilterDateRangeProps> = ({
     date?: Date,
     type?: 'start' | 'end',
   ) => {
+    // luôn tính next state để tránh gọi onFilterChange với giá trị cũ (stale state)
+    let nextStart = startDate;
+    let nextEnd = endDate;
+
     if (type === 'start') {
       setShowStartPicker(false);
       if (date) {
+        nextStart = date;
         setStartDate(date);
       }
     } else {
       setShowEndPicker(false);
       if (date) {
+        nextEnd = date;
         setEndDate(date);
       }
     }
 
-    onFilterChange?.(convertToString(startDate), convertToString(endDate));
+    onFilterChange?.(convertToString(nextStart), convertToString(nextEnd));
   };
 
   const handlePreset = (days: number) => {

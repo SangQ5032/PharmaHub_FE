@@ -6,12 +6,11 @@ import {
   TextStyle,
   Text,
   ActivityIndicator,
-  Alert,
 } from 'react-native';
 import { StatsGrid, StatsSection } from '../components/StatCard';
 import { FilterDateRange } from '../components/FilterDateRange';
-import { StatTable, TableColumn } from '../components/StatTable';
 import { useMedicinesStats } from '../hooks/useBranchStatistics';
+import { StatInsightList } from '../components/StatInsightList';
 
 /**
  * Màn hình thống kê bán hàng theo thuốc
@@ -34,39 +33,6 @@ export const MedicinesStatsScreen: React.FC = () => {
     setStartDate(start);
     setEndDate(end);
   };
-
-  const columns: TableColumn[] = [
-    {
-      key: 'medicineName',
-      label: 'Tên Thuốc',
-      width: 1.5,
-    },
-    {
-      key: 'totalQuantity',
-      label: 'Số Lượng Bán',
-      format: 'number',
-      align: 'center',
-    },
-    {
-      key: 'totalRevenue',
-      label: 'Doanh Thu',
-      format: 'currency',
-      align: 'right',
-      width: 1.2,
-    },
-    {
-      key: 'timesOrdered',
-      label: 'Số Lần',
-      format: 'number',
-      align: 'center',
-    },
-    {
-      key: 'averagePrice',
-      label: 'Giá TB',
-      format: 'currency',
-      align: 'right',
-    },
-  ];
 
   return (
     <ScrollView style={styles.container}>
@@ -105,14 +71,78 @@ export const MedicinesStatsScreen: React.FC = () => {
             />
           </StatsSection>
 
-          <StatsSection
-            title={`Chi Tiết Thuốc (${data.medicineDetails.length})`}
-          >
-            <StatTable
-              data={data.medicineDetails}
-              columns={columns}
+          <StatsSection title="Top thuốc theo doanh thu">
+            <StatInsightList
+              items={[...(data.medicineDetails || [])]
+                .sort(
+                  (a: any, b: any) =>
+                    Number(b?.totalRevenue || 0) - Number(a?.totalRevenue || 0),
+                )
+                .map((m: any, idx: number) => ({
+                  id: String(m?.medicineId || m?._id || m?.medicineName || idx),
+                  title: m?.medicineName || 'Không rõ',
+                  rank: idx + 1,
+                  rightText: String(m?.totalRevenue ?? 0),
+                  rightTextFormat: 'currency',
+                  rows: [
+                    {
+                      label: 'Số lượng bán',
+                      value: m?.totalQuantity,
+                      format: 'number',
+                    },
+                    {
+                      label: 'Số lần',
+                      value: m?.timesOrdered,
+                      format: 'number',
+                    },
+                    {
+                      label: 'Giá TB',
+                      value: m?.averagePrice,
+                      format: 'currency',
+                    },
+                  ],
+                }))}
+              initialVisible={6}
               emptyMessage="Không có dữ liệu thuốc"
-              pageSize={10}
+            />
+          </StatsSection>
+
+          <StatsSection title="Top thuốc theo số lượng">
+            <StatInsightList
+              items={[...(data.medicineDetails || [])]
+                .sort(
+                  (a: any, b: any) =>
+                    Number(b?.totalQuantity || 0) -
+                    Number(a?.totalQuantity || 0),
+                )
+                .map((m: any, idx: number) => ({
+                  id: `qty-${String(
+                    m?.medicineId || m?._id || m?.medicineName || idx,
+                  )}`,
+                  title: m?.medicineName || 'Không rõ',
+                  rank: idx + 1,
+                  rightText: String(m?.totalQuantity ?? 0),
+                  rightTextFormat: 'number',
+                  rows: [
+                    {
+                      label: 'Doanh thu',
+                      value: m?.totalRevenue,
+                      format: 'currency',
+                    },
+                    {
+                      label: 'Số lần',
+                      value: m?.timesOrdered,
+                      format: 'number',
+                    },
+                    {
+                      label: 'Giá TB',
+                      value: m?.averagePrice,
+                      format: 'currency',
+                    },
+                  ],
+                }))}
+              initialVisible={6}
+              emptyMessage="Không có dữ liệu thuốc"
             />
           </StatsSection>
         </>

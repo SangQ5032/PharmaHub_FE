@@ -6,16 +6,16 @@ import {
   TextStyle,
   Text,
   ActivityIndicator,
-  Alert,
   TouchableOpacity,
 } from 'react-native';
 import { useRoute } from '@react-navigation/native';
 import { StatsSection } from '../components/StatCard';
 import { FilterDateRange } from '../components/FilterDateRange';
-import { StatTable, TableColumn } from '../components/StatTable';
 import { useRevenueByPeriodStats } from '../hooks/useBranchStatistics';
 import { useSystemAdminRevenueByPeriod } from '../hooks/useSystemAdminStats';
 import { ROUTES } from '@shared/constants/routes';
+import { StatInsightList } from '../components/StatInsightList';
+import { formatCurrency, formatNumber } from '@shared/utils/formatters';
 
 type GroupByType = 'day' | 'month' | 'year';
 
@@ -98,45 +98,18 @@ export const RevenueByPeriodStatsScreen: React.FC = () => {
         return 'Kỳ/Năm';
     }
   };
-
-  const columns: TableColumn[] = [
-    {
-      key: '_id',
-      label: getGroupByLabel(),
-      width: 1.2,
-    },
-    {
-      key: 'totalRevenue',
-      label: 'Doanh Thu',
-      format: 'currency',
-      align: 'right',
-      width: 1.3,
-    },
-    {
-      key: 'totalOrders',
-      label: 'Số Đơn',
-      format: 'number',
-      align: 'center',
-    },
-    {
-      key: 'totalQuantity',
-      label: 'Số Lượng',
-      format: 'number',
-      align: 'center',
-    },
-    {
-      key: 'totalDiscount',
-      label: 'Giảm Giá',
-      format: 'currency',
-      align: 'right',
-    },
-    {
-      key: 'totalTax',
-      label: 'Thuế',
-      format: 'currency',
-      align: 'right',
-    },
-  ];
+  const totalRevenue = (data || []).reduce(
+    (sum: number, r: any) => sum + Number(r?.totalRevenue || 0),
+    0,
+  );
+  const totalOrders = (data || []).reduce(
+    (sum: number, r: any) => sum + Number(r?.totalOrders || 0),
+    0,
+  );
+  const maxRevenuePeriod = [...(data || [])].sort(
+    (a: any, b: any) =>
+      Number(b?.totalRevenue || 0) - Number(a?.totalRevenue || 0),
+  )[0];
 
   return (
     <ScrollView style={styles.container}>
@@ -174,18 +147,94 @@ export const RevenueByPeriodStatsScreen: React.FC = () => {
           <Text style={styles.loadingText}>Đang tải dữ liệu...</Text>
         </View>
       ) : data && data.length > 0 ? (
-        <StatsSection
-          title={`Doanh Thu Theo ${
-            groupBy === 'day' ? 'Ngày' : groupBy === 'month' ? 'Tháng' : 'Năm'
-          }`}
-        >
-          <StatTable
-            data={data}
-            columns={columns}
-            emptyMessage="Không có dữ liệu"
-            pageSize={15}
-          />
-        </StatsSection>
+        <>
+          <StatsSection title="Tổng quan">
+            <View style={styles.summaryCard}>
+              <View style={styles.summaryRow}>
+                <Text style={styles.summaryLabel}>Tổng doanh thu</Text>
+                <Text style={styles.summaryValueGreen}>
+                  {formatCurrency(totalRevenue)}
+                </Text>
+              </View>
+              <View style={styles.summaryRow}>
+                <Text style={styles.summaryLabel}>Tổng số đơn</Text>
+                <Text style={styles.summaryValue}>
+                  {formatNumber(totalOrders)}
+                </Text>
+              </View>
+              <View style={styles.summaryRow}>
+                <Text style={styles.summaryLabel}>
+                  Số kỳ (
+                  {groupBy === 'day'
+                    ? 'ngày'
+                    : groupBy === 'month'
+                    ? 'tháng'
+                    : 'năm'}
+                  )
+                </Text>
+                <Text style={styles.summaryValue}>
+                  {formatNumber(data.length)}
+                </Text>
+              </View>
+              {maxRevenuePeriod ? (
+                <View style={styles.summaryRow}>
+                  <Text style={styles.summaryLabel}>Kỳ cao nhất</Text>
+                  <Text style={styles.summaryValue}>
+                    {String(maxRevenuePeriod?._id)} ·{' '}
+                    {formatCurrency(
+                      Number(maxRevenuePeriod?.totalRevenue || 0),
+                    )}
+                  </Text>
+                </View>
+              ) : null}
+            </View>
+          </StatsSection>
+
+          <StatsSection
+            title={`Danh sách theo ${
+              groupBy === 'day' ? 'ngày' : groupBy === 'month' ? 'tháng' : 'năm'
+            }`}
+          >
+            <StatInsightList
+              items={[...data]
+                .sort((a: any, b: any) => {
+                  // nếu _id có thể parse được date thì sort desc; fallback: sort theo chuỗi
+                  const ad = new Date(a?._id).getTime();
+                  const bd = new Date(b?._id).getTime();
+                  if (!isNaN(ad) && !isNaN(bd)) return bd - ad;
+                  return String(b?._id || '').localeCompare(
+                    String(a?._id || ''),
+                  );
+                })
+                .map((r: any, idx: number) => ({
+                  id: String(r?._id || idx),
+                  title: `${getGroupByLabel()}: ${String(r?._id ?? 'N/A')}`,
+                  rightText: String(r?.totalRevenue ?? 0),
+                  rightTextFormat: 'currency',
+                  rows: [
+                    {
+                      label: 'Số đơn',
+                      value: r?.totalOrders,
+                      format: 'number',
+                    },
+                    {
+                      label: 'Số lượng',
+                      value: r?.totalQuantity,
+                      format: 'number',
+                    },
+                    {
+                      label: 'Giảm giá',
+                      value: r?.totalDiscount,
+                      format: 'currency',
+                    },
+                    { label: 'Thuế', value: r?.totalTax, format: 'currency' },
+                  ],
+                }))}
+              initialVisible={8}
+              emptyMessage="Không có dữ liệu"
+            />
+          </StatsSection>
+        </>
       ) : (
         <StatsSection title="Doanh Thu Theo Thời Gian">
           <View style={styles.emptyContainer}>
@@ -267,5 +316,35 @@ const styles = StyleSheet.create({
   groupByButtonTextActive: {
     color: '#fff',
     fontWeight: '600',
+  } as TextStyle,
+  summaryCard: {
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    padding: 14,
+    borderWidth: 1,
+    borderColor: '#eef2f7',
+  },
+  summaryRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 6,
+    gap: 12,
+  },
+  summaryLabel: {
+    fontSize: 12,
+    color: '#7f8c8d',
+    fontWeight: '600',
+    flex: 1,
+  } as TextStyle,
+  summaryValue: {
+    fontSize: 12,
+    color: '#2c3e50',
+    fontWeight: '800',
+  } as TextStyle,
+  summaryValueGreen: {
+    fontSize: 12,
+    color: '#27ae60',
+    fontWeight: '800',
   } as TextStyle,
 });

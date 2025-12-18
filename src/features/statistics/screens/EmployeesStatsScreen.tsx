@@ -6,12 +6,12 @@ import {
   TextStyle,
   Text,
   ActivityIndicator,
-  Alert,
 } from 'react-native';
 import { StatsSection } from '../components/StatCard';
 import { FilterDateRange } from '../components/FilterDateRange';
-import { StatTable, TableColumn } from '../components/StatTable';
 import { useEmployeesStats } from '../hooks/useBranchStatistics';
+import { StatInsightList } from '../components/StatInsightList';
+import { formatCurrency } from '@shared/utils/formatters';
 
 /**
  * Màn hình thống kê doanh thu từng nhân viên
@@ -35,38 +35,10 @@ export const EmployeesStatsScreen: React.FC = () => {
     setEndDate(end);
   };
 
-  const columns: TableColumn[] = [
-    {
-      key: 'employeeName',
-      label: 'Nhân Viên',
-      width: 1.5,
-    },
-    {
-      key: 'totalRevenue',
-      label: 'Doanh Thu',
-      format: 'currency',
-      align: 'right',
-      width: 1.2,
-    },
-    {
-      key: 'totalOrders',
-      label: 'Số Đơn',
-      format: 'number',
-      align: 'center',
-    },
-    {
-      key: 'totalQuantity',
-      label: 'Số Lượng',
-      format: 'number',
-      align: 'center',
-    },
-    {
-      key: 'averageOrderValue',
-      label: 'TB/Đơn',
-      format: 'currency',
-      align: 'right',
-    },
-  ];
+  const totalRevenue = (data || []).reduce(
+    (sum: number, e: any) => sum + Number(e?.totalRevenue || 0),
+    0,
+  );
 
   return (
     <ScrollView style={styles.container}>
@@ -78,14 +50,57 @@ export const EmployeesStatsScreen: React.FC = () => {
           <Text style={styles.loadingText}>Đang tải dữ liệu...</Text>
         </View>
       ) : data && data.length > 0 ? (
-        <StatsSection title={`Doanh Thu Nhân Viên`}>
-          <StatTable
-            data={data}
-            columns={columns}
-            emptyMessage="Không có dữ liệu nhân viên"
-            pageSize={10}
-          />
-        </StatsSection>
+        <>
+          <StatsSection title="Tổng quan">
+            <View style={styles.summaryCard}>
+              <Text style={styles.summaryLabel}>
+                Tổng doanh thu (theo nhân viên)
+              </Text>
+              <Text style={styles.summaryValue}>
+                {formatCurrency(totalRevenue)}
+              </Text>
+              <Text style={styles.summaryHint}>
+                Hiển thị top theo doanh thu, chạm “Xem thêm” để xem toàn bộ.
+              </Text>
+            </View>
+          </StatsSection>
+
+          <StatsSection title={`Top nhân viên (${data.length})`}>
+            <StatInsightList
+              items={[...data]
+                .sort(
+                  (a: any, b: any) =>
+                    Number(b?.totalRevenue || 0) - Number(a?.totalRevenue || 0),
+                )
+                .map((e: any, idx: number) => ({
+                  id: String(e?.employeeId || e?._id || e?.employeeName || idx),
+                  title: e?.employeeName || 'Không rõ',
+                  rank: idx + 1,
+                  rightText: String(e?.totalRevenue ?? 0),
+                  rightTextFormat: 'currency',
+                  rows: [
+                    {
+                      label: 'Số đơn',
+                      value: e?.totalOrders,
+                      format: 'number',
+                    },
+                    {
+                      label: 'Số lượng',
+                      value: e?.totalQuantity,
+                      format: 'number',
+                    },
+                    {
+                      label: 'TB/đơn',
+                      value: e?.averageOrderValue,
+                      format: 'currency',
+                    },
+                  ],
+                }))}
+              initialVisible={6}
+              emptyMessage="Không có dữ liệu nhân viên"
+            />
+          </StatsSection>
+        </>
       ) : (
         <StatsSection title="Doanh Thu Nhân Viên">
           <View style={styles.emptyContainer}>
@@ -128,6 +143,29 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#95a5a6',
     fontStyle: 'italic',
+  } as TextStyle,
+  summaryCard: {
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    padding: 14,
+    borderWidth: 1,
+    borderColor: '#eef2f7',
+  },
+  summaryLabel: {
+    fontSize: 12,
+    color: '#7f8c8d',
+    fontWeight: '600',
+  } as TextStyle,
+  summaryValue: {
+    marginTop: 6,
+    fontSize: 22,
+    fontWeight: '800',
+    color: '#27ae60',
+  } as TextStyle,
+  summaryHint: {
+    marginTop: 6,
+    fontSize: 12,
+    color: '#95a5a6',
   } as TextStyle,
   errorContainer: {
     backgroundColor: '#fee',

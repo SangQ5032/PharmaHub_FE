@@ -87,14 +87,6 @@ export const BranchStatisticsHubScreen: React.FC<
       color: '#1abc9c',
       route: ROUTES.BRANCH_CUSTOMERS_STATS,
     },
-    {
-      id: 'period',
-      title: 'Xu Hướng Doanh Thu',
-      description: 'Doanh thu theo thời gian',
-      icon: 'chart-box',
-      color: '#34495e',
-      route: ROUTES.BRANCH_REVENUE_BY_PERIOD_STATS,
-    },
   ];
 
   const isLoading = revenueLoading || batchLoading;
