@@ -28,17 +28,22 @@ const MedicinesHubScreen: React.FC = () => {
 
       <View style={styles.content}>
         <CardButton
-          label="Quản lý thuốc"
+          label="Danh sách thuốc"
           onPress={() => navigation.navigate(ROUTES.MEDICINES)}
         />
         <CardButton
-          label="Quản lý danh mục"
+          label="Quản lý thuốc"
           color="#388E3C"
+          onPress={() => navigation.navigate(ROUTES.MEDICINE_MANAGEMENT)}
+        />
+        <CardButton
+          label="Quản lý danh mục"
+          color="#1B5E20"
           onPress={() => navigation.navigate(ROUTES.CATEGORIES)}
         />
         <CardButton
           label="Quản lý nhà cung cấp"
-          color="#1B5E20"
+          color="#FF9800"
           onPress={() => navigation.navigate(ROUTES.SUPPLIERS)}
         />
       </View>

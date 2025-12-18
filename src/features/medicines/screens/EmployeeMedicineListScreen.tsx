@@ -119,20 +119,11 @@ const EmployeeMedicineListScreen: React.FC = () => {
           </TouchableOpacity>
         </View>
 
-        {/* Header row */}
-        <View style={styles.headerRow}>
-          <View style={[styles.headerCell, styles.headerCellName]}>
-            <Text style={[styles.headerText, styles.left]}>TÊN THUỐC</Text>
-          </View>
-          <View style={[styles.headerCell, styles.headerCellSmall]}>
-            <Text style={[styles.headerText, styles.center]}>NHÓM</Text>
-          </View>
-          <View style={[styles.headerCell, styles.headerCellSmall]}>
-            <Text style={[styles.headerText, styles.center]}>GIÁ</Text>
-          </View>
-          <View style={[styles.headerCell, styles.headerCellTiny]}>
-            <Text style={[styles.headerText, styles.center]}>TRẠNG THÁI</Text>
-          </View>
+        {/* Summary info */}
+        <View style={styles.summaryContainer}>
+          <Text style={styles.summaryText}>
+            Tổng: {filteredMedicines.length} thuốc
+          </Text>
         </View>
 
         {error ? (
@@ -152,11 +143,18 @@ const EmployeeMedicineListScreen: React.FC = () => {
             <RefreshControl refreshing={loading} onRefresh={refresh} />
           }
           contentContainerStyle={
-            filteredMedicines.length === 0 ? styles.emptyContainer : undefined
+            filteredMedicines.length === 0
+              ? styles.emptyContainer
+              : styles.listContent
           }
           ListEmptyComponent={
             !loading ? (
-              <Text style={styles.emptyText}>Không có dữ liệu</Text>
+              <View style={styles.emptyContainer}>
+                <Text style={styles.emptyText}>Không có thuốc nào</Text>
+                <Text style={styles.emptySubText}>
+                  Thử tìm kiếm với từ khóa khác
+                </Text>
+              </View>
             ) : null
           }
         />
@@ -246,39 +244,52 @@ const EmployeeMedicineListScreen: React.FC = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: '#F5F7FA',
   },
   titleContainer: {
-    paddingVertical: 16,
+    paddingVertical: 18,
     paddingHorizontal: 16,
     backgroundColor: '#fff',
     borderBottomWidth: 1,
-    borderBottomColor: '#e0e0e0',
+    borderBottomColor: '#E2E8F0',
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.05,
+    shadowRadius: 3,
+    elevation: 2,
   },
   titleText: {
-    fontSize: 20,
+    fontSize: 22,
     fontWeight: '700',
-    color: '#333',
+    color: '#1A202C',
+    letterSpacing: 0.3,
   },
   searchContainer: {
-    paddingHorizontal: 12,
-    paddingVertical: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
     backgroundColor: '#fff',
+    borderBottomWidth: 1,
+    borderBottomColor: '#E2E8F0',
   },
   searchInput: {
-    backgroundColor: '#f0f0f0',
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    fontSize: 14,
-    color: '#333',
+    backgroundColor: '#F7FAFC',
+    borderRadius: 10,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    fontSize: 15,
+    color: '#1A202C',
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
   },
   filtersRow: {
     backgroundColor: '#fff',
-    paddingHorizontal: 12,
-    paddingVertical: 8,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: '#e0e0e0',
+    borderBottomColor: '#E2E8F0',
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
@@ -286,113 +297,119 @@ const styles = StyleSheet.create({
   },
   chipsContainer: {
     flexDirection: 'row',
-    paddingHorizontal: 8,
+    paddingHorizontal: 4,
     gap: 8,
   },
   chipsPlaceholder: {
-    color: '#999',
+    color: '#94A3B8',
     fontSize: 13,
+    fontStyle: 'italic',
   },
   chip: {
-    backgroundColor: '#E3F2FD',
-    borderRadius: 16,
-    paddingHorizontal: 12,
+    backgroundColor: '#E0F2FE',
+    borderRadius: 18,
+    paddingHorizontal: 14,
     paddingVertical: 6,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
+    borderWidth: 1,
+    borderColor: '#BAE6FD',
   },
   chipText: {
     fontSize: 12,
-    color: '#1976D2',
-    fontWeight: '500',
+    color: '#0369A1',
+    fontWeight: '600',
   },
   chipRemove: {
     width: 18,
     height: 18,
     justifyContent: 'center',
     alignItems: 'center',
+    backgroundColor: '#BAE6FD',
+    borderRadius: 9,
   },
   chipRemoveText: {
-    fontSize: 16,
-    color: '#1976D2',
+    fontSize: 14,
+    color: '#0369A1',
     fontWeight: 'bold',
   },
   filterButton: {
-    backgroundColor: '#2EB872',
-    paddingHorizontal: 12,
+    backgroundColor: '#059669',
+    paddingHorizontal: 16,
     paddingVertical: 8,
-    borderRadius: 6,
+    borderRadius: 8,
+    shadowColor: '#059669',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.2,
+    shadowRadius: 3,
+    elevation: 2,
   },
   filterButtonText: {
     color: '#fff',
     fontSize: 13,
     fontWeight: '600',
   },
-  headerRow: {
-    flexDirection: 'row',
-    backgroundColor: '#E8E8E8',
-    paddingVertical: 10,
-    paddingHorizontal: 8,
+  summaryContainer: {
+    backgroundColor: '#fff',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: '#ddd',
+    borderBottomColor: '#E2E8F0',
   },
-  headerCell: {
-    justifyContent: 'center',
+  summaryText: {
+    fontSize: 14,
+    color: '#64748B',
+    fontWeight: '600',
   },
-  headerCellName: {
-    flex: 35,
-  },
-  headerCellSmall: {
-    flex: 25,
-  },
-  headerCellTiny: {
-    flex: 15,
-  },
-  headerText: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: '#333',
-  },
-  left: {
-    textAlign: 'left',
-  },
-  center: {
-    textAlign: 'center',
+  listContent: {
+    paddingTop: 8,
+    paddingBottom: 16,
   },
   errorContainer: {
-    margin: 12,
-    padding: 12,
-    backgroundColor: '#FFEBEE',
-    borderRadius: 8,
+    margin: 16,
+    padding: 16,
+    backgroundColor: '#FEF2F2',
+    borderRadius: 12,
     borderWidth: 1,
-    borderColor: '#FFCDD2',
+    borderColor: '#FECACA',
   },
   error: {
-    color: '#C62828',
+    color: '#DC2626',
     fontWeight: '600',
-    marginBottom: 8,
+    marginBottom: 12,
+    fontSize: 14,
   },
   retry: {
-    backgroundColor: '#C62828',
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 6,
+    backgroundColor: '#DC2626',
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 8,
     alignSelf: 'flex-start',
   },
   retryText: {
     color: '#fff',
     fontWeight: '600',
-    fontSize: 13,
+    fontSize: 14,
   },
   emptyContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+    paddingVertical: 60,
   },
   emptyText: {
+    fontSize: 16,
+    color: '#64748B',
+    fontWeight: '600',
+    marginBottom: 8,
+  },
+  emptySubText: {
     fontSize: 14,
-    color: '#999',
+    color: '#94A3B8',
   },
   modalBackdrop: {
     flex: 1,

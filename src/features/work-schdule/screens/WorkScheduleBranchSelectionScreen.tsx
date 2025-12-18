@@ -26,10 +26,23 @@ const WorkScheduleBranchSelectionScreen: React.FC = () => {
   const { data: branchesResponse, isLoading, refetch } = useBranches();
   const [refreshing, setRefreshing] = useState(false);
 
-  // Get the target route from route params
+  // Get the current route name
+  const currentRouteName = route.name;
+
+  // Determine target route based on current route
+  // If it's work history branch selection, go to branch work history
+  // Otherwise, go to branch work schedule
   const targetRoute =
     (route.params as any)?.targetRoute ||
-    ROUTES.SYSTEM_ADMIN_BRANCH_WORK_SCHEDULE;
+    (currentRouteName === ROUTES.SYSTEM_ADMIN_WORK_HISTORY_BRANCH_SELECTION
+      ? ROUTES.SYSTEM_ADMIN_BRANCH_WORK_HISTORY
+      : ROUTES.SYSTEM_ADMIN_BRANCH_WORK_SCHEDULE);
+
+  // Determine subtitle based on target route
+  const subtitle =
+    targetRoute === ROUTES.SYSTEM_ADMIN_BRANCH_WORK_HISTORY
+      ? 'Chọn chi nhánh để xem lịch sử làm việc'
+      : 'Chọn chi nhánh để xem thông tin lịch làm việc';
 
   const branches: Branch[] = Array.isArray(branchesResponse)
     ? branchesResponse
@@ -74,9 +87,7 @@ const WorkScheduleBranchSelectionScreen: React.FC = () => {
     <View style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.headerTitle}>Chọn Chi Nhánh</Text>
-        <Text style={styles.headerSubtitle}>
-          Chọn chi nhánh để xem thông tin lịch làm việc
-        </Text>
+        <Text style={styles.headerSubtitle}>{subtitle}</Text>
       </View>
 
       {isLoading && !branches.length ? (

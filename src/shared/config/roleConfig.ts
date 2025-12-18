@@ -25,13 +25,6 @@ export interface RoleConfig {
 export const ROLE_CONFIG: Record<UserRole, RoleConfig> = {
   'system-admin': {
     options: [
-      {
-        id: 'admin-1',
-        name: 'Thống Kê Hệ Thống',
-        icon: 'chart-box-multiple',
-        route: ROUTES.SYSTEM_ADMIN_STATISTICS_MENU,
-        description: 'Xem thống kê toàn hệ thống',
-      },
       // {
       //   id: 'admin-2',
       //   name: 'Quản lý nhân viên',
@@ -39,20 +32,6 @@ export const ROLE_CONFIG: Record<UserRole, RoleConfig> = {
       //   route: ROUTES.EMPLOYEE_MANAGEMENT,
       //   description: 'Quản lý toàn bộ nhân viên',
       // },
-      {
-        id: 'admin-3',
-        name: 'Báo cáo doanh thu',
-        icon: 'chart-line',
-        route: ROUTES.BRANCH_REVENUE_REPORT,
-        description: 'Xem báo cáo doanh thu chi tiết',
-      },
-      {
-        id: 'admin-4',
-        name: 'Quản lý thuốc',
-        icon: 'pill',
-        route: ROUTES.MEDICINE_MANAGEMENT,
-        description: 'Quản lý kho thuốc',
-      },
       {
         id: 'admin-5',
         name: 'Quản lý chi nhánh',
@@ -71,8 +50,8 @@ export const ROLE_CONFIG: Record<UserRole, RoleConfig> = {
         id: 'admin-7',
         name: 'Lịch sử làm việc',
         icon: 'history',
-        route: ROUTES.ADMIN_WORK_HISTORY,
-        description: 'Xem lịch sử làm việc toàn hệ thống',
+        route: ROUTES.SYSTEM_ADMIN_WORK_HISTORY_BRANCH_SELECTION,
+        description: 'Xem lịch sử làm việc theo chi nhánh',
       },
       {
         id: 'admin-8',
@@ -98,72 +77,23 @@ export const ROLE_CONFIG: Record<UserRole, RoleConfig> = {
       {
         id: 'admin-tab-2',
         name: 'MedicinesHub',
-        label: 'Medicines Hub',
+        label: 'Quản Lý Thuốc',
       },
-      // {
-      //   id: 'admin-tab-3',
-      //   name: 'ReportsHub',
-      //   label: 'Reports',
-      // },
+      {
+        id: 'admin-tab-3',
+        name: 'StatisticsHub',
+        label: 'Thống Kê',
+      },
     ],
   },
   'branch-manager': {
     options: [
       {
         id: 'manager-1',
-        name: 'Lịch Làm Việc',
-        icon: 'calendar',
-        route: ROUTES.WORK_SCHEDULE_MENU,
-        description: 'Quản lý lịch làm việc',
-      },
-      {
-        id: 'manager-2',
-        name: 'Lịch sử làm việc',
-        icon: 'history',
-        route: ROUTES.BRANCH_WORK_HISTORY,
-        description: 'Xem lịch sử làm việc',
-      },
-      {
-        id: 'manager-3',
-        name: 'Báo cáo doanh thu',
-        icon: 'chart-line',
-        route: ROUTES.BRANCH_REVENUE_REPORT,
-        description: 'Báo cáo doanh thu chi nhánh',
-      },
-      {
-        id: 'manager-4',
-        name: 'Kho Thuốc',
-        icon: 'warehouse',
-        route: ROUTES.WAREHOUSE_HUB,
-        description: 'Quản lý tồn kho thuốc',
-      },
-      {
-        id: 'manager-5',
-        name: 'Nhập Hàng',
-        icon: 'truck-delivery',
-        route: ROUTES.IMPORT_LIST,
-        description: 'Quản lý đơn nhập hàng',
-      },
-      {
-        id: 'manager-7',
-        name: 'Lịch sử hoá đơn',
-        icon: 'file-document-outline',
-        route: ROUTES.BRANCH_INVOICE_HISTORY,
-        description: 'Xem lịch sử bán hàng',
-      },
-      {
-        id: 'manager-8',
-        name: 'Quản Lý Lương',
-        icon: 'cash-multiple',
-        route: ROUTES.PAYROLL_MENU,
-        description: 'Quản lý bảng lương nhân viên',
-      },
-      {
-        id: 'manager-9',
-        name: 'Thống Kê Chi Nhánh',
-        icon: 'chart-box-multiple',
-        route: ROUTES.BRANCH_STATISTICS_HUB,
-        description: 'Xem thống kê chi tiết chi nhánh',
+        name: 'Danh Sách Thuốc',
+        icon: 'pill',
+        route: ROUTES.EMPLOYEE_MEDICINES,
+        description: 'Xem danh sách thuốc có trong hệ thống',
       },
       {
         id: 'manager-10',
@@ -172,13 +102,6 @@ export const ROLE_CONFIG: Record<UserRole, RoleConfig> = {
         route: ROUTES.CUSTOMER_LIST,
         description: 'Quản lý danh sách khách hàng',
       },
-      {
-        id: 'manager-11',
-        name: 'Thông tin nhân viên',
-        icon: 'account-group',
-        route: ROUTES.BRANCH_EMPLOYEE_INFO_MENU,
-        description: 'Xem thông tin nhân viên',
-      },
     ],
     tabs: [
       {
@@ -186,11 +109,21 @@ export const ROLE_CONFIG: Record<UserRole, RoleConfig> = {
         name: 'Home',
         label: 'Trang chủ',
       },
-      // {
-      //   id: 'manager-tab-2',
-      //   name: 'MedicinesHub',
-      //   label: 'Medicines',
-      // },
+      {
+        id: 'manager-tab-2',
+        name: 'BranchWarehouseHub',
+        label: 'Kho & Nhập Hàng',
+      },
+      {
+        id: 'manager-tab-3',
+        name: 'BranchReportsHub',
+        label: 'Báo Cáo & Thống Kê',
+      },
+      {
+        id: 'manager-tab-4',
+        name: 'BranchWorkScheduleHub',
+        label: 'Lịch & Nhân Sự',
+      },
     ],
   },
   employee: {

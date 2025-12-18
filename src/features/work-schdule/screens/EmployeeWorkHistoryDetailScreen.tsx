@@ -148,7 +148,8 @@ export const EmployeeWorkHistoryDetailScreen: React.FC = () => {
   const getStatusLabel = (status: string): string => {
     switch (status) {
       case 'checked_out':
-        return 'Đã checkout';
+      case 'present': // API trả về "present" thay vì "checked_out"
+        return 'Có mặt';
       case 'checked_in':
         return 'Đang làm';
       case 'late':
@@ -165,6 +166,7 @@ export const EmployeeWorkHistoryDetailScreen: React.FC = () => {
   const getStatusIcon = (status: string): string => {
     switch (status) {
       case 'checked_out':
+      case 'present': // API trả về "present" thay vì "checked_out"
         return 'check-circle';
       case 'checked_in':
         return 'clock-outline';
@@ -182,6 +184,7 @@ export const EmployeeWorkHistoryDetailScreen: React.FC = () => {
   const getStatusColor = (status: string): string => {
     switch (status) {
       case 'checked_out':
+      case 'present': // API trả về "present" thay vì "checked_out"
         return '#4CAF50';
       case 'checked_in':
         return '#2196F3';
