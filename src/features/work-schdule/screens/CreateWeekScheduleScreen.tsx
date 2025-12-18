@@ -29,13 +29,29 @@ interface Employee {
   role: string;
 }
 
+function startOfDay(d: Date) {
+  return new Date(d.getFullYear(), d.getMonth(), d.getDate());
+}
+
+// Thứ 2 của tuần kế tiếp so với ngày hiện tại (local time).
+function getNextWeekMonday(baseDate: Date = new Date()) {
+  const today = startOfDay(baseDate);
+  // JS: 0=CN, 1=T2, ... 6=T7
+  const dayOfWeek = today.getDay();
+  const daysUntilNextMonday = (8 - dayOfWeek) % 7 || 7;
+  const nextMonday = new Date(today);
+  nextMonday.setDate(today.getDate() + daysUntilNextMonday);
+  return nextMonday;
+}
+
 export default function CreateWeekScheduleScreen({ navigation }: any) {
   const { user } = useAuthStore();
   const { mutate: createWeekSchedule, isPending } = useCreateWeekSchedule();
   const { data: usersData, isLoading: usersLoading } = useBranchUsers();
 
-  const [fromDate, setFromDate] = useState(new Date());
-  const [toDate, setToDate] = useState(new Date());
+  const minimumSelectableDate = useMemo(() => getNextWeekMonday(), []);
+  const [fromDate, setFromDate] = useState(minimumSelectableDate);
+  const [toDate, setToDate] = useState(minimumSelectableDate);
   const [showFromPicker, setShowFromPicker] = useState(false);
   const [showToPicker, setShowToPicker] = useState(false);
   const [schedules, setSchedules] = useState<ScheduleInput[]>([
@@ -76,17 +92,25 @@ export default function CreateWeekScheduleScreen({ navigation }: any) {
     );
   }, [employees, searchQuery]);
   const handleFromDateChange = (event: any, date?: Date) => {
-    if (date) {
-      setFromDate(date);
-      setShowFromPicker(false);
-    }
+    setShowFromPicker(false);
+    if (!date) return;
+
+    const nextFrom = startOfDay(
+      date < minimumSelectableDate ? minimumSelectableDate : date,
+    );
+    setFromDate(nextFrom);
+    // Đảm bảo toDate luôn >= fromDate
+    if (toDate < nextFrom) setToDate(nextFrom);
   };
 
   const handleToDateChange = (event: any, date?: Date) => {
-    if (date) {
-      setToDate(date);
-      setShowToPicker(false);
-    }
+    setShowToPicker(false);
+    if (!date) return;
+
+    const minTo =
+      fromDate < minimumSelectableDate ? minimumSelectableDate : fromDate;
+    const nextTo = startOfDay(date < minTo ? minTo : date);
+    setToDate(nextTo);
   };
 
   const generateSchedulesForDateRange = () => {
@@ -184,7 +208,8 @@ export default function CreateWeekScheduleScreen({ navigation }: any) {
 
   const handleDatePickerChange = (event: any, selectedDate?: Date) => {
     if (selectedDate && selectedDateIndex !== null) {
-      const dateString = selectedDate.toISOString().split('T')[0];
+      // dùng local date để tránh lệch timezone
+      const dateString = selectedDate.toLocaleDateString('en-CA');
       const newSchedules = [...schedules];
       newSchedules[selectedDateIndex].date = dateString;
       setSchedules(newSchedules);
@@ -202,7 +227,7 @@ export default function CreateWeekScheduleScreen({ navigation }: any) {
       const [year, month, day] = schedules[index].date.split('-').map(Number);
       setTempDateForPicker(new Date(year, month - 1, day));
     } else {
-      setTempDateForPicker(new Date());
+      setTempDateForPicker(fromDate);
     }
     setShowDatePicker(true);
   };
@@ -219,8 +244,9 @@ export default function CreateWeekScheduleScreen({ navigation }: any) {
       return;
     }
 
-    const fromString = fromDate.toISOString().split('T')[0];
-    const toString = toDate.toISOString().split('T')[0];
+    // dùng local date để tránh lệch timezone
+    const fromString = fromDate.toLocaleDateString('en-CA');
+    const toString = toDate.toLocaleDateString('en-CA');
 
     const scheduleData = validSchedules.map(({ _key, ...rest }: any) => rest);
 
@@ -286,6 +312,7 @@ export default function CreateWeekScheduleScreen({ navigation }: any) {
             value={fromDate}
             mode="date"
             display="default"
+            minimumDate={minimumSelectableDate}
             onChange={handleFromDateChange}
           />
         )}
@@ -294,6 +321,11 @@ export default function CreateWeekScheduleScreen({ navigation }: any) {
             value={toDate}
             mode="date"
             display="default"
+            minimumDate={
+              fromDate < minimumSelectableDate
+                ? minimumSelectableDate
+                : fromDate
+            }
             onChange={handleToDateChange}
           />
         )}
@@ -498,6 +530,7 @@ export default function CreateWeekScheduleScreen({ navigation }: any) {
           value={tempDateForPicker}
           mode="date"
           display="default"
+          minimumDate={minimumSelectableDate}
           onChange={handleDatePickerChange}
         />
       )}

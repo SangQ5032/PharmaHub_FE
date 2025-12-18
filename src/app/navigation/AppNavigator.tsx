@@ -40,6 +40,10 @@ import { HomeNavigator, TabItem } from '@shared/components';
 import HomeScreen from '@shared/screens/HomeScreen';
 import ReportsHubScreen from '@shared/screens/ReportsHubScreen';
 import StatisticsHubScreen from '@shared/screens/StatisticsHubScreen';
+import EmployeeWorkHubScreen from '@shared/screens/EmployeeWorkHubScreen';
+import EmployeeSalesHubScreen from '@shared/screens/EmployeeSalesHubScreen';
+import EmployeeInventoryHubScreen from '@shared/screens/EmployeeInventoryHubScreen';
+import EmployeeMoreHubScreen from '@shared/screens/EmployeeMoreHubScreen';
 import BranchWarehouseHubScreen from '@shared/screens/BranchWarehouseHubScreen';
 import BranchReportsHubScreen from '@shared/screens/BranchReportsHubScreen';
 import BranchWorkScheduleHubScreen from '@shared/screens/BranchWorkScheduleHubScreen';
@@ -132,6 +136,10 @@ const TAB_COMPONENTS: Record<string, React.ComponentType<any>> = {
   BranchWarehouseHub: BranchWarehouseHubScreen,
   BranchReportsHub: BranchReportsHubScreen,
   BranchWorkScheduleHub: BranchWorkScheduleHubScreen,
+  EmployeeWorkHub: EmployeeWorkHubScreen,
+  EmployeeSalesHub: EmployeeSalesHubScreen,
+  EmployeeInventoryHub: EmployeeInventoryHubScreen,
+  EmployeeMoreHub: EmployeeMoreHubScreen,
 };
 
 // Create Auth Navigator - chỉ có PhoneLoginScreen
@@ -568,11 +576,6 @@ const MainAppNavigator = () => {
         name={ROUTES.BRANCH_CUSTOMERS_STATS}
         component={CustomersStatsScreen}
         options={{ headerShown: true, title: 'Doanh Thu Khách Hàng' }}
-      />
-      <MainStack.Screen
-        name={ROUTES.BRANCH_REVENUE_BY_PERIOD_STATS}
-        component={RevenueByPeriodStatsScreen}
-        options={{ headerShown: true, title: 'Xu Hướng Doanh Thu' }}
       />
 
       {/* System Admin Statistics Routes */}

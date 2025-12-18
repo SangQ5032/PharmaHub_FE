@@ -205,11 +205,26 @@ export const ROLE_CONFIG: Record<UserRole, RoleConfig> = {
         name: 'Home',
         label: 'Trang chủ',
       },
-      // {
-      //   id: 'staff-tab-2',
-      //   name: 'MedicinesHub',
-      //   label: 'Medicines',
-      // },
+      {
+        id: 'staff-tab-2',
+        name: 'EmployeeWorkHub',
+        label: 'Công việc',
+      },
+      {
+        id: 'staff-tab-3',
+        name: 'EmployeeSalesHub',
+        label: 'Bán hàng',
+      },
+      {
+        id: 'staff-tab-4',
+        name: 'EmployeeInventoryHub',
+        label: 'Kho & Thuốc',
+      },
+      {
+        id: 'staff-tab-5',
+        name: 'EmployeeMoreHub',
+        label: 'Khác',
+      },
     ],
   },
 };

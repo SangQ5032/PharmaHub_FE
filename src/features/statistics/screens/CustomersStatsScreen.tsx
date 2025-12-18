@@ -6,12 +6,12 @@ import {
   TextStyle,
   Text,
   ActivityIndicator,
-  Alert,
 } from 'react-native';
 import { StatsSection } from '../components/StatCard';
 import { FilterDateRange } from '../components/FilterDateRange';
-import { StatTable, TableColumn } from '../components/StatTable';
 import { useCustomersStats } from '../hooks/useBranchStatistics';
+import { StatInsightList } from '../components/StatInsightList';
+import { formatCurrency, formatNumber } from '@shared/utils/formatters';
 
 /**
  * Màn hình thống kê doanh thu theo khách hàng
@@ -35,49 +35,14 @@ export const CustomersStatsScreen: React.FC = () => {
     setEndDate(end);
   };
 
-  const columns: TableColumn[] = [
-    {
-      key: 'customerName',
-      label: 'Tên KH',
-      width: 1.3,
-    },
-    {
-      key: 'customerPhone',
-      label: 'Số Điện Thoại',
-      width: 1.2,
-    },
-    {
-      key: 'totalRevenue',
-      label: 'Doanh Thu',
-      format: 'currency',
-      align: 'right',
-      width: 1.2,
-    },
-    {
-      key: 'totalOrders',
-      label: 'Số Đơn',
-      format: 'number',
-      align: 'center',
-    },
-    {
-      key: 'totalQuantity',
-      label: 'Số Lượng',
-      format: 'number',
-      align: 'center',
-    },
-    {
-      key: 'averageOrderValue',
-      label: 'TB/Đơn',
-      format: 'currency',
-      align: 'right',
-    },
-    {
-      key: 'lastOrderDate',
-      label: 'Mua Gần Nhất',
-      format: 'date',
-      width: 1.1,
-    },
-  ];
+  const totalRevenue = (data || []).reduce(
+    (sum: number, c: any) => sum + Number(c?.totalRevenue || 0),
+    0,
+  );
+  const totalOrders = (data || []).reduce(
+    (sum: number, c: any) => sum + Number(c?.totalOrders || 0),
+    0,
+  );
 
   return (
     <ScrollView style={styles.container}>
@@ -89,14 +54,76 @@ export const CustomersStatsScreen: React.FC = () => {
           <Text style={styles.loadingText}>Đang tải dữ liệu...</Text>
         </View>
       ) : data && data.length > 0 ? (
-        <StatsSection title={`Doanh Thu Khách Hàng`}>
-          <StatTable
-            data={data}
-            columns={columns}
-            emptyMessage="Không có dữ liệu khách hàng"
-            pageSize={10}
-          />
-        </StatsSection>
+        <>
+          <StatsSection title="Tổng quan">
+            <View style={styles.summaryCard}>
+              <View style={styles.summaryRow}>
+                <Text style={styles.summaryLabel}>Tổng doanh thu</Text>
+                <Text style={styles.summaryValueGreen}>
+                  {formatCurrency(totalRevenue)}
+                </Text>
+              </View>
+              <View style={styles.summaryRow}>
+                <Text style={styles.summaryLabel}>Tổng số đơn</Text>
+                <Text style={styles.summaryValue}>
+                  {formatNumber(totalOrders)}
+                </Text>
+              </View>
+              <View style={styles.summaryRow}>
+                <Text style={styles.summaryLabel}>Số khách có phát sinh</Text>
+                <Text style={styles.summaryValue}>
+                  {formatNumber(data.length)}
+                </Text>
+              </View>
+            </View>
+          </StatsSection>
+
+          <StatsSection title="Top khách hàng theo doanh thu">
+            <StatInsightList
+              items={[...data]
+                .sort(
+                  (a: any, b: any) =>
+                    Number(b?.totalRevenue || 0) - Number(a?.totalRevenue || 0),
+                )
+                .map((c: any, idx: number) => ({
+                  id: String(
+                    c?.customerId || c?._id || c?.customerPhone || idx,
+                  ),
+                  title: c?.customerName || 'Không rõ',
+                  subtitle: c?.customerPhone
+                    ? `SĐT: ${c.customerPhone}`
+                    : undefined,
+                  rank: idx + 1,
+                  rightText: String(c?.totalRevenue ?? 0),
+                  rightTextFormat: 'currency',
+                  rows: [
+                    {
+                      label: 'Số đơn',
+                      value: c?.totalOrders,
+                      format: 'number',
+                    },
+                    {
+                      label: 'Số lượng',
+                      value: c?.totalQuantity,
+                      format: 'number',
+                    },
+                    {
+                      label: 'TB/đơn',
+                      value: c?.averageOrderValue,
+                      format: 'currency',
+                    },
+                    {
+                      label: 'Mua gần nhất',
+                      value: c?.lastOrderDate,
+                      format: 'date',
+                    },
+                  ],
+                }))}
+              initialVisible={6}
+              emptyMessage="Không có dữ liệu khách hàng"
+            />
+          </StatsSection>
+        </>
       ) : (
         <StatsSection title="Doanh Thu Khách Hàng">
           <View style={styles.emptyContainer}>
@@ -150,5 +177,33 @@ const styles = StyleSheet.create({
   errorText: {
     color: '#c33',
     fontSize: 14,
+  } as TextStyle,
+  summaryCard: {
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    padding: 14,
+    borderWidth: 1,
+    borderColor: '#eef2f7',
+  },
+  summaryRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 6,
+  },
+  summaryLabel: {
+    fontSize: 12,
+    color: '#7f8c8d',
+    fontWeight: '600',
+  } as TextStyle,
+  summaryValue: {
+    fontSize: 13,
+    color: '#2c3e50',
+    fontWeight: '800',
+  } as TextStyle,
+  summaryValueGreen: {
+    fontSize: 13,
+    color: '#27ae60',
+    fontWeight: '800',
   } as TextStyle,
 });

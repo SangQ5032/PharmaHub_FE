@@ -6,52 +6,16 @@ import {
   TextStyle,
   Text,
   ActivityIndicator,
-  Alert,
 } from 'react-native';
 import { StatsGrid, StatsSection } from '../components/StatCard';
-import { StatTable, TableColumn } from '../components/StatTable';
 import { useBatchStatusStats } from '../hooks/useBranchStatistics';
+import { StatInsightList } from '../components/StatInsightList';
 
 /**
  * Màn hình thống kê tình trạng lô hàng
  */
 export const BatchStatusStatsScreen: React.FC = () => {
   const { data, isLoading, error } = useBatchStatusStats();
-
-  const statusColumns: TableColumn[] = [
-    {
-      key: 'batchNumber',
-      label: 'Mã Lô',
-      width: 1,
-    },
-    {
-      key: 'medicineName',
-      label: 'Tên Thuốc',
-      width: 1.3,
-    },
-    {
-      key: 'quantity',
-      label: 'Tồn Kho',
-      format: 'number',
-      align: 'center',
-    },
-    {
-      key: 'stockStatus',
-      label: 'Trạng Thái',
-      width: 1,
-    },
-    {
-      key: 'expiryDate',
-      label: 'HSD',
-      format: 'date',
-      width: 1,
-    },
-    {
-      key: 'expiryStatus',
-      label: 'HSD Trạng Thái',
-      width: 1.2,
-    },
-  ];
 
   return (
     <ScrollView style={styles.container}>
@@ -108,26 +72,75 @@ export const BatchStatusStatsScreen: React.FC = () => {
             />
           </StatsSection>
 
-          <StatsSection title={`Chi Tiết Lô Hàng (${data.details.length})`}>
-            <StatTable
-              data={data.details}
-              columns={statusColumns}
-              emptyMessage="Không có lô hàng"
-              pageSize={10}
+          <StatsSection title="⚠️ Các lô cần lưu ý">
+            <StatInsightList
+              items={(data.details || [])
+                .filter(
+                  (b: any) =>
+                    b?.isExpired ||
+                    Number(b?.quantity || 0) === 0 ||
+                    b?.isExpiringSoon,
+                )
+                .sort((a: any, b: any) => {
+                  // ưu tiên: hết hạn -> hết hàng -> sắp hết hạn
+                  const score = (x: any) =>
+                    x?.isExpired
+                      ? 3
+                      : Number(x?.quantity || 0) === 0
+                      ? 2
+                      : x?.isExpiringSoon
+                      ? 1
+                      : 0;
+                  return score(b) - score(a);
+                })
+                .map((b: any, idx: number) => ({
+                  id: String(b?.batchId || b?._id || b?.batchNumber || idx),
+                  title: b?.medicineName || 'Không rõ',
+                  subtitle: b?.batchNumber
+                    ? `Mã lô: ${b.batchNumber}`
+                    : undefined,
+                  badges: [
+                    b?.isExpired
+                      ? {
+                          text: 'HẾT HẠN',
+                          color: '#fff',
+                          backgroundColor: '#c0392b',
+                        }
+                      : null,
+                    Number(b?.quantity || 0) === 0
+                      ? {
+                          text: 'HẾT HÀNG',
+                          color: '#fff',
+                          backgroundColor: '#e74c3c',
+                        }
+                      : null,
+                    b?.isExpiringSoon
+                      ? {
+                          text: 'SẮP HẾT HẠN',
+                          color: '#7a4f01',
+                          backgroundColor: '#fdebd0',
+                        }
+                      : null,
+                  ].filter(Boolean) as any,
+                  rows: [
+                    { label: 'Tồn kho', value: b?.quantity, format: 'number' },
+                    {
+                      label: 'Trạng thái',
+                      value: b?.stockStatus,
+                      format: 'text',
+                    },
+                    { label: 'HSD', value: b?.expiryDate, format: 'date' },
+                    {
+                      label: 'Trạng thái HSD',
+                      value: b?.expiryStatus,
+                      format: 'text',
+                    },
+                  ],
+                }))}
+              initialVisible={8}
+              emptyMessage="Không có lô hàng cần lưu ý"
             />
           </StatsSection>
-
-          {/* Critical Batches Section */}
-          {data.details.some(b => b.isExpired || b.quantity === 0) && (
-            <StatsSection title="⚠️ Các Lô Hàng Cần Lưu Ý">
-              <StatTable
-                data={data.details.filter(b => b.isExpired || b.quantity === 0)}
-                columns={statusColumns}
-                emptyMessage="Không có lô hàng cần lưu ý"
-                pageSize={10}
-              />
-            </StatsSection>
-          )}
         </>
       ) : null}
 

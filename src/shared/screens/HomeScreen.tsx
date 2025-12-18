@@ -162,6 +162,53 @@ const HomeScreen = () => {
     );
   };
 
+  const employeeQuickTabs = React.useMemo(
+    () => [
+      {
+        id: 'emp-tab-work',
+        name: 'Công việc',
+        icon: 'briefcase-outline',
+        tab: 'EmployeeWorkHub',
+      },
+      {
+        id: 'emp-tab-sales',
+        name: 'Bán hàng',
+        icon: 'cash-register',
+        tab: 'EmployeeSalesHub',
+      },
+      {
+        id: 'emp-tab-inventory',
+        name: 'Kho & Thuốc',
+        icon: 'package-variant-closed',
+        tab: 'EmployeeInventoryHub',
+      },
+      {
+        id: 'emp-tab-more',
+        name: 'Khác',
+        icon: 'dots-horizontal-circle-outline',
+        tab: 'EmployeeMoreHub',
+      },
+    ],
+    [],
+  );
+
+  const renderEmployeeTabCard = ({
+    item,
+  }: {
+    item: { id: string; name: string; icon: string; tab: string };
+  }) => (
+    <TouchableOpacity
+      style={styles.card}
+      onPress={() => navigation.navigate(item.tab as never)}
+      activeOpacity={0.85}
+    >
+      <View style={styles.iconContainer}>
+        <Icon name={item.icon} size={32} color="#4CAF50" />
+      </View>
+      <Text style={styles.cardText}>{item.name}</Text>
+    </TouchableOpacity>
+  );
+
   return (
     <View style={styles.container}>
       <Header
@@ -218,16 +265,63 @@ const HomeScreen = () => {
           </TouchableOpacity>
         )}
 
+        {/* Employee Dashboard: quick navigation + checkin status */}
+        {role === 'employee' && (
+          <>
+            <View style={styles.employeeStatusRow}>
+              <View style={styles.employeeStatusItem}>
+                <Icon
+                  name={
+                    hasCheckedInToday ? 'check-circle' : 'alert-circle-outline'
+                  }
+                  size={18}
+                  color={hasCheckedInToday ? '#2E7D32' : '#F57C00'}
+                />
+                <Text style={styles.employeeStatusText}>
+                  {hasCheckedInToday
+                    ? 'Đã checkin hôm nay'
+                    : 'Chưa checkin hôm nay'}
+                </Text>
+              </View>
+              {!hasCheckedInToday && (
+                <TouchableOpacity
+                  style={styles.employeeStatusCta}
+                  onPress={() =>
+                    navigation.navigate(ROUTES.CHECKIN_CHECKOUT as never)
+                  }
+                  activeOpacity={0.85}
+                >
+                  <Text style={styles.employeeStatusCtaText}>Đi checkin</Text>
+                </TouchableOpacity>
+              )}
+            </View>
+
+            <Text style={styles.sectionLabel}>Nhóm chức năng</Text>
+            <FlatList
+              data={employeeQuickTabs}
+              renderItem={renderEmployeeTabCard}
+              keyExtractor={item => item.id}
+              numColumns={2}
+              contentContainerStyle={styles.gridContainer}
+              scrollEnabled={false}
+            />
+          </>
+        )}
+
         {/* Function Cards */}
-        <Text style={styles.sectionLabel}>Chức Năng</Text>
-        <FlatList
-          data={roleConfig.options}
-          renderItem={renderFunctionCard}
-          keyExtractor={item => item.id}
-          numColumns={2}
-          contentContainerStyle={styles.gridContainer}
-          scrollEnabled={false}
-        />
+        {role !== 'employee' && (
+          <>
+            <Text style={styles.sectionLabel}>Chức Năng</Text>
+            <FlatList
+              data={roleConfig.options}
+              renderItem={renderFunctionCard}
+              keyExtractor={item => item.id}
+              numColumns={2}
+              contentContainerStyle={styles.gridContainer}
+              scrollEnabled={false}
+            />
+          </>
+        )}
       </ScrollView>
     </View>
   );
@@ -331,6 +425,38 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: 'rgba(255,255,255,0.7)',
     marginTop: 8,
+  },
+  employeeStatusRow: {
+    marginHorizontal: 16,
+    marginTop: 4,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 12,
+  },
+  employeeStatusItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    flex: 1,
+  },
+  employeeStatusText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#333333',
+  },
+  employeeStatusCta: {
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 999,
+    backgroundColor: '#E8F5E9',
+    borderWidth: 1,
+    borderColor: '#C8E6C9',
+  },
+  employeeStatusCtaText: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#2E7D32',
   },
   card: {
     flex: 1,
