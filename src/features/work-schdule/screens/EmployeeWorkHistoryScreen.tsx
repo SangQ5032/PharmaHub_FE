@@ -2,7 +2,7 @@
  * Employee Work History List Screen
  * Hiển thị danh sách lịch sử làm việc của nhân viên
  */
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import {
   View,
   StyleSheet,
@@ -65,6 +65,43 @@ export const EmployeeWorkHistoryScreen: React.FC = () => {
     ? branchWorkHistoryQuery
     : myWorkHistoryQuery;
   const { data, isLoading, isError, refetch } = queryResult;
+
+  // Debug: Log data để kiểm tra
+  useEffect(() => {
+    if (data) {
+      console.log('EmployeeWorkHistoryScreen - Data:', data);
+      console.log('EmployeeWorkHistoryScreen - data?.data:', data?.data);
+      console.log(
+        'EmployeeWorkHistoryScreen - data?.data?.length:',
+        data?.data?.length,
+      );
+      console.log(
+        'EmployeeWorkHistoryScreen - data?.pagination:',
+        data?.pagination,
+      );
+      console.log(
+        'EmployeeWorkHistoryScreen - data?.data isArray:',
+        Array.isArray(data?.data),
+      );
+    }
+    console.log('EmployeeWorkHistoryScreen - isLoading:', isLoading);
+    console.log('EmployeeWorkHistoryScreen - isError:', isError);
+    console.log('EmployeeWorkHistoryScreen - employeeId:', employeeId);
+    console.log(
+      'EmployeeWorkHistoryScreen - isViewingOtherEmployee:',
+      isViewingOtherEmployee,
+    );
+  }, [data, isLoading, isError, employeeId, isViewingOtherEmployee]);
+
+  // Reset page và refetch khi employeeId thay đổi
+  useEffect(() => {
+    if (employeeId && isViewingOtherEmployee) {
+      setPage(1);
+      setShift(undefined);
+      // Refetch ngay lập tức khi employeeId thay đổi
+      refetch();
+    }
+  }, [employeeId, isViewingOtherEmployee, refetch]);
 
   useFocusEffect(
     useCallback(() => {
@@ -132,6 +169,7 @@ export const EmployeeWorkHistoryScreen: React.FC = () => {
   const getStatusIcon = (status: string): string => {
     switch (status) {
       case 'checked_out':
+      case 'present': // API trả về "present" thay vì "checked_out"
         return 'check-circle';
       case 'checked_in':
         return 'clock-outline';
@@ -149,6 +187,7 @@ export const EmployeeWorkHistoryScreen: React.FC = () => {
   const getStatusColor = (status: string): string => {
     switch (status) {
       case 'checked_out':
+      case 'present': // API trả về "present" thay vì "checked_out"
         return '#4CAF50';
       case 'checked_in':
         return '#2196F3';
@@ -166,7 +205,8 @@ export const EmployeeWorkHistoryScreen: React.FC = () => {
   const getStatusLabel = (status: string): string => {
     switch (status) {
       case 'checked_out':
-        return 'Checkout đúng giờ';
+      case 'present': // API trả về "present" thay vì "checked_out"
+        return 'Có mặt';
       case 'checked_in':
         return 'Đang làm';
       case 'late':
@@ -269,6 +309,12 @@ export const EmployeeWorkHistoryScreen: React.FC = () => {
   );
 
   const renderItem = ({ item }: { item: WorkScheduleHistoryRecord }) => {
+    // Kiểm tra item có hợp lệ không
+    if (!item || !item._id) {
+      console.warn('EmployeeWorkHistoryScreen - Invalid item:', item);
+      return null;
+    }
+
     // Tính lại status đúng dựa trên thời gian checkin/checkout
     const correctStatus = calculateAttendanceStatus(
       item.checkin_time,
@@ -277,10 +323,15 @@ export const EmployeeWorkHistoryScreen: React.FC = () => {
       item.scheduledShift,
     );
     const statusFromBackend = item.status;
-    const statusMismatch = correctStatus !== statusFromBackend;
 
-    // Sử dụng status đúng để hiển thị
-    const displayStatus = correctStatus;
+    // Normalize status từ API: "present" -> "checked_out"
+    const normalizedBackendStatus =
+      statusFromBackend === 'present' ? 'checked_out' : statusFromBackend;
+    const statusMismatch = correctStatus !== normalizedBackendStatus;
+
+    // Sử dụng status từ API (đã normalize) để hiển thị, hoặc correctStatus nếu có
+    // Ưu tiên sử dụng status từ API vì nó đã được tính toán trên backend
+    const displayStatus = normalizedBackendStatus || correctStatus;
 
     return (
       <TouchableOpacity
@@ -317,18 +368,6 @@ export const EmployeeWorkHistoryScreen: React.FC = () => {
                   {getStatusLabel(displayStatus)}
                 </Text>
               </View>
-              {statusMismatch && (
-                <View style={styles.statusWarning}>
-                  <MaterialCommunityIcons
-                    name="alert"
-                    size={12}
-                    color="#FF9800"
-                  />
-                  <Text style={styles.statusWarningText}>
-                    Backend: {getStatusLabel(statusFromBackend)}
-                  </Text>
-                </View>
-              )}
             </View>
           </View>
 
@@ -406,276 +445,301 @@ export const EmployeeWorkHistoryScreen: React.FC = () => {
         </View>
       </TouchableOpacity>
     );
+  };
 
-    const renderEmpty = () => (
-      <View style={styles.emptyContainer}>
-        <MaterialCommunityIcons
-          name="calendar-blank"
-          size={64}
-          color={colors.primary}
-        />
-        <Text style={[styles.emptyText, { color: colors.text }]}>
-          Không có lịch sử làm việc
-        </Text>
-        <Text style={[styles.emptySubText, { color: colors.gray }]}>
-          Lịch sử làm việc của bạn sẽ hiển thị ở đây
+  const renderEmpty = () => (
+    <View style={styles.emptyContainer}>
+      <MaterialCommunityIcons
+        name="calendar-blank"
+        size={64}
+        color={colors.primary}
+      />
+      <Text style={[styles.emptyText, { color: colors.text }]}>
+        Không có lịch sử làm việc
+      </Text>
+      <Text style={[styles.emptySubText, { color: colors.gray }]}>
+        Lịch sử làm việc của bạn sẽ hiển thị ở đây
+      </Text>
+    </View>
+  );
+
+  const renderFooter = () => {
+    if (!isLoading || page === 1) return null;
+    return (
+      <View style={styles.footerLoader}>
+        <ActivityIndicator size="small" color={colors.primary} />
+        <Text style={[styles.footerLoaderText, { color: colors.text }]}>
+          Đang tải...
         </Text>
       </View>
     );
+  };
 
-    const renderFooter = () => {
-      if (!isLoading || page === 1) return null;
-      return (
-        <View style={styles.footerLoader}>
-          <ActivityIndicator size="small" color={colors.primary} />
-          <Text style={[styles.footerLoaderText, { color: colors.text }]}>
-            Đang tải...
-          </Text>
-        </View>
-      );
-    };
-
-    if (isError) {
-      return (
-        <SafeAreaView
-          style={[styles.container, { backgroundColor: colors.background }]}
-        >
-          <View style={styles.errorContainer}>
-            <MaterialCommunityIcons
-              name="alert-circle"
-              size={64}
-              color={colors.notification}
-            />
-            <Text style={[styles.errorText, { color: colors.notification }]}>
-              Lỗi khi tải dữ liệu
-            </Text>
-            <TouchableOpacity
-              onPress={() => {
-                setPage(1);
-                refetch();
-              }}
-              style={[styles.retryButton, { backgroundColor: colors.primary }]}
-            >
-              <Text style={styles.retryButtonText}>Thử lại</Text>
-            </TouchableOpacity>
-          </View>
-        </SafeAreaView>
-      );
-    }
-
+  if (isError) {
     return (
       <SafeAreaView
         style={[styles.container, { backgroundColor: colors.background }]}
       >
-        <FlatList
-          data={data?.data || []}
-          renderItem={renderItem}
-          keyExtractor={item => item._id}
-          ListHeaderComponent={renderHeader}
-          ListEmptyComponent={renderEmpty}
-          ListFooterComponent={renderFooter}
-          onEndReached={handleLoadMore}
-          onEndReachedThreshold={0.5}
-          refreshControl={
-            <RefreshControl
-              refreshing={refreshing}
-              onRefresh={handleRefresh}
-              colors={[colors.primary]}
-            />
-          }
-          contentContainerStyle={
-            !data?.data?.length ? { flex: 1 } : { paddingBottom: 20 }
-          }
-        />
-        {isLoading && page === 1 && (
-          <View style={styles.loadingOverlay}>
-            <ActivityIndicator size="large" color={colors.primary} />
-          </View>
-        )}
+        <View style={styles.errorContainer}>
+          <MaterialCommunityIcons
+            name="alert-circle"
+            size={64}
+            color={colors.notification}
+          />
+          <Text style={[styles.errorText, { color: colors.notification }]}>
+            Lỗi khi tải dữ liệu
+          </Text>
+          <TouchableOpacity
+            onPress={() => {
+              setPage(1);
+              refetch();
+            }}
+            style={[styles.retryButton, { backgroundColor: colors.primary }]}
+          >
+            <Text style={styles.retryButtonText}>Thử lại</Text>
+          </TouchableOpacity>
+        </View>
       </SafeAreaView>
     );
-  };
+  }
 
-  const styles = StyleSheet.create({
-    container: {
-      flex: 1,
-    },
-    header: {
-      paddingHorizontal: 16,
-      paddingVertical: 12,
-      borderBottomWidth: 1,
-    },
-    headerTitle: {
-      fontSize: 18,
-      fontWeight: '700',
-      marginBottom: 12,
-    },
-    filterContainer: {
-      flexDirection: 'row',
-      gap: 8,
-      marginBottom: 12,
-    },
-    filterButton: {
-      flex: 1,
-      paddingVertical: 8,
-      paddingHorizontal: 12,
-      borderRadius: 8,
-      borderWidth: 1,
-      alignItems: 'center',
-    },
-    filterButtonText: {
-      fontSize: 12,
-      fontWeight: '600',
-    },
-    statsContainer: {
-      paddingTop: 8,
-    },
-    statsText: {
-      fontSize: 12,
-      fontWeight: '500',
-    },
-    card: {
-      marginHorizontal: 12,
-      marginVertical: 8,
-      borderRadius: 12,
-      borderWidth: 1,
-      overflow: 'hidden',
-    },
-    cardContent: {
-      paddingHorizontal: 12,
-      paddingVertical: 12,
-    },
-    cardTop: {
-      flexDirection: 'row',
-      justifyContent: 'space-between',
-      alignItems: 'center',
-      marginBottom: 10,
-    },
-    dateText: {
-      fontSize: 14,
-      fontWeight: '600',
-    },
-    timeText: {
-      fontSize: 12,
-      marginTop: 4,
-    },
-    statusContainer: {
-      alignItems: 'flex-end',
-      gap: 4,
-    },
-    statusBadge: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: 6,
-      paddingHorizontal: 12,
-      paddingVertical: 6,
-      borderRadius: 20,
-    },
-    statusBadgeText: {
-      color: '#fff',
-      fontSize: 12,
-      fontWeight: '600',
-    },
-    statusWarning: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: 4,
-      paddingHorizontal: 8,
-      paddingVertical: 4,
-      backgroundColor: '#FFF3CD',
-      borderRadius: 12,
-      borderWidth: 1,
-      borderColor: '#FF9800',
-    },
-    statusWarningText: {
-      fontSize: 10,
-      color: '#856404',
-      fontWeight: '500',
-    },
-    cardRow: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      marginVertical: 6,
-      gap: 8,
-    },
-    cardLabel: {
-      fontSize: 13,
-      fontWeight: '500',
-      flex: 1,
-    },
-    cardValue: {
-      fontSize: 13,
-      flex: 1,
-    },
-    cardBottom: {
-      flexDirection: 'row',
-      justifyContent: 'space-between',
-      alignItems: 'center',
-      marginTop: 10,
-      paddingTop: 10,
-      borderTopWidth: 1,
-    },
-    scheduleStatus: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: 6,
-    },
-    scheduleStatusText: {
-      fontSize: 12,
-      fontWeight: '600',
-    },
-    emptyContainer: {
-      flex: 1,
-      justifyContent: 'center',
-      alignItems: 'center',
-      paddingHorizontal: 20,
-    },
-    emptyText: {
-      fontSize: 16,
-      fontWeight: '600',
-      marginTop: 12,
-    },
-    emptySubText: {
-      fontSize: 13,
-      marginTop: 6,
-    },
-    errorContainer: {
-      flex: 1,
-      justifyContent: 'center',
-      alignItems: 'center',
-      paddingHorizontal: 20,
-    },
-    errorText: {
-      fontSize: 16,
-      fontWeight: '600',
-      marginTop: 12,
-      marginBottom: 16,
-    },
-    retryButton: {
-      paddingHorizontal: 24,
-      paddingVertical: 10,
-      borderRadius: 8,
-    },
-    retryButtonText: {
-      color: '#fff',
-      fontSize: 14,
-      fontWeight: '600',
-    },
-    footerLoader: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      justifyContent: 'center',
-      paddingVertical: 16,
-      gap: 8,
-    },
-    footerLoaderText: {
-      fontSize: 12,
-    },
-    loadingOverlay: {
-      ...StyleSheet.absoluteFillObject,
-      justifyContent: 'center',
-      alignItems: 'center',
-      backgroundColor: 'rgba(0, 0, 0, 0.3)',
-    },
-  });
+  // Kiểm tra data structure
+  const workHistoryData = Array.isArray(data?.data)
+    ? data.data
+    : Array.isArray(data)
+    ? data
+    : [];
+
+  // Debug: Log workHistoryData
+  console.log('EmployeeWorkHistoryScreen - workHistoryData:', workHistoryData);
+  console.log(
+    'EmployeeWorkHistoryScreen - workHistoryData.length:',
+    workHistoryData.length,
+  );
+  console.log(
+    'EmployeeWorkHistoryScreen - workHistoryData isArray:',
+    Array.isArray(workHistoryData),
+  );
+  console.log('EmployeeWorkHistoryScreen - First item:', workHistoryData[0]);
+
+  return (
+    <SafeAreaView
+      style={[styles.container, { backgroundColor: colors.background }]}
+    >
+      <FlatList
+        data={workHistoryData}
+        renderItem={renderItem}
+        keyExtractor={(item, index) => {
+          const key = item?._id || `item-${index}`;
+          return key;
+        }}
+        ListHeaderComponent={renderHeader}
+        ListEmptyComponent={renderEmpty}
+        ListFooterComponent={renderFooter}
+        onEndReached={handleLoadMore}
+        onEndReachedThreshold={0.5}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={handleRefresh}
+            colors={[colors.primary]}
+          />
+        }
+        contentContainerStyle={
+          !workHistoryData.length ? { flex: 1 } : { paddingBottom: 20 }
+        }
+        removeClippedSubviews={false}
+        initialNumToRender={10}
+        maxToRenderPerBatch={10}
+      />
+      {isLoading && page === 1 && (
+        <View style={styles.loadingOverlay}>
+          <ActivityIndicator size="large" color={colors.primary} />
+        </View>
+      )}
+    </SafeAreaView>
+  );
 };
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+  },
+  header: {
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+  },
+  headerTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    marginBottom: 12,
+  },
+  filterContainer: {
+    flexDirection: 'row',
+    gap: 8,
+    marginBottom: 12,
+  },
+  filterButton: {
+    flex: 1,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+    borderWidth: 1,
+    alignItems: 'center',
+  },
+  filterButtonText: {
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  statsContainer: {
+    paddingTop: 8,
+  },
+  statsText: {
+    fontSize: 12,
+    fontWeight: '500',
+  },
+  card: {
+    marginHorizontal: 12,
+    marginVertical: 8,
+    borderRadius: 12,
+    borderWidth: 1,
+    overflow: 'hidden',
+  },
+  cardContent: {
+    paddingHorizontal: 12,
+    paddingVertical: 12,
+  },
+  cardTop: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+  dateText: {
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  timeText: {
+    fontSize: 12,
+    marginTop: 4,
+  },
+  statusContainer: {
+    alignItems: 'flex-end',
+    gap: 4,
+  },
+  statusBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 20,
+  },
+  statusBadgeText: {
+    color: '#fff',
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  statusWarning: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    backgroundColor: '#FFF3CD',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#FF9800',
+  },
+  statusWarningText: {
+    fontSize: 10,
+    color: '#856404',
+    fontWeight: '500',
+  },
+  cardRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginVertical: 6,
+    gap: 8,
+  },
+  cardLabel: {
+    fontSize: 13,
+    fontWeight: '500',
+    flex: 1,
+  },
+  cardValue: {
+    fontSize: 13,
+    flex: 1,
+  },
+  cardBottom: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginTop: 10,
+    paddingTop: 10,
+    borderTopWidth: 1,
+  },
+  scheduleStatus: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  scheduleStatusText: {
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  emptyContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+  },
+  emptyText: {
+    fontSize: 16,
+    fontWeight: '600',
+    marginTop: 12,
+  },
+  emptySubText: {
+    fontSize: 13,
+    marginTop: 6,
+  },
+  errorContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+  },
+  errorText: {
+    fontSize: 16,
+    fontWeight: '600',
+    marginTop: 12,
+    marginBottom: 16,
+  },
+  retryButton: {
+    paddingHorizontal: 24,
+    paddingVertical: 10,
+    borderRadius: 8,
+  },
+  retryButtonText: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  footerLoader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 16,
+    gap: 8,
+  },
+  footerLoaderText: {
+    fontSize: 12,
+  },
+  loadingOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.3)',
+  },
+});

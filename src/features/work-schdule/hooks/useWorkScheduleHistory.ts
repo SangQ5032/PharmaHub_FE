@@ -41,11 +41,18 @@ export const useBranchEmployeesWorkHistory = (filters?: WorkHistoryFilters) => {
     ...(filters?.userId && { user_id: filters.userId }),
   };
 
+  // Nếu có userId trong filters, enable query
+  // Nếu không có userId, vẫn enable để lấy tất cả nhân viên (cho branch manager xem tất cả)
+  const isEnabled = true;
+
   return useQuery({
     queryKey: ['work-history-branch-employees', params],
     queryFn: () => workScheduleApi.getBranchEmployeesWorkHistory(params),
-    enabled: true,
-    staleTime: 5 * 60 * 1000,
+    enabled: isEnabled,
+    staleTime: 0, // Không cache để đảm bảo data luôn mới nhất
+    // Refetch khi params thay đổi (bao gồm userId)
+    refetchOnMount: true,
+    refetchOnWindowFocus: false,
   });
 };
 

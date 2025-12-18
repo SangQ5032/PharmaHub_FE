@@ -39,6 +39,10 @@ import { ROUTES } from '@shared/constants/routes';
 import { HomeNavigator, TabItem } from '@shared/components';
 import HomeScreen from '@shared/screens/HomeScreen';
 import ReportsHubScreen from '@shared/screens/ReportsHubScreen';
+import StatisticsHubScreen from '@shared/screens/StatisticsHubScreen';
+import BranchWarehouseHubScreen from '@shared/screens/BranchWarehouseHubScreen';
+import BranchReportsHubScreen from '@shared/screens/BranchReportsHubScreen';
+import BranchWorkScheduleHubScreen from '@shared/screens/BranchWorkScheduleHubScreen';
 import {
   MedicinesHubScreen,
   MedicineListScreen,
@@ -124,6 +128,10 @@ const TAB_COMPONENTS: Record<string, React.ComponentType<any>> = {
   Home: HomeScreen,
   MedicinesHub: MedicinesHubScreen,
   ReportsHub: ReportsHubScreen,
+  StatisticsHub: StatisticsHubScreen,
+  BranchWarehouseHub: BranchWarehouseHubScreen,
+  BranchReportsHub: BranchReportsHubScreen,
+  BranchWorkScheduleHub: BranchWorkScheduleHubScreen,
 };
 
 // Create Auth Navigator - chỉ có PhoneLoginScreen

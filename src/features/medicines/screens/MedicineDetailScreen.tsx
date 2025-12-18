@@ -221,7 +221,11 @@ const MedicineDetailScreen: React.FC = () => {
                         typeof item.base_unit.short_name === 'string'
                           ? item.base_unit.short_name
                           : '-';
-                      return `${name} (${shortName})`;
+                      const ratio =
+                        typeof item.base_unit.ratio_to_base === 'number'
+                          ? item.base_unit.ratio_to_base
+                          : 1;
+                      return `${name} (${shortName}) - Tỷ lệ: ${ratio}`;
                     }
                     if (typeof item.base_unit === 'string') {
                       return item.base_unit;
@@ -234,13 +238,13 @@ const MedicineDetailScreen: React.FC = () => {
                   item.units.length > 0 && (
                     <View style={styles.textRow}>
                       <Text style={styles.textLabel}>Các đơn vị khác:</Text>
-                      <Text style={styles.textValue}>
+                      <View style={styles.unitsList}>
                         {item.units
                           .filter(
                             (u: any) =>
                               u && typeof u === 'object' && u !== null,
                           )
-                          .map((u: any) => {
+                          .map((u: any, index: number) => {
                             const name =
                               u.name && typeof u.name === 'string'
                                 ? String(u.name)
@@ -253,24 +257,28 @@ const MedicineDetailScreen: React.FC = () => {
                               typeof u.ratio_to_base === 'number'
                                 ? String(u.ratio_to_base)
                                 : '1';
-                            return `${name} (${shortName}) - Tỷ lệ: ${ratio}`;
-                          })
-                          .filter(
-                            (str: any): str is string =>
-                              typeof str === 'string',
-                          )
-                          .join('\n')}
-                      </Text>
+                            return (
+                              <View
+                                key={u._id || index}
+                                style={styles.unitItem}
+                              >
+                                <Text style={styles.unitText}>
+                                  • {name} ({shortName}) - Tỷ lệ: {ratio}
+                                </Text>
+                              </View>
+                            );
+                          })}
+                      </View>
                     </View>
                   )}
                 {item.unit_ratios &&
                   typeof item.unit_ratios === 'object' &&
                   Object.keys(item.unit_ratios).length > 0 && (
                     <View style={styles.textRow}>
-                      <Text style={styles.textLabel}>Tỷ lệ đơn vị:</Text>
-                      <Text style={styles.textValue}>
-                        {Object.entries(item.unit_ratios)
-                          .map(([unitId, ratio]) => {
+                      <Text style={styles.textLabel}>Bảng tỷ lệ đơn vị:</Text>
+                      <View style={styles.unitsList}>
+                        {Object.entries(item.unit_ratios).map(
+                          ([unitId, ratio], index) => {
                             if (!unitId || typeof unitId !== 'string')
                               return null;
                             const unit = item.units?.find(
@@ -296,14 +304,19 @@ const MedicineDetailScreen: React.FC = () => {
                               typeof ratio === 'number'
                                 ? String(ratio)
                                 : String(ratio || '0');
-                            return `${unitName}: ${ratioStr}`;
-                          })
-                          .filter(
-                            (item): item is string =>
-                              item !== null && typeof item === 'string',
-                          )
-                          .join('\n')}
-                      </Text>
+                            return (
+                              <View
+                                key={unitId || index}
+                                style={styles.unitItem}
+                              >
+                                <Text style={styles.unitText}>
+                                  • {unitName}: {ratioStr} (so với đơn vị cơ sở)
+                                </Text>
+                              </View>
+                            );
+                          },
+                        )}
+                      </View>
                     </View>
                   )}
                 <Row label="Nhà sản xuất" value={item?.manufacturer} />
@@ -782,6 +795,17 @@ const styles = StyleSheet.create({
   },
   textLabel: { color: '#333', fontWeight: '600', marginBottom: 6 },
   textValue: { color: '#555', lineHeight: 20 },
+  unitsList: {
+    marginTop: 4,
+  },
+  unitItem: {
+    marginBottom: 4,
+  },
+  unitText: {
+    color: '#555',
+    lineHeight: 20,
+    fontSize: 14,
+  },
   imageContainer: {
     alignItems: 'center',
     marginBottom: 16,
