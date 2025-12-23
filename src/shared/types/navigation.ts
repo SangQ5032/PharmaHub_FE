@@ -89,6 +89,16 @@ export type MainStackParamList = {
     branchId?: string;
     branchName?: string;
   };
+  [ROUTES.MEDICINE_SELECTION]: {
+    onAddMedicine?: (
+      selectedMedicine: any,
+      quantity: number,
+      unit: string,
+      price?: number,
+      batchId?: string,
+      batchNumber?: string,
+    ) => void;
+  };
   [ROUTES.BRANCH_LIST]: undefined;
   [ROUTES.ADD_EDIT_BRANCH]: { mode?: 'edit'; item?: any } | undefined;
   [ROUTES.BRANCH_DETAIL]: { branchId: string; branchName?: string } | undefined;

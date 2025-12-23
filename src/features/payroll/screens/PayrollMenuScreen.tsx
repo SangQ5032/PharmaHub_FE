@@ -58,15 +58,15 @@ export const PayrollMenuScreen: React.FC = () => {
           bgColor: '#9C27B0',
           route: ROUTES.PAYROLL_BRANCH_SELECTION,
         },
-        {
-          id: 'payroll-summary',
-          title: 'Báo cáo lương',
-          description: 'Xem báo cáo tổng hợp lương toàn hệ thống',
-          icon: 'chart-line',
-          iconColor: '#fff',
-          bgColor: '#FF9800',
-          route: ROUTES.PAYROLL_SUMMARY,
-        },
+        // {
+        //   id: 'payroll-summary',
+        //   title: 'Báo cáo lương',
+        //   description: 'Xem báo cáo tổng hợp lương toàn hệ thống',
+        //   icon: 'chart-line',
+        //   iconColor: '#fff',
+        //   bgColor: '#FF9800',
+        //   route: ROUTES.PAYROLL_SUMMARY,
+        // },
       ];
     } else if (role === 'branch-manager') {
       return [
@@ -89,15 +89,15 @@ export const PayrollMenuScreen: React.FC = () => {
           bgColor: '#4CAF50',
           route: ROUTES.CREATE_PAYROLL,
         },
-        {
-          id: 'payroll-summary',
-          title: 'Báo cáo lương',
-          description: 'Xem báo cáo tổng hợp lương chi nhánh',
-          icon: 'chart-line',
-          iconColor: '#fff',
-          bgColor: '#FF9800',
-          route: ROUTES.PAYROLL_SUMMARY,
-        },
+        // {
+        //   id: 'payroll-summary',
+        //   title: 'Báo cáo lương',
+        //   description: 'Xem báo cáo tổng hợp lương chi nhánh',
+        //   icon: 'chart-line',
+        //   iconColor: '#fff',
+        //   bgColor: '#FF9800',
+        //   route: ROUTES.PAYROLL_SUMMARY,
+        // },
       ];
     } else if (role === 'employee') {
       return [

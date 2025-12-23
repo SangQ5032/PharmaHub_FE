@@ -68,6 +68,7 @@ import {
   BranchInvoiceHistoryScreen,
   EmployeeInvoiceHistoryScreen,
   MedicineDetailScreen as SalesMedicineDetailScreen,
+  MedicineSelectionScreen,
   CreateCustomerScreen,
   PaymentQRScreen,
   BarcodeScannerScreen,
@@ -211,7 +212,7 @@ const MainAppNavigator = () => {
       <MainStack.Screen
         name={ROUTES.CREATE_WEEK_SCHEDULE}
         component={CreateWeekScheduleScreen}
-        options={{ headerShown: true, title: 'Tạo lịch tuần' }}
+        options={{ headerShown: true, title: 'Tạo lịch làm việc' }}
       />
 
       {/* Work Schedule History Routes */}
@@ -454,6 +455,11 @@ const MainAppNavigator = () => {
         options={{ headerShown: true, title: 'Chi tiết thuốc' }}
       />
       <MainStack.Screen
+        name={ROUTES.MEDICINE_SELECTION}
+        component={MedicineSelectionScreen}
+        options={{ headerShown: false }}
+      />
+      <MainStack.Screen
         name="CreateCustomer"
         component={CreateCustomerScreen}
         options={{ headerShown: true, title: 'Tạo khách hàng' }}
@@ -523,7 +529,7 @@ const MainAppNavigator = () => {
       <MainStack.Screen
         name={ROUTES.PAYROLL_DETAIL}
         component={PayrollDetailsScreen}
-        options={{ headerShown: true, title: 'Chi Tiết Lương' }}
+        options={{ headerShown: true, title: 'Chi Tiết Bảng Lương' }}
       />
       <MainStack.Screen
         name={ROUTES.CREATE_PAYROLL}

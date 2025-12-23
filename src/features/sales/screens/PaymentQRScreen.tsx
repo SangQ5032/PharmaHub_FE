@@ -11,6 +11,8 @@ import {
 import { useNavigation, useRoute } from '@react-navigation/native';
 import QRCode from 'react-native-qrcode-svg';
 import { useCreateInvoice } from '../hooks/useSales';
+import { showPrintOptions } from '../services/invoicePrintService';
+import { ROUTES } from '@shared/constants/routes';
 
 const PaymentQRScreen: React.FC = () => {
   const navigation = useNavigation<any>();
@@ -37,6 +39,20 @@ const PaymentQRScreen: React.FC = () => {
           'Thành công',
           `Tạo hóa đơn thành công!\nMã hóa đơn: ${response.data.invoice_code}`,
           [
+            {
+              text: 'In hóa đơn',
+              onPress: () => {
+                showPrintOptions(response.data);
+              },
+            },
+            {
+              text: 'Xem chi tiết',
+              onPress: () => {
+                navigation.navigate(ROUTES.INVOICE_DETAIL, {
+                  invoiceId: response.data._id,
+                });
+              },
+            },
             {
               text: 'OK',
               onPress: () => {

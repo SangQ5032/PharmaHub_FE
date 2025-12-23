@@ -1,5 +1,5 @@
 /* eslint-disable react-hooks/exhaustive-deps */
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -10,6 +10,7 @@ import {
   ScrollView,
   PermissionsAndroid,
   Platform,
+  Modal,
 } from 'react-native';
 import Geolocation from '@react-native-community/geolocation';
 import { Header } from '@shared/components/header/Header';
@@ -40,6 +41,10 @@ const CheckinCheckoutScreen = () => {
     longitude: number;
   } | null>(null);
   const [isLoadingLocation, setIsLoadingLocation] = useState(false);
+  const [showLocationDialog, setShowLocationDialog] = useState(false);
+  const [locationDialogMessage, setLocationDialogMessage] = useState('');
+  const [pendingCheckin, setPendingCheckin] = useState(false);
+  const skipNextEffectRef = useRef(false);
   const {
     data: attendanceData,
     refetch,
@@ -55,6 +60,12 @@ const CheckinCheckoutScreen = () => {
 
   // Cập nhật today's attendance khi data thay đổi
   useEffect(() => {
+    // Bỏ qua một lần cập nhật nếu vừa mới checkin (để tránh ghi đè state đã được set từ response)
+    if (skipNextEffectRef.current) {
+      skipNextEffectRef.current = false;
+      return;
+    }
+
     if (attendanceData?.data) {
       const attendances = Array.isArray(attendanceData.data)
         ? attendanceData.data
@@ -62,11 +73,17 @@ const CheckinCheckoutScreen = () => {
 
       const today = new Date().toDateString();
       const todayRecord = attendances.find(att => {
+        if (!att || !att.checkin_time) return false;
         const attDate = new Date(att.checkin_time).toDateString();
-        return attDate === today && att.status === 'checked_in';
+        // Kiểm tra: có checkin_time của hôm nay và chưa checkout (checkout_time là null)
+        // Bất kể status là gì (checked_in, late, early) - đều coi như đã checkin
+        return attDate === today && !att.checkout_time;
       });
 
       setTodayAttendance(todayRecord || null);
+    } else {
+      // Reset về null nếu không có data (chỉ khi không có flag skip)
+      setTodayAttendance(null);
     }
   }, [attendanceData]);
 
@@ -107,21 +124,32 @@ const CheckinCheckoutScreen = () => {
   /**
    * Lấy vị trí hiện tại
    */
-  const getCurrentLocation = () => {
+  const getCurrentLocation = (
+    onSuccess?: (location: { latitude: number; longitude: number }) => void,
+    onError?: () => void,
+  ) => {
     setIsLoadingLocation(true);
     Geolocation.getCurrentPosition(
       position => {
         const { latitude, longitude } = position.coords;
-        setCurrentLocation({ latitude, longitude });
+        const location = { latitude, longitude };
+        setCurrentLocation(location);
         setIsLoadingLocation(false);
+        if (onSuccess) {
+          onSuccess(location);
+        }
       },
       error => {
         console.error('Error getting location:', error);
         setIsLoadingLocation(false);
-        Alert.alert(
-          'Lỗi',
-          'Không thể lấy vị trí hiện tại. Vui lòng kiểm tra cài đặt GPS.',
-        );
+        if (onError) {
+          onError();
+        } else {
+          Alert.alert(
+            'Lỗi',
+            'Không thể lấy vị trí hiện tại. Vui lòng kiểm tra cài đặt GPS.',
+          );
+        }
       },
       {
         enableHighAccuracy: true,
@@ -145,10 +173,56 @@ const CheckinCheckoutScreen = () => {
         return;
       }
 
-      // Lấy vị trí hiện tại trước khi checkin
+      // Nếu chưa có vị trí, tự động lấy vị trí
       if (!currentLocation) {
-        Alert.alert('Lỗi', 'Đang xác định vị trí... Vui lòng chờ');
-        getCurrentLocation();
+        setPendingCheckin(true);
+        setShowLocationDialog(true);
+        setLocationDialogMessage('Đang lấy vị trí...');
+
+        getCurrentLocation(
+          // onSuccess
+          location => {
+            setLocationDialogMessage('Lấy vị trí thành công');
+            // Đợi 1.5 giây để hiển thị thông báo thành công rồi tự tắt và checkin
+            setTimeout(async () => {
+              setShowLocationDialog(false);
+              setPendingCheckin(false);
+              // Sử dụng location từ callback để đảm bảo có location
+              await performCheckinWithLocation(location);
+            }, 1500);
+          },
+          // onError
+          () => {
+            setShowLocationDialog(false);
+            setPendingCheckin(false);
+            Alert.alert(
+              'Lỗi',
+              'Không thể lấy vị trí hiện tại. Vui lòng kiểm tra cài đặt GPS.',
+            );
+          },
+        );
+        return;
+      }
+
+      // Nếu đã có vị trí, thực hiện checkin ngay
+      await performCheckinWithLocation();
+    } catch (error: any) {
+      const errorMessage =
+        error?.response?.data?.message || error?.message || 'Có lỗi xảy ra';
+      Alert.alert('Lỗi Checkin', errorMessage);
+    }
+  };
+
+  /**
+   * Thực hiện checkin với vị trí được truyền vào hoặc vị trí hiện tại
+   */
+  const performCheckinWithLocation = async (location?: {
+    latitude: number;
+    longitude: number;
+  }) => {
+    try {
+      const locationToUse = location || currentLocation;
+      if (!locationToUse) {
         return;
       }
 
@@ -165,19 +239,40 @@ const CheckinCheckoutScreen = () => {
 
       // Gửi API checkin với lat/long
       const checkinBody: CheckinBody = {
-        latitude: currentLocation.latitude,
-        longitude: currentLocation.longitude,
+        latitude: locationToUse.latitude,
+        longitude: locationToUse.longitude,
       };
 
-      await checkinMutation.mutateAsync(checkinBody);
-      Alert.alert('Thành công', 'Checkin thành công!', [
-        {
-          text: 'OK',
-          onPress: () => {
-            refetch();
-          },
-        },
-      ]);
+      const response = await checkinMutation.mutateAsync(checkinBody);
+
+      // Cập nhật state trực tiếp từ response để UI cập nhật ngay lập tức
+      if (response?.data) {
+        const newAttendance = Array.isArray(response.data)
+          ? response.data[0]
+          : response.data;
+
+        // Kiểm tra: có checkin_time và checkout_time là null nghĩa là đã checkin (bất kể status là gì: checked_in, late, early)
+        if (
+          newAttendance &&
+          newAttendance.checkin_time &&
+          !newAttendance.checkout_time
+        ) {
+          // Đánh dấu để bỏ qua lần cập nhật tiếp theo của useEffect (khi refetch chạy)
+          skipNextEffectRef.current = true;
+          // Luôn cập nhật state vì đây là attendance mới từ API checkin
+          setTodayAttendance(newAttendance as Attendance);
+
+          // Refetch ở background để đồng bộ với server
+          refetch();
+
+          Alert.alert('Thành công', 'Checkin thành công!');
+          return;
+        }
+      }
+
+      // Nếu không có data trong response, refetch để lấy data mới
+      await refetch();
+      Alert.alert('Thành công', 'Checkin thành công!');
     } catch (error: any) {
       const errorMessage =
         error?.response?.data?.message || error?.message || 'Có lỗi xảy ra';
@@ -208,15 +303,14 @@ const CheckinCheckoutScreen = () => {
       }
 
       await checkoutMutation.mutateAsync({});
-      Alert.alert('Thành công', 'Checkout thành công!', [
-        {
-          text: 'OK',
-          onPress: () => {
-            refetch();
-            setTodayAttendance(null);
-          },
-        },
-      ]);
+
+      // Reset state về null vì đã checkout xong
+      setTodayAttendance(null);
+
+      // Refetch dữ liệu attendance để đảm bảo đồng bộ với server
+      refetch();
+
+      Alert.alert('Thành công', 'Checkout thành công!');
     } catch (error: any) {
       const errorMessage =
         error?.response?.data?.message || error?.message || 'Có lỗi xảy ra';
@@ -423,6 +517,39 @@ const CheckinCheckoutScreen = () => {
           </View>
         )}
       </ScrollView>
+
+      {/* Location Dialog */}
+      <Modal
+        visible={showLocationDialog}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => {
+          if (!isLoadingLocation) {
+            setShowLocationDialog(false);
+            setPendingCheckin(false);
+          }
+        }}
+      >
+        <View style={styles.dialogBackdrop}>
+          <View style={styles.dialogContent}>
+            {isLoadingLocation ? (
+              <>
+                <ActivityIndicator size="large" color="#2196F3" />
+                <Text style={styles.dialogMessage}>
+                  {locationDialogMessage}
+                </Text>
+              </>
+            ) : (
+              <>
+                <Icon name="check-circle" size={48} color="#4CAF50" />
+                <Text style={styles.dialogMessage}>
+                  {locationDialogMessage}
+                </Text>
+              </>
+            )}
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 };
@@ -620,6 +747,35 @@ const styles = StyleSheet.create({
   refreshLocationButtonText: {
     fontSize: 13,
     color: '#2196F3',
+    fontWeight: '500',
+  },
+  dialogBackdrop: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 16,
+  },
+  dialogContent: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    padding: 24,
+    alignItems: 'center',
+    minWidth: 200,
+    elevation: 5,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+  },
+  dialogMessage: {
+    fontSize: 16,
+    color: '#333333',
+    marginTop: 16,
+    textAlign: 'center',
     fontWeight: '500',
   },
 });

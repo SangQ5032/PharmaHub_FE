@@ -9,6 +9,7 @@ export type Customer = {
   email?: string;
   address?: string;
   total_spent?: number;
+  discount_balance?: number;
   createdAt?: string;
   updatedAt?: string;
 };

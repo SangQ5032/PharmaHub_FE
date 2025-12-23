@@ -46,13 +46,13 @@ export const ROLE_CONFIG: Record<UserRole, RoleConfig> = {
         route: ROUTES.SYSTEM_ADMIN_WORK_SCHEDULE_MENU,
         description: 'Quản lý lịch làm việc theo chi nhánh',
       },
-      {
-        id: 'admin-7',
-        name: 'Lịch sử làm việc',
-        icon: 'history',
-        route: ROUTES.SYSTEM_ADMIN_WORK_HISTORY_BRANCH_SELECTION,
-        description: 'Xem lịch sử làm việc theo chi nhánh',
-      },
+      // {
+      //   id: 'admin-7',
+      //   name: 'Lịch sử làm việc',
+      //   icon: 'history',
+      //   route: ROUTES.SYSTEM_ADMIN_WORK_HISTORY_BRANCH_SELECTION,
+      //   description: 'Xem lịch sử làm việc theo chi nhánh',
+      // },
       {
         id: 'admin-8',
         name: 'Quản lý lương',

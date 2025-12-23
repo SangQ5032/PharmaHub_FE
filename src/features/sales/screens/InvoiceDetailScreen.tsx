@@ -6,10 +6,13 @@ import {
   ScrollView,
   ActivityIndicator,
   Alert,
+  TouchableOpacity,
 } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
+import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { useGetInvoiceById } from '../hooks/useSales';
 import { Invoice } from '../types';
+import { showPrintOptions } from '../services/invoicePrintService';
 
 const InvoiceDetailScreen: React.FC = () => {
   const navigation = useNavigation<any>();
@@ -25,6 +28,27 @@ const InvoiceDetailScreen: React.FC = () => {
       navigation.goBack();
     }
   }, [error, navigation]);
+
+  // Set header right button - phải đặt trước early returns để tuân thủ quy tắc hooks
+  useEffect(() => {
+    if (invoice) {
+      const handlePrint = () => {
+        showPrintOptions(invoice);
+      };
+
+      navigation.setOptions({
+        headerRight: () => (
+          <TouchableOpacity
+            onPress={handlePrint}
+            style={styles.headerButton}
+            activeOpacity={0.7}
+          >
+            <Icon name="printer" size={24} color="#0066CC" />
+          </TouchableOpacity>
+        ),
+      });
+    }
+  }, [invoice, navigation]);
 
   if (isLoading) {
     return (
@@ -481,6 +505,10 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: '#666',
     lineHeight: 20,
+  },
+  headerButton: {
+    marginRight: 16,
+    padding: 8,
   },
 });
 

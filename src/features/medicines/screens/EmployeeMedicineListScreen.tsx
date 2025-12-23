@@ -87,7 +87,7 @@ const EmployeeMedicineListScreen: React.FC = () => {
         </View>
 
         {/* Filters row */}
-        <View style={styles.filtersRow}>
+        {/* <View style={styles.filtersRow}>
           <ScrollView
             horizontal
             showsHorizontalScrollIndicator={false}
@@ -117,7 +117,7 @@ const EmployeeMedicineListScreen: React.FC = () => {
           >
             <Text style={styles.filterButtonText}>Lọc</Text>
           </TouchableOpacity>
-        </View>
+        </View> */}
 
         {/* Summary info */}
         <View style={styles.summaryContainer}>

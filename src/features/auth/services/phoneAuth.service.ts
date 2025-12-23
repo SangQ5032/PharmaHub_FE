@@ -86,6 +86,17 @@ class PhoneAuthService {
           user: response.data.user,
         };
       } else {
+        // Kiểm tra trường hợp chi nhánh đóng cửa
+        if (
+          response.status === 'error' &&
+          response.message === 'Chi nhánh đã đóng cửa'
+        ) {
+          return {
+            success: false,
+            error: 'BRANCH_CLOSED', // Flag đặc biệt để screen xử lý
+          };
+        }
+
         return {
           success: false,
           error: response.message || 'Không thể xác thực với server',
@@ -93,6 +104,24 @@ class PhoneAuthService {
       }
     } catch (error: any) {
       console.error('Lỗi xác thực OTP:', error);
+
+      // Kiểm tra lỗi 403 từ server (chi nhánh đóng cửa)
+      if (error.response?.status === 403) {
+        const errorData = error.response?.data;
+        // Kiểm tra nhiều cách format response
+        if (
+          (errorData?.success === false &&
+            errorData?.status === 'error' &&
+            errorData?.message === 'Chi nhánh đã đóng cửa') ||
+          errorData?.message === 'Chi nhánh đã đóng cửa'
+        ) {
+          return {
+            success: false,
+            error: 'BRANCH_CLOSED', // Flag đặc biệt để screen xử lý
+          };
+        }
+      }
+
       return {
         success: false,
         error: this.getFirebaseErrorMessage(error),
@@ -134,6 +163,11 @@ class PhoneAuthService {
    * Chuyển đổi lỗi Firebase sang thông báo tiếng Việt
    */
   private getFirebaseErrorMessage(error: any): string {
+    // Ưu tiên message từ server response
+    if (error?.response?.data?.message) {
+      return error.response.data.message;
+    }
+
     const code = error?.code;
 
     switch (code) {

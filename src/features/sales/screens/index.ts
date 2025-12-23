@@ -5,6 +5,7 @@ export { default as InvoiceDetailScreen } from './InvoiceDetailScreen';
 export { default as BranchInvoiceHistoryScreen } from './BranchInvoiceHistoryScreen';
 export { default as EmployeeInvoiceHistoryScreen } from './EmployeeInvoiceHistoryScreen';
 export { default as MedicineDetailScreen } from './MedicineDetailScreen';
+export { default as MedicineSelectionScreen } from './MedicineSelectionScreen';
 export { default as CreateCustomerScreen } from './CreateCustomerScreen';
 export { default as PaymentQRScreen } from './PaymentQRScreen';
 export { default as BarcodeScannerScreen } from './BarcodeScannerScreen';

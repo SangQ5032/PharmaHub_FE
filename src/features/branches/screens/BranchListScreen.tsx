@@ -9,7 +9,11 @@ import {
   Alert,
   ActivityIndicator,
 } from 'react-native';
-import { useBranches, useDeleteBranch } from '../hooks/useBranches';
+import {
+  useBranches,
+  useCloseBranch,
+  useOpenBranch,
+} from '../hooks/useBranches';
 import BranchItem from '../components/BranchItem';
 import { useNavigation } from '@react-navigation/native';
 import { ROUTES } from '@shared/constants/routes';
@@ -25,7 +29,8 @@ const BranchListEmpty: React.FC = () => (
 const BranchListScreen: React.FC = () => {
   const navigation = useNavigation<any>();
   const { data, isLoading, isError } = useBranches();
-  const deleteMut = useDeleteBranch();
+  const closeMut = useCloseBranch();
+  const openMut = useOpenBranch();
 
   const [query, setQuery] = useState('');
   const [page, setPage] = useState(1);
@@ -48,21 +53,45 @@ const BranchListScreen: React.FC = () => {
   const onAdd = () =>
     navigation.navigate(ROUTES.ADD_EDIT_BRANCH, { mode: 'create' });
 
-  const confirmDelete = (item: any) => {
-    Alert.alert('Xác nhận', `Bạn có muốn xóa chi nhánh "${item.name}" không?`, [
-      { text: 'Hủy', style: 'cancel' },
-      {
-        text: 'Xóa',
-        style: 'destructive',
-        onPress: async () => {
-          try {
-            await deleteMut.mutateAsync(item._id);
-          } catch (err: any) {
-            Alert.alert('Lỗi', err?.message || 'Xóa thất bại');
-          }
+  const confirmClose = (item: any) => {
+    Alert.alert(
+      'Xác nhận',
+      `Bạn có muốn đóng cửa chi nhánh "${item.name}" không?`,
+      [
+        { text: 'Hủy', style: 'cancel' },
+        {
+          text: 'Đóng cửa',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await closeMut.mutateAsync(item._id);
+            } catch (err: any) {
+              Alert.alert('Lỗi', err?.message || 'Đóng cửa thất bại');
+            }
+          },
         },
-      },
-    ]);
+      ],
+    );
+  };
+
+  const confirmOpen = (item: any) => {
+    Alert.alert(
+      'Xác nhận',
+      `Bạn có muốn mở cửa chi nhánh "${item.name}" không?`,
+      [
+        { text: 'Hủy', style: 'cancel' },
+        {
+          text: 'Mở cửa',
+          onPress: async () => {
+            try {
+              await openMut.mutateAsync(item._id);
+            } catch (err: any) {
+              Alert.alert('Lỗi', err?.message || 'Mở cửa thất bại');
+            }
+          },
+        },
+      ],
+    );
   };
 
   if (isLoading) {
@@ -113,7 +142,8 @@ const BranchListScreen: React.FC = () => {
                 branchName: item.name,
               })
             }
-            onDelete={() => confirmDelete(item)}
+            onClose={() => confirmClose(item)}
+            onOpen={() => confirmOpen(item)}
           />
         )}
         ListEmptyComponent={BranchListEmpty}

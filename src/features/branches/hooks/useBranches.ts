@@ -47,3 +47,19 @@ export function useDeleteBranch() {
     onSuccess: () => qc.invalidateQueries({ queryKey: ['branches'] }),
   });
 }
+
+export function useCloseBranch() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => branchApi.closeBranch(id),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['branches'] }),
+  });
+}
+
+export function useOpenBranch() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => branchApi.openBranch(id),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['branches'] }),
+  });
+}

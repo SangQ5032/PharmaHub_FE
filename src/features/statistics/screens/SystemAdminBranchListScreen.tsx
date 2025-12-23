@@ -46,7 +46,7 @@ const SystemAdminBranchListScreen: React.FC<BranchListScreenProps> = ({
         showsVerticalScrollIndicator={false}
       >
         {/* Header */}
-        <View style={styles.header}>
+        {/* <View style={styles.header}>
           <TouchableOpacity onPress={() => navigation.goBack()}>
             <Text style={styles.backBtn}>← Quay lại</Text>
           </TouchableOpacity>
@@ -54,7 +54,7 @@ const SystemAdminBranchListScreen: React.FC<BranchListScreenProps> = ({
           <Text style={styles.subtitle}>
             Chọn mục để xem thông tin chi nhánh
           </Text>
-        </View>
+        </View> */}
 
         {/* Menu Items */}
         <View style={styles.menuContainer}>

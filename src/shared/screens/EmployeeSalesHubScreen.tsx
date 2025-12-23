@@ -36,8 +36,11 @@ const EmployeeSalesHubScreen: React.FC = () => {
       : [attendanceData.data];
     const today = new Date().toDateString();
     return attendances.some(att => {
+      if (!att || !att.checkin_time) return false;
       const attDate = new Date(att.checkin_time).toDateString();
-      return attDate === today && att.status === 'checked_in';
+      // Kiểm tra: có checkin_time của hôm nay và chưa checkout (checkout_time là null)
+      // Bất kể status là gì (checked_in, late, early) - đều coi như đã checkin
+      return attDate === today && !att.checkout_time;
     });
   }, [attendanceData]);
 

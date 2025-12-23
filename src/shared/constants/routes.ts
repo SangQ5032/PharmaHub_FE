@@ -53,6 +53,7 @@ export const ROUTES = {
   INVOICE_LIST: 'InvoiceList',
   BRANCH_INVOICE_HISTORY: 'BranchInvoiceHistory',
   EMPLOYEE_INVOICE_HISTORY: 'EmployeeInvoiceHistory',
+  MEDICINE_SELECTION: 'MedicineSelection',
   CUSTOMER_LIST: 'CustomerList',
   CUSTOMER_DETAIL: 'CustomerDetail',
   // Categories routes

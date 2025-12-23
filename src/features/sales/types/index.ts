@@ -68,6 +68,7 @@ export type CustomerInfo = {
   phone: string;
   address?: string;
   total_spent: number;
+  discount_balance?: number;
 };
 export type Invoice = {
   _id: string;

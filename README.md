@@ -36,6 +36,11 @@ yarn install
 ```
 
 ## Chạy dự án
+(khuyến nghị chạy android với máy ảo android studio, ios bằng xcode có thể có lỗi mô trường)
+
+chạy yarn android (tự động chạy metro)
+
+hoặc
 
 ### Chạy Metro (bundler)
 

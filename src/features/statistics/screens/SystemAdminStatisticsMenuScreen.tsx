@@ -26,11 +26,11 @@ const StatisticsMenuScreen: React.FC<StatisticsMenuScreenProps> = ({
   const menuItems = [
     {
       id: '1',
-      title: 'Danh Sách Chi Nhánh',
-      description: 'Xem danh sách tất cả chi nhánh trong hệ thống',
-      icon: '🏪',
+      title: 'Doanh Thu Chi Nhánh',
+      description: 'Xem thống kê doanh thu từng chi nhánh',
+      icon: '💰',
       color: '#4CAF50',
-      onPress: () => navigation.navigate('SystemAdminBranchList'),
+      onPress: () => navigation.navigate('SystemAdminBranchRevenueDetailed'),
     },
     {
       id: '2',

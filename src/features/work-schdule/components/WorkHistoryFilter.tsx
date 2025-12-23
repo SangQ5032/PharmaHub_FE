@@ -15,7 +15,12 @@ import {
   WorkHistoryFilters,
   Shift,
 } from '@features/work-schdule/types/workScheduleHistory.types';
-import { useAllEmployees, Employee } from '@features/employee-management';
+import {
+  useAllEmployees,
+  useEmployeeManagement,
+  Employee,
+} from '@features/employee-management';
+import { useAuthStore } from '@features/auth/stores/useAuthStore';
 
 interface WorkHistoryFilterProps {
   filters: WorkHistoryFilters;
@@ -32,9 +37,36 @@ export const WorkHistoryFilter: React.FC<WorkHistoryFilterProps> = ({
 }) => {
   const { colors } = useTheme();
   const [modalVisible, setModalVisible] = useState(false);
+  const { user } = useAuthStore();
 
   // Lấy danh sách nhân viên nếu cần filter theo user
-  const { employees, isLoading: isLoadingEmployees } = useAllEmployees();
+  // Nếu là branch-manager, chỉ lấy nhân viên của chi nhánh đó
+  // Nếu là system-admin, chỉ lấy nhân viên của chi nhánh được chọn (nếu có branchId trong filters)
+  const isBranchManager = user?.role === 'branch-manager';
+  const isSystemAdmin = user?.role === 'system-admin';
+  const userBranchId = user?.branch_id || user?.branchId;
+
+  // Nếu system-admin có chọn chi nhánh trong filters, dùng branchId từ filters
+  // Nếu không, dùng branchId từ user (nhưng system-admin thường không có branchId)
+  const selectedBranchId =
+    isSystemAdmin && filters.branchId ? filters.branchId : userBranchId;
+
+  const allEmployeesQuery = useAllEmployees();
+  const branchEmployeesQuery = useEmployeeManagement(selectedBranchId);
+
+  // Nếu là system-admin và có branchId trong filters, chỉ lấy nhân viên của chi nhánh đó
+  // Nếu là branch-manager, chỉ lấy nhân viên của chi nhánh đó
+  // Nếu là system-admin nhưng không có branchId, không hiển thị danh sách nhân viên
+  const employeesQuery =
+    (isSystemAdmin && filters.branchId) || isBranchManager
+      ? branchEmployeesQuery
+      : allEmployeesQuery;
+
+  const employees = (employeesQuery.employees || []) as Employee[];
+  const isLoadingEmployees =
+    (isSystemAdmin && filters.branchId) || isBranchManager
+      ? branchEmployeesQuery.isLoadingEmployees
+      : allEmployeesQuery.isLoading;
 
   const handleShiftChange = (shift: Shift | undefined) => {
     onFiltersChange({
@@ -222,7 +254,12 @@ export const WorkHistoryFilter: React.FC<WorkHistoryFilterProps> = ({
                 <Text style={[styles.filterLabel, { color: colors.text }]}>
                   Nhân viên
                 </Text>
-                {isLoadingEmployees ? (
+                {/* Nếu là system-admin nhưng chưa chọn chi nhánh, hiển thị thông báo */}
+                {isSystemAdmin && !filters.branchId ? (
+                  <Text style={[styles.infoText, { color: colors.text }]}>
+                    Vui lòng chọn chi nhánh để xem danh sách nhân viên
+                  </Text>
+                ) : isLoadingEmployees ? (
                   <View style={styles.loadingContainer}>
                     <ActivityIndicator size="small" color={colors.primary} />
                   </View>
@@ -426,6 +463,12 @@ const styles = StyleSheet.create({
   loadingContainer: {
     paddingVertical: 20,
     alignItems: 'center',
+  },
+  infoText: {
+    fontSize: 13,
+    fontStyle: 'italic',
+    marginVertical: 8,
+    opacity: 0.7,
   },
   dateInfo: {
     fontSize: 13,

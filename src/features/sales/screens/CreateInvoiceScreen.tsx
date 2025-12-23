@@ -24,6 +24,8 @@ import { useGetCustomers } from '../hooks/useCustomers';
 import { useAuthStore } from '../../auth/stores/useAuthStore';
 import { SaleItem, CreateInvoiceRequest } from '../types';
 import { getUnitDisplayName } from '../../../utils/medicineUnits';
+import { showPrintOptions } from '../services/invoicePrintService';
+import { ROUTES } from '@shared/constants/routes';
 
 const CreateInvoiceScreen: React.FC = () => {
   const navigation = useNavigation<any>();
@@ -78,8 +80,6 @@ const CreateInvoiceScreen: React.FC = () => {
 
   // Items state
   const [items, setItems] = useState<SaleItem[]>([]);
-  const [showMedicineModal, setShowMedicineModal] = useState(false);
-  const [medicineSearchQuery, setMedicineSearchQuery] = useState('');
 
   // Customer selection state
   const [showCustomerModal, setShowCustomerModal] = useState(false);
@@ -121,10 +121,10 @@ const CreateInvoiceScreen: React.FC = () => {
     if (value > 0 && value < 1000) {
       return 'Chiết khấu tối thiểu phải là 1,000₫';
     }
-    if (customerId && value > maxDiscountEligible) {
+    if (customerId && maxDiscountEligible > 0 && value > maxDiscountEligible) {
       return `Chiết khấu không được vượt quá ${maxDiscountEligible.toLocaleString(
         'vi-VN',
-      )}₫ (chiết khấu tối đa)`;
+      )}₫ (số dư chiết khấu)`;
     }
     if (value > subtotal) {
       return 'Chiết khấu không được vượt quá tổng tiền hàng';
@@ -148,10 +148,6 @@ const CreateInvoiceScreen: React.FC = () => {
   const medicines = medicinesResponse?.data || [];
   const customers = customersData?.data || []; // Sửa: thêm .data để lấy mảng từ response object
 
-  const filteredMedicines = medicines.filter((med: any) =>
-    med?.name?.toLowerCase().includes(medicineSearchQuery.toLowerCase()),
-  );
-
   const filteredCustomers = customers.filter(
     (cust: any) =>
       cust?.name?.toLowerCase().includes(customerSearchQuery.toLowerCase()) ||
@@ -165,20 +161,16 @@ const CreateInvoiceScreen: React.FC = () => {
     setCustomerSearchQuery('');
     setShowCustomerModal(false);
 
-    // Tính toán max_discount_eligible từ total_spent
-    const totalSpent = customer.total_spent || 0;
-    const maxDiscount = Math.floor(totalSpent / 100000) * 1000;
-    setMaxDiscountEligible(maxDiscount);
+    // Sử dụng discount_balance trực tiếp từ API
+    const discountBalance = customer.discount_balance || 0;
+    setMaxDiscountEligible(discountBalance);
 
     // Reset discount về 0 khi chọn khách hàng mới
     setDiscount(0);
   };
 
-  const handleSelectMedicine = (medicine: any) => {
-    setShowMedicineModal(false);
-    setMedicineSearchQuery('');
-    navigation.navigate('SalesMedicineDetail', {
-      medicine,
+  const handleSelectMedicine = () => {
+    navigation.navigate(ROUTES.MEDICINE_SELECTION, {
       onAddMedicine: (
         selectedMedicine: any,
         quantity: number,
@@ -286,12 +278,16 @@ const CreateInvoiceScreen: React.FC = () => {
       Alert.alert('Lỗi', 'Chiết khấu không được vượt quá tổng tiền hàng');
       return;
     }
-    if (customerId && discount > maxDiscountEligible) {
+    if (
+      customerId &&
+      maxDiscountEligible > 0 &&
+      discount > maxDiscountEligible
+    ) {
       Alert.alert(
         'Lỗi',
         `Chiết khấu không được vượt quá ${maxDiscountEligible.toLocaleString(
           'vi-VN',
-        )}₫ (chiết khấu tối đa)`,
+        )}₫ (số dư chiết khấu)`,
       );
       return;
     }
@@ -342,6 +338,20 @@ const CreateInvoiceScreen: React.FC = () => {
           'Thành công',
           `Tạo hóa đơn thành công!\nMã hóa đơn: ${response.data.invoice_code}`,
           [
+            {
+              text: 'In hóa đơn',
+              onPress: () => {
+                showPrintOptions(response.data);
+              },
+            },
+            {
+              text: 'Xem chi tiết',
+              onPress: () => {
+                navigation.navigate(ROUTES.INVOICE_DETAIL, {
+                  invoiceId: response.data._id,
+                });
+              },
+            },
             {
               text: 'OK',
               onPress: () => {
@@ -438,11 +448,11 @@ const CreateInvoiceScreen: React.FC = () => {
             <>
               <TouchableOpacity
                 style={styles.medicineSelectButton}
-                onPress={() => setShowMedicineModal(true)}
+                onPress={handleSelectMedicine}
                 disabled={isPending}
               >
                 <Text style={styles.medicineSelectButtonText}>
-                  {medicineSearchQuery || 'Chọn thuốc/sản phẩm'}
+                  Chọn thuốc/sản phẩm
                 </Text>
               </TouchableOpacity>
 
@@ -545,17 +555,7 @@ const CreateInvoiceScreen: React.FC = () => {
             <Text style={styles.label}>Chiết khấu</Text>
             {customerId && maxDiscountEligible > 0 && (
               <Text style={styles.discountInfo}>
-                Chiết khấu tối đa: {maxDiscountEligible.toLocaleString('vi-VN')}
-                ₫
-                {maxDiscountEligible > 0 && (
-                  <Text style={styles.discountInfoSmall}>
-                    {'\n'}(Khách hàng đã chi tiêu:{' '}
-                    {customers
-                      .find((c: any) => c._id === customerId)
-                      ?.total_spent?.toLocaleString('vi-VN') || 0}
-                    ₫)
-                  </Text>
-                )}
+                Số dư chiết khấu: {maxDiscountEligible.toLocaleString('vi-VN')}₫
               </Text>
             )}
             {!customerId && (
@@ -565,7 +565,7 @@ const CreateInvoiceScreen: React.FC = () => {
             )}
             {customerId && maxDiscountEligible === 0 && (
               <Text style={styles.discountInfo}>
-                Khách hàng này chưa đủ điều kiện để nhận chiết khấu
+                Khách hàng này không có số dư chiết khấu
               </Text>
             )}
             <TextInput
@@ -684,68 +684,6 @@ const CreateInvoiceScreen: React.FC = () => {
         </TouchableOpacity>
       </ScrollView>
 
-      {/* Medicine Selection Modal */}
-      <Modal
-        visible={showMedicineModal}
-        transparent
-        animationType="slide"
-        onRequestClose={() => setShowMedicineModal(false)}
-      >
-        <View style={styles.modalContainer}>
-          <View style={styles.modalContent}>
-            <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Chọn thuốc/sản phẩm</Text>
-              <TouchableOpacity onPress={() => setShowMedicineModal(false)}>
-                <Text style={styles.closeButton}>Đóng</Text>
-              </TouchableOpacity>
-            </View>
-
-            <TextInput
-              style={styles.searchInput}
-              placeholder="Tìm kiếm thuốc..."
-              value={medicineSearchQuery}
-              onChangeText={setMedicineSearchQuery}
-            />
-
-            <FlatList
-              data={filteredMedicines}
-              keyExtractor={item => item._id}
-              renderItem={({ item }) => (
-                <TouchableOpacity
-                  style={[
-                    styles.medicineListItem,
-                    (!item.total_quantity || item.total_quantity === 0) &&
-                      styles.medicineListItemOutOfStock,
-                  ]}
-                  onPress={() => handleSelectMedicine(item)}
-                  disabled={!item.total_quantity || item.total_quantity === 0}
-                >
-                  <View style={styles.medicineListItemContent}>
-                    <Text style={styles.medicineName}>{item.name}</Text>
-                    <Text style={styles.medicineInfo}>
-                      Giá:{' '}
-                      {Number(
-                        item.retail_price || item.price || 0,
-                      ).toLocaleString('vi-VN')}
-                      ₫ | {item.unit || 'viên'}
-                    </Text>
-                    <Text style={styles.medicineInfo}>
-                      Tồn kho: {item.total_quantity || 0} {item.unit || 'viên'}
-                      {item.batch_count ? ` (${item.batch_count} lô)` : ''}
-                      {(!item.total_quantity || item.total_quantity === 0) &&
-                        ' | Hết hàng'}
-                    </Text>
-                  </View>
-                </TouchableOpacity>
-              )}
-              ListEmptyComponent={
-                <Text style={styles.emptyText}>Không tìm thấy sản phẩm</Text>
-              }
-            />
-          </View>
-        </View>
-      </Modal>
-
       {/* Customer Selection Modal */}
       <Modal
         visible={showCustomerModal}
@@ -780,8 +718,17 @@ const CreateInvoiceScreen: React.FC = () => {
                   <View>
                     <Text style={styles.medicineName}>{item.name}</Text>
                     <Text style={styles.medicineInfo}>
-                      SĐT: {item.phone} | Đã chi tiêu:{' '}
-                      {Number(item.total_spent || 0).toLocaleString('vi-VN')}₫
+                      SĐT: {item.phone}
+                      {item.discount_balance !== undefined && (
+                        <>
+                          {' '}
+                          | Số dư chiết khấu:{' '}
+                          {Number(item.discount_balance || 0).toLocaleString(
+                            'vi-VN',
+                          )}
+                          ₫
+                        </>
+                      )}
                     </Text>
                   </View>
                 </TouchableOpacity>
@@ -1036,17 +983,10 @@ const styles = StyleSheet.create({
     color: '#333',
   },
   closeButton: {
-    fontSize: 14,
-    color: '#0066CC',
-    fontWeight: '600',
-  },
-  searchInput: {
-    borderWidth: 1,
-    borderColor: '#DDD',
-    borderRadius: 6,
-    padding: 10,
-    margin: 12,
-    fontSize: 14,
+    fontSize: 24,
+    color: '#757575',
+    fontWeight: '300',
+    padding: 4,
   },
   medicineListItem: {
     padding: 12,

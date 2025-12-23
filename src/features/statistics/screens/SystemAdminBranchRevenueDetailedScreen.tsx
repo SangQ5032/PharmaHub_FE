@@ -135,11 +135,11 @@ const SystemAdminBranchRevenueDetailedScreen: React.FC<
         ListHeaderComponent={
           <View style={styles.header}>
             {/* Back Button */}
-            <TouchableOpacity onPress={() => navigation.goBack()}>
+            {/* <TouchableOpacity onPress={() => navigation.goBack()}>
               <Text style={styles.backBtn}>← Quay lại</Text>
             </TouchableOpacity>
 
-            <Text style={styles.title}>Doanh Thu Chi Nhánh</Text>
+            <Text style={styles.title}>Doanh Thu Chi Nhánhds</Text> */}
 
             {/* Summary Cards */}
             <View style={styles.summaryGrid}>

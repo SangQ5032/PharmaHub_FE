@@ -117,7 +117,7 @@ export default function PhoneLoginScreen() {
         }
         if (result.user) {
           setUser(result.user);
-          Alert.alert('Thong tin user', JSON.stringify(result.user));
+          Alert.alert('Thành công', 'Đăng nhập thành công');
           console.tron.log('User info:', result.user);
         }
 
@@ -128,7 +128,12 @@ export default function PhoneLoginScreen() {
           routes: [{ name: 'MainApp' as keyof RootStackParamList }],
         });
       } else {
-        Alert.alert('Lỗi', result.error || 'Mã OTP không đúng');
+        // Kiểm tra trường hợp chi nhánh đóng cửa
+        if (result.error === 'BRANCH_CLOSED') {
+          Alert.alert('Thông báo', 'Chi nhánh đóng cửa');
+        } else {
+          Alert.alert('Lỗi', result.error || 'Mã OTP không đúng');
+        }
       }
     } catch (error: any) {
       Alert.alert('Lỗi', error.message || 'Đã xảy ra lỗi. Vui lòng thử lại');

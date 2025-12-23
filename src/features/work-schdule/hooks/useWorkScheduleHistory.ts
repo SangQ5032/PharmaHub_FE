@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { workScheduleApi } from '@features/work-schdule/api/work-schedule.api';
 import {
@@ -17,43 +17,131 @@ export const useMyWorkHistory = (filters?: WorkHistoryFilters) => {
     limit: filters?.limit || 10,
     ...(filters?.fromDate && { from_date: filters.fromDate }),
     ...(filters?.toDate && { to_date: filters.toDate }),
-    ...(filters?.shift && { shift: filters.shift }),
+    // KHÔNG gửi shift lên API - sẽ lọc ở frontend
   };
 
-  return useQuery({
-    queryKey: ['work-history-me', params],
+  // Tạo query key - không include shift vì không gửi lên API
+  const queryKey = [
+    'work-history-me',
+    filters?.page || 1,
+    filters?.limit || 10,
+    filters?.fromDate,
+    filters?.toDate,
+  ];
+
+  const queryResult = useQuery({
+    queryKey,
     queryFn: () => workScheduleApi.getMyWorkHistory(params),
     enabled: true,
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
+
+  // Lọc dữ liệu ở frontend dựa trên shift filter
+  const filteredData = useMemo(() => {
+    if (!queryResult.data?.data) {
+      return queryResult.data;
+    }
+
+    // Nếu không có shift filter, trả về data gốc
+    if (!filters?.shift) {
+      return queryResult.data;
+    }
+
+    // Lọc data theo shift
+    const filteredRecords = queryResult.data.data.filter(
+      (record: WorkScheduleHistoryRecord) => record.shift === filters.shift,
+    );
+
+    return {
+      ...queryResult.data,
+      data: filteredRecords,
+      pagination: {
+        ...queryResult.data.pagination,
+        total: filteredRecords.length,
+        totalPages: Math.ceil(filteredRecords.length / (filters?.limit || 10)),
+      },
+    };
+  }, [queryResult.data, filters?.shift, filters?.limit]);
+
+  return {
+    ...queryResult,
+    data: filteredData,
+  };
 };
 
 /**
  * Hook để lấy lịch sử làm việc nhân viên trong chi nhánh (Branch Manager)
  */
 export const useBranchEmployeesWorkHistory = (filters?: WorkHistoryFilters) => {
+  // Tạo params object, KHÔNG gửi shift lên API - sẽ lọc ở frontend
   const params: WorkScheduleHistoryParams = {
     page: filters?.page || 1,
     limit: filters?.limit || 10,
     ...(filters?.fromDate && { from_date: filters.fromDate }),
     ...(filters?.toDate && { to_date: filters.toDate }),
-    ...(filters?.shift && { shift: filters.shift }),
+    // KHÔNG gửi shift lên API - sẽ lọc ở frontend
     ...(filters?.userId && { user_id: filters.userId }),
   };
+
+  // Tạo query key - không include shift vì không gửi lên API
+  const queryKey = [
+    'work-history-branch-employees',
+    filters?.page || 1,
+    filters?.limit || 10,
+    filters?.fromDate,
+    filters?.toDate,
+    filters?.userId,
+  ];
 
   // Nếu có userId trong filters, enable query
   // Nếu không có userId, vẫn enable để lấy tất cả nhân viên (cho branch manager xem tất cả)
   const isEnabled = true;
 
-  return useQuery({
-    queryKey: ['work-history-branch-employees', params],
-    queryFn: () => workScheduleApi.getBranchEmployeesWorkHistory(params),
+  const queryResult = useQuery({
+    queryKey,
+    queryFn: async () => {
+      const result = await workScheduleApi.getBranchEmployeesWorkHistory(
+        params,
+      );
+      return result;
+    },
     enabled: isEnabled,
     staleTime: 0, // Không cache để đảm bảo data luôn mới nhất
-    // Refetch khi params thay đổi (bao gồm userId)
     refetchOnMount: true,
     refetchOnWindowFocus: false,
   });
+
+  // Lọc dữ liệu ở frontend dựa trên shift filter
+  const filteredData = useMemo(() => {
+    if (!queryResult.data?.data) {
+      return queryResult.data;
+    }
+
+    // Nếu không có shift filter, trả về data gốc
+    if (!filters?.shift) {
+      return queryResult.data;
+    }
+
+    // Lọc data theo shift
+    const filteredRecords = queryResult.data.data.filter(
+      (record: WorkScheduleHistoryRecord) => record.shift === filters.shift,
+    );
+
+    return {
+      ...queryResult.data,
+      data: filteredRecords,
+      pagination: {
+        ...queryResult.data.pagination,
+        total: filteredRecords.length,
+        totalPages: Math.ceil(filteredRecords.length / (filters?.limit || 10)),
+      },
+    };
+  }, [queryResult.data, filters?.shift, filters?.limit]);
+
+  return {
+    ...queryResult,
+    data: filteredData,
+  };
 };
 
 /**
@@ -65,17 +153,60 @@ export const useAllWorkHistory = (filters?: WorkHistoryFilters) => {
     limit: filters?.limit || 10,
     ...(filters?.fromDate && { from_date: filters.fromDate }),
     ...(filters?.toDate && { to_date: filters.toDate }),
-    ...(filters?.shift && { shift: filters.shift }),
+    // KHÔNG gửi shift lên API - sẽ lọc ở frontend
     ...(filters?.userId && { user_id: filters.userId }),
     ...(filters?.branchId && { branch_id: filters.branchId }),
   };
 
-  return useQuery({
-    queryKey: ['work-history-all', params],
+  // Tạo query key - không include shift vì không gửi lên API
+  const queryKey = [
+    'work-history-all',
+    filters?.page || 1,
+    filters?.limit || 10,
+    filters?.fromDate,
+    filters?.toDate,
+    filters?.userId,
+    filters?.branchId,
+  ];
+
+  const queryResult = useQuery({
+    queryKey,
     queryFn: () => workScheduleApi.getAllWorkHistory(params),
     enabled: true,
     staleTime: 5 * 60 * 1000,
   });
+
+  // Lọc dữ liệu ở frontend dựa trên shift filter
+  const filteredData = useMemo(() => {
+    if (!queryResult.data?.data) {
+      return queryResult.data;
+    }
+
+    // Nếu không có shift filter, trả về data gốc
+    if (!filters?.shift) {
+      return queryResult.data;
+    }
+
+    // Lọc data theo shift
+    const filteredRecords = queryResult.data.data.filter(
+      (record: WorkScheduleHistoryRecord) => record.shift === filters.shift,
+    );
+
+    return {
+      ...queryResult.data,
+      data: filteredRecords,
+      pagination: {
+        ...queryResult.data.pagination,
+        total: filteredRecords.length,
+        totalPages: Math.ceil(filteredRecords.length / (filters?.limit || 10)),
+      },
+    };
+  }, [queryResult.data, filters?.shift, filters?.limit]);
+
+  return {
+    ...queryResult,
+    data: filteredData,
+  };
 };
 
 /**

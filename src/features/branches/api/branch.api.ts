@@ -23,6 +23,14 @@ const branchApi = {
     const res = await api.delete(`${PREFIX}/${id}`);
     return res.data;
   },
+  closeBranch: async (id: string) => {
+    const res = await api.post(`${PREFIX}/${id}/close`);
+    return res.data;
+  },
+  openBranch: async (id: string) => {
+    const res = await api.post(`${PREFIX}/${id}/open`);
+    return res.data;
+  },
   getInventory: async (id: string) => {
     const res = await api.get(`${PREFIX}/${id}/inventory`);
     return res.data;

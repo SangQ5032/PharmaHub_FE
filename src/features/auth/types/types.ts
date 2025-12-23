@@ -16,6 +16,7 @@ export interface LoginFirebaseBody {
 
 export interface VerifyFirebaseTokenResponse {
   success: boolean;
+  status?: string;
   data: {
     accessToken?: string;
     refreshToken?: string;
