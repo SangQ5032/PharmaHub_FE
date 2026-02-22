@@ -15,6 +15,12 @@ export const ROUTES = {
   ADD_MEDICINE: 'AddMedicine',
   SUPPLIERS: 'Suppliers',
   ADD_SUPPLIER: 'AddSupplier',
+
+  // Customer routes
+  CUSTOMERS: 'Customers',
+  CUSTOMER_DETAIL: 'CustomerDetail',
+  ADD_CUSTOMER: 'AddCustomer',
+
   // Warehouse routes
   WAREHOUSE_HUB: 'WarehouseHub',
   IMPORT_LIST: 'ImportList',

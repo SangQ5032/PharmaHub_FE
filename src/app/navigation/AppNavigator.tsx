@@ -55,6 +55,9 @@ import {
 } from '@features/medicines';
 import MedicineDetailScreen from '@features/medicines/screens/MedicineDetailScreen';
 import { SuppliersScreen, AddSupplierScreen } from '@features/suppliers';
+
+import { CustomerListScreen, CustomerDetailScreen } from '@features/Customer';
+
 import {
   CategoriesScreen,
   AddCategoryScreen,
@@ -146,6 +149,7 @@ const TAB_COMPONENTS: Record<string, React.ComponentType<any>> = {
 const AuthStack = createNativeStackNavigator<AuthStackParamList>();
 const AuthNavigator = () => (
   <AuthStack.Navigator screenOptions={{ headerShown: false }}>
+    {/* <AuthStack.Screen name={ROUTES.PHONE_LOGIN} component={PhoneLoginScreen} /> */}
     <AuthStack.Screen name={ROUTES.PHONE_LOGIN} component={PhoneLoginScreen} />
   </AuthStack.Navigator>
 );
@@ -177,7 +181,10 @@ const MainAppNavigator = () => {
   }, [roleConfig.tabs]);
 
   return (
-    <MainStack.Navigator screenOptions={{ headerShown: false }}>
+    <MainStack.Navigator
+      screenOptions={{ headerShown: false }}
+      initialRouteName={ROUTES.CUSTOMERS}
+    >
       <MainStack.Screen name="HomeTabs">
         {() => (
           <HomeNavigator
@@ -289,6 +296,16 @@ const MainAppNavigator = () => {
       <MainStack.Screen
         name={ROUTES.MEDICINE_MANAGEMENT}
         component={MedicineManagementScreen}
+      />
+
+      {/* Customer Routes */}
+      <MainStack.Screen
+        name={ROUTES.CUSTOMERS}
+        component={CustomerListScreen}
+      />
+      <MainStack.Screen
+        name={ROUTES.CUSTOMER_DETAIL}
+        component={CustomerDetailScreen}
       />
 
       {/* Revenue Report Routes */}
@@ -641,7 +658,7 @@ export default function AppNavigator() {
     <NavigationContainer>
       <Stack.Navigator
         screenOptions={{ headerShown: false }}
-        initialRouteName="Auth"
+        initialRouteName="MainApp"
       >
         <Stack.Screen name="Auth" component={AuthNavigator} />
         <Stack.Screen name="MainApp" component={MainAppNavigator} />
